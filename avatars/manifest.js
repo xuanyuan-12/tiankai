@@ -1,8 +1,15 @@
 window.AVATAR_MANIFEST = [
   { id: 'default', name: '默认头像', file: 'default.svg', accent: '#2f9e50' },
-  { id: 'zhangshihuo', name: '张师活', file: '张师活.png', accent: '#4b87e5' },
-  // 在下面按同样格式追加图片，例如：
-  // { id: 'my-face', name: '我的头像', file: 'my-face.png', accent: '#4b87e5' },
+  { id: 'guowei', name: '郭威', file: '郭威.jpg', accent: '#4b87e5' },
+  { id: 'laoda', name: '牢大', file: '牢大.png', accent: '#d86b2f' },
+  { id: 'lvchaoqun', name: '吕超群', file: '吕超群.jpg', accent: '#67b36b' },
+  { id: 'shangguangyu', name: '商广宇', file: '商广宇.jpg', accent: '#a36bd8' },
+  { id: 'xujiayin', name: '许家印', file: '许家印.png', accent: '#d84b5a' },
+  { id: 'yangjinli_chishou', name: '杨金力（吃手）', file: '杨金力(吃手).png', accent: '#e0a235' },
+  { id: 'yangjinli_tushetou', name: '杨金力（吐舌头）', file: '杨金力(吐舌头).png', accent: '#e06b9e' },
+  { id: 'yangjinli', name: '杨金力', file: '杨金力.jpg', accent: '#3fa9a0' },
+  { id: 'yaoweisheng', name: '姚卫盛', file: '姚卫盛.jpg', accent: '#6b8fe0' },
+  { id: 'zhangpeihua', name: '张培华', file: '张培华.jpg', accent: '#b07a4a' },
+  { id: 'zhangxuefeng', name: '张雪峰', file: '张雪峰.png', accent: '#4b87e5' },
+  { id: 'zhenwei', name: '甄伟', file: '甄伟.jpg', accent: '#8c63d8' },
 ];
-
-
