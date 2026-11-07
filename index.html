@@ -141,28 +141,6 @@
       </div>
 
       <div class="start-grid">
-        <aside class="home-side home-side--left" aria-label="游戏记录">
-          <button class="side-card side-card--board" id="boardButton" type="button" aria-haspopup="dialog" aria-label="排行榜">
-            <span class="side-card__icon"><svg class="icon"><use href="#i-trophy"></use></svg></span>
-            <span class="side-card__body">
-              <span class="side-card__eyebrow">HALL OF FAME</span>
-              <strong>排行榜</strong>
-              <span class="side-card__hint">历史成绩与用时</span>
-            </span>
-            <span class="side-card__arrow" aria-hidden="true">→</span>
-          </button>
-          <button class="side-card side-card--achievements" id="achievementButton" type="button" aria-haspopup="dialog" aria-label="成就">
-            <span class="side-card__icon"><svg class="icon"><use href="#i-star"></use></svg></span>
-            <span class="side-card__body">
-              <span class="side-card__eyebrow">MILESTONES</span>
-              <strong>成就 <b id="achievementCount">0/10</b></strong>
-              <span class="side-card__meter" aria-hidden="true"><i id="achievementMeter"></i></span>
-              <span class="side-card__hint">四套进度独立记录</span>
-            </span>
-            <span class="side-card__arrow" aria-hidden="true">→</span>
-          </button>
-        </aside>
-
         <div class="hero-panel">
           <div class="logo-lockup" aria-label="Super Mario Run">
             <span class="logo-super">SUPER</span>
@@ -171,38 +149,64 @@
           </div>
           <h2 class="hero-title">马里奥 · 极速跑酷</h2>
 
-          <div class="mode-dock" id="modeDock">
-            <div class="difficulty-switch" id="difficultySwitch" role="group" aria-label="选择模式">
-              <button class="difficulty-option" type="button" data-mode="easy" aria-pressed="false">简单</button>
-              <button class="difficulty-option is-active" type="button" data-mode="normal" aria-pressed="true">普通</button>
-              <button class="difficulty-option" type="button" data-mode="hard" aria-pressed="false">困难</button>
-              <button class="difficulty-option" type="button" data-mode="extreme" aria-pressed="false">极限</button>
-            </div>
-          </div>
+          <div class="home-controls">
+            <aside class="home-side home-side--left" aria-label="游戏记录">
+              <button class="side-card side-card--board" id="boardButton" type="button" aria-haspopup="dialog" aria-label="排行榜">
+                <span class="side-card__icon"><svg class="icon"><use href="#i-trophy"></use></svg></span>
+                <span class="side-card__body">
+                  <span class="side-card__eyebrow">HALL OF FAME</span>
+                  <strong>排行榜</strong>
+                  <span class="side-card__hint">历史成绩与用时</span>
+                </span>
+                <span class="side-card__arrow" aria-hidden="true">→</span>
+              </button>
+              <button class="side-card side-card--achievements" id="achievementButton" type="button" aria-haspopup="dialog" aria-label="成就">
+                <span class="side-card__icon"><svg class="icon"><use href="#i-star"></use></svg></span>
+                <span class="side-card__body">
+                  <span class="side-card__eyebrow">MILESTONES</span>
+                  <strong>成就 <b id="achievementCount">0/10</b></strong>
+                  <span class="side-card__meter" aria-hidden="true"><i id="achievementMeter"></i></span>
+                  <span class="side-card__hint">四套进度独立记录</span>
+                </span>
+                <span class="side-card__arrow" aria-hidden="true">→</span>
+              </button>
+            </aside>
 
-          <div class="hero-actions">
-            <button class="button button--primary" id="startButton" type="button" data-mode="normal">
-              <span class="button__play"><svg class="icon"><use href="#i-play"></use></svg></span>
-              <span>开始跑酷</span>
-              <span class="button__key">SPACE</span>
-            </button>
-            <div class="best-pill">
-              <svg class="icon"><use href="#i-trophy"></use></svg>
-              <span id="menuBestLabel">最高分</span>
-              <strong id="menuBest">000000</strong>
+            <div class="home-center">
+              <div class="mode-dock" id="modeDock">
+                <div class="difficulty-switch" id="difficultySwitch" role="group" aria-label="选择模式">
+                  <button class="difficulty-option" type="button" data-mode="easy" aria-pressed="false">简单</button>
+                  <button class="difficulty-option is-active" type="button" data-mode="normal" aria-pressed="true">普通</button>
+                  <button class="difficulty-option" type="button" data-mode="hard" aria-pressed="false">困难</button>
+                  <button class="difficulty-option" type="button" data-mode="extreme" aria-pressed="false">极限</button>
+                </div>
+              </div>
+
+              <div class="hero-actions">
+                <button class="button button--primary" id="startButton" type="button" data-mode="normal">
+                  <span class="button__play"><svg class="icon"><use href="#i-play"></use></svg></span>
+                  <span>开始跑酷</span>
+                  <span class="button__key">SPACE</span>
+                </button>
+                <div class="best-pill">
+                  <svg class="icon"><use href="#i-trophy"></use></svg>
+                  <span id="menuBestLabel">最高分</span>
+                  <strong id="menuBest">000000</strong>
+                </div>
+              </div>
             </div>
+
+            <aside class="selector-panel" aria-labelledby="selectorTitle">
+              <div class="selector-panel__tape" aria-hidden="true"></div>
+              <h3 class="selector-title" id="selectorTitle">头像</h3>
+              <button class="avatar-preview" id="openAvatarButton" type="button" aria-label="打开头像选择页">
+                <canvas id="menuAvatarCanvas" width="200" height="200"></canvas>
+                <span class="avatar-preview__edit">更换头像</span>
+              </button>
+              <div class="avatar-preview__name" id="menuAvatarName">默认头像</div>
+            </aside>
           </div>
         </div>
-
-        <aside class="selector-panel" aria-labelledby="selectorTitle">
-          <div class="selector-panel__tape" aria-hidden="true"></div>
-          <h3 class="selector-title" id="selectorTitle">跑者</h3>
-          <button class="avatar-preview" id="openAvatarButton" type="button" aria-label="打开头像选择页">
-            <canvas id="menuAvatarCanvas" width="200" height="200"></canvas>
-            <span class="avatar-preview__edit">更换头像</span>
-          </button>
-          <div class="avatar-preview__name" id="menuAvatarName">默认头像</div>
-        </aside>
       </div>
     </section>
 

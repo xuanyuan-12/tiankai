@@ -3815,3 +3815,445 @@ kbd {
     transition-duration: .01ms !important;
   }
 }
+
+/* ------------------------------------------------------------
+   Homepage cluster: cards + controls + avatar
+   ------------------------------------------------------------ */
+
+.screen--start .start-grid {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.hero-panel {
+  top: -4.4em;
+  width: min(62em, 92vw);
+}
+
+.home-controls {
+  display: grid;
+  grid-template-columns: minmax(8.8em, 10.5em) auto minmax(10.8em, 13em);
+  align-items: center;
+  justify-content: center;
+  gap: clamp(.55em, 1.1vw, .95em);
+  width: auto;
+  max-width: 100%;
+  margin: .5em auto 0;
+}
+
+.start-grid .home-side--left {
+  position: static;
+  top: auto;
+  left: auto;
+  transform: none;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .55em;
+  width: 100%;
+}
+
+.start-grid .home-side--left .side-card {
+  width: 100%;
+  min-height: 4.6em;
+  padding: .55em .55em;
+  gap: .5em;
+}
+
+.start-grid .home-side--left .side-card__icon {
+  width: 2.15em;
+  height: 2.15em;
+}
+
+.start-grid .home-side--left .side-card__body strong {
+  font-size: .72em;
+}
+
+.start-grid .home-side--left .side-card__eyebrow {
+  font-size: .42em;
+}
+
+.start-grid .home-side--left .side-card__hint {
+  font-size: .44em;
+}
+
+.home-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.home-center .mode-dock {
+  margin-top: 0;
+  justify-content: center;
+}
+
+.home-center .hero-actions {
+  margin-top: .45em;
+  gap: .45em;
+}
+
+.start-grid .selector-panel {
+  position: static;
+  top: auto;
+  right: auto;
+  display: block;
+  width: 100%;
+  max-width: 13em;
+  padding: .62em .68em .5em;
+  transform: rotate(.4deg);
+}
+
+.screen--start.is-visible .start-grid .selector-panel {
+  animation: homePanelIn .48s var(--ease-out) both;
+}
+
+@keyframes homePanelIn {
+  from { opacity: 0; transform: translateY(.9em) rotate(1.4deg) scale(.97); }
+  to { opacity: 1; transform: translateY(0) rotate(.4deg) scale(1); }
+}
+
+.start-grid .selector-panel__tape {
+  top: -.68em;
+  width: 3.5em;
+  height: 1.02em;
+}
+
+.start-grid .selector-title {
+  margin: .02em 0 .22em;
+  font-size: .8em;
+  letter-spacing: 0;
+}
+
+.start-grid .avatar-preview {
+  width: 4.4em;
+  height: 4.4em;
+  margin: .05em auto .28em;
+}
+
+.start-grid .avatar-preview__edit {
+  bottom: -.28em;
+  padding: .1em .36em;
+  font-size: .38em;
+}
+
+.start-grid .avatar-preview__name {
+  margin-bottom: .18em;
+  font-size: .52em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 1080px) {
+  .hero-panel {
+    top: -3.6em;
+    width: min(56em, 94vw);
+  }
+
+  .home-controls {
+    grid-template-columns: minmax(7.5em, 9em) auto minmax(9.5em, 11em);
+    gap: .55em;
+    margin-top: .35em;
+  }
+
+  .start-grid .home-side--left .side-card {
+    min-height: 4em;
+    padding: .45em;
+  }
+
+  .side-card__hint {
+    display: none;
+  }
+
+  .start-grid .selector-panel {
+    max-width: 11em;
+    padding: .5em .55em .4em;
+  }
+
+  .start-grid .selector-title {
+    font-size: .72em;
+  }
+
+  .start-grid .avatar-preview {
+    width: 3.8em;
+    height: 3.8em;
+  }
+}
+
+@media (max-width: 900px) {
+  .hero-panel {
+    top: -2.2em;
+    width: min(52em, 96vw);
+  }
+
+  .home-controls {
+    grid-template-columns: minmax(6.2em, 7.8em) auto minmax(7.8em, 9.2em);
+    gap: .42em;
+    margin-top: .25em;
+  }
+
+  .start-grid .home-side--left {
+    gap: .38em;
+  }
+
+  .start-grid .home-side--left .side-card {
+    min-height: 3.5em;
+    padding: .38em;
+    gap: .35em;
+    border-radius: .75em;
+  }
+
+  .start-grid .home-side--left .side-card__icon {
+    width: 1.8em;
+    height: 1.8em;
+  }
+
+  .start-grid .home-side--left .side-card__eyebrow,
+  .start-grid .home-side--left .side-card__hint,
+  .start-grid .home-side--left .side-card__arrow {
+    display: none;
+  }
+
+  .start-grid .home-side--left .side-card__body strong {
+    font-size: .64em;
+  }
+
+  .start-grid .selector-panel {
+    max-width: 9em;
+    padding: .42em .45em .35em;
+  }
+
+  .start-grid .selector-title {
+    font-size: .66em;
+  }
+
+  .start-grid .avatar-preview {
+    width: 3.2em;
+    height: 3.2em;
+  }
+
+  .start-grid .avatar-preview__name {
+    font-size: .46em;
+  }
+
+  .start-grid .avatar-preview__edit {
+    font-size: .33em;
+  }
+}
+
+@media (max-width: 700px) {
+  .screen--start .start-grid {
+    flex-direction: row;
+  }
+
+  .hero-panel {
+    top: -.8em;
+    width: 100%;
+    order: 0;
+  }
+
+  .home-controls {
+    grid-template-columns: minmax(4.2em, 5.2em) auto minmax(5.4em, 6.6em);
+    gap: .3em;
+    width: 100%;
+    margin-top: .15em;
+  }
+
+  .start-grid .home-side--left {
+    flex-direction: column;
+    justify-content: center;
+    width: 100%;
+    gap: .28em;
+  }
+
+  .start-grid .home-side--left .side-card {
+    width: 100%;
+    min-height: 0;
+    padding: .25em;
+    border-radius: .55em;
+    box-shadow: .1em .12em 0 rgba(9, 29, 40, .4);
+  }
+
+  .start-grid .home-side--left .side-card__body,
+  .start-grid .home-side--left .side-card__arrow {
+    display: none;
+  }
+
+  .start-grid .home-side--left .side-card__icon {
+    width: 1.55em;
+    height: 1.55em;
+  }
+
+  .home-center .mode-dock {
+    padding: .2em;
+  }
+
+  .home-center .difficulty-option {
+    padding: .42em .52em;
+    font-size: .72em;
+  }
+
+  .home-center .hero-actions {
+    margin-top: .35em;
+  }
+
+  .home-center .button--primary {
+    font-size: .74em;
+    padding: .62em .8em;
+  }
+
+  .start-grid .selector-panel {
+    max-width: 6.6em;
+    padding: .3em .3em .25em;
+    border-radius: .65em;
+  }
+
+  .start-grid .selector-panel__tape {
+    display: none;
+  }
+
+  .start-grid .selector-title {
+    margin: .02em 0 .12em;
+    font-size: .6em;
+  }
+
+  .start-grid .avatar-preview {
+    width: 2.75em;
+    height: 2.75em;
+    margin-bottom: .15em;
+  }
+
+  .start-grid .avatar-preview__edit {
+    padding: .08em .25em;
+    font-size: .28em;
+  }
+
+  .start-grid .avatar-preview__name {
+    margin-bottom: .08em;
+    font-size: .4em;
+  }
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .hero-panel {
+    top: -.2em;
+    width: 96vw;
+    margin: auto;
+  }
+
+  .home-controls {
+    grid-template-columns: 2.35em auto 4.35em;
+    gap: .22em;
+    margin-top: .1em;
+  }
+
+  .start-grid .home-side--left {
+    gap: .18em;
+    width: 100%;
+  }
+
+  .start-grid .home-side--left .side-card {
+    width: 2.35em;
+    min-height: 2.35em;
+    padding: .16em;
+    border-radius: .45em;
+  }
+
+  .start-grid .home-side--left .side-card__icon {
+    width: 1.18em;
+    height: 1.18em;
+  }
+
+  .start-grid .selector-panel {
+    max-width: 4.35em;
+    padding: .22em .18em .18em;
+    border-radius: .5em;
+  }
+
+  .start-grid .selector-panel__tape {
+    display: none;
+  }
+
+  .start-grid .selector-title {
+    margin: 0 0 .08em;
+    font-size: .52em;
+    letter-spacing: .02em;
+  }
+
+  .start-grid .avatar-preview {
+    width: 2.3em;
+    height: 2.3em;
+    margin: 0 auto .08em;
+  }
+
+  .start-grid .avatar-preview__edit {
+    bottom: -.22em;
+    padding: .06em .2em;
+    font-size: .27em;
+  }
+
+  .start-grid .avatar-preview__name {
+    margin-bottom: 0;
+    font-size: .37em;
+  }
+
+  .home-center .mode-dock {
+    padding: .16em;
+  }
+
+  .home-center .difficulty-option {
+    padding: .35em .42em;
+    font-size: .68em;
+  }
+
+  .home-center .hero-actions {
+    margin-top: .22em;
+  }
+
+  .home-center .button--primary {
+    font-size: .7em;
+    padding: .55em .7em;
+  }
+
+  .start-grid .best-pill {
+    display: none;
+  }
+
+  .logo-super {
+    left: 0;
+    transform: rotate(-3.5deg);
+  }
+}
+
+/* Homepage cluster ends */
+
+.home-controls {
+  min-width: 0;
+}
+
+.home-controls > .home-side--left,
+.home-controls > .home-center,
+.home-controls > .selector-panel {
+  order: 0;
+  min-width: 0;
+}
+
+.start-grid .home-side--left {
+  order: 0;
+}
+
+.home-center {
+  order: 0;
+}
+
+.start-grid .selector-panel {
+  order: 0;
+}
+
