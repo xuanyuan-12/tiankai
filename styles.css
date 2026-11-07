@@ -4257,3 +4257,38 @@ kbd {
   order: 0;
 }
 
+
+/* Out-of-top-100 run rank shown below the global leaderboard */
+.board-outside-rank {
+  margin-top: .35em;
+  border-top: 2px dashed rgba(23, 36, 59, .18);
+  background: rgba(255, 214, 75, .08);
+}
+
+.board-outside-note {
+  padding: .45em .75em .12em;
+  color: rgba(23, 36, 59, .58);
+  font-size: .56em;
+  font-weight: 900;
+  letter-spacing: .02em;
+  text-align: center;
+}
+
+.board-outside-rank .board-row {
+  background: rgba(255, 210, 63, .16);
+}
+
+.board-outside-rank .board-row.is-current {
+  background: rgba(255, 198, 40, .26);
+}
+
+.board-row.is-outside .board-rank {
+  width: auto;
+  min-width: 2.6em;
+  height: 1.85em;
+  padding: 0 .35em;
+  border-radius: 999px;
+  color: var(--ink);
+  background: rgba(255, 210, 63, .58);
+  font-size: .9em;
+}

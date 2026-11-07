@@ -50,7 +50,7 @@
     key: 'sb_publishable_cGTEJNDDMo5rN9wha6EJ2w_Iao0DV1y',
     table: 'scores',
     timeout: 15000,
-    limit: 200,
+    limit: 100,
     epoch: '2026-11-07T02:45:30Z',
   });
 
@@ -2081,6 +2081,8 @@
     onlineLoading: false,
     onlineError: '',
     onlineFetchedAt: 0,
+    onlineRunRank: null,
+    onlineRankLoading: false,
     pendingSyncing: false,
     boardReturn: 'start',
     boardOpen: false,
@@ -3008,6 +3010,10 @@
       saveBests();
     }
     const entry = qualified ? recordRun(run, score, rules.key) : null;
+    if (!qualified) {
+      state.lastRunId = '';
+      state.onlineRunRank = null;
+    }
     const rank = rankOfEntry(entry ? entry.id : '');
     updateMenuBest();
     dom.overKicker.textContent = `RUN COMPLETE · ${rules.label}`;
@@ -3062,6 +3068,8 @@
     state.lastRunId = '';
     state.onlineBoard = [];
     state.onlineFetchedAt = 0;
+    state.onlineRunRank = null;
+    state.onlineRankLoading = false;
     state.bests = { easy: 0, normal: 0, hard: 0, extreme: 0 };
     saveBoard();
     saveBests();
@@ -3086,6 +3094,8 @@
     if (state.board.length > BOARD_LIMIT) state.board = state.board.slice(-BOARD_LIMIT);
     saveBoard();
     state.lastRunId = entry.id;
+    state.onlineRunRank = null;
+    state.onlineFetchedAt = 0;
     queueScoreUpload(entry);
     return entry;
   }
@@ -3147,17 +3157,38 @@
     return row;
   }
 
+  function buildOutsideRankRow(info) {
+    const wrap = document.createElement('div');
+    wrap.className = 'board-outside-rank';
+    const note = document.createElement('div');
+    note.className = 'board-outside-note';
+    const modeLabel = RULES_BY_KEY[info.mode] ? RULES_BY_KEY[info.mode].label : '本模式';
+    note.textContent = `仅显示前 ${ONLINE.limit} 名 · 本局${modeLabel}榜排名`;
+    const row = buildBoardRow(info.entry, info.rank);
+    row.classList.add('is-outside');
+    wrap.append(note, row);
+    return wrap;
+  }
+
   function renderBoard() {
     const online = state.boardSource === 'global';
     const entries = online
       ? sortedOnlineEntries(state.boardFilter)
       : sortedBoardEntries(state.boardFilter);
+    const outsideRank = online
+      && state.onlineRunRank
+      && state.onlineRunRank.rank > ONLINE.limit
+      && (state.boardFilter === 'all' || state.boardFilter === state.onlineRunRank.mode)
+      ? state.onlineRunRank
+      : null;
     dom.boardBody.innerHTML = '';
     const fragment = document.createDocumentFragment();
     entries.forEach((entry, index) => fragment.appendChild(buildBoardRow(entry, index + 1)));
     dom.boardBody.appendChild(fragment);
-    dom.boardTable.hidden = entries.length === 0;
-    dom.boardEmpty.hidden = entries.length > 0;
+    if (outsideRank) dom.boardBody.appendChild(buildOutsideRankRow(outsideRank));
+    const hasRows = entries.length > 0 || Boolean(outsideRank);
+    dom.boardTable.hidden = !hasRows;
+    dom.boardEmpty.hidden = hasRows;
 
     if (online) {
       if (state.onlineLoading) {
@@ -3174,7 +3205,8 @@
         dom.boardStatus.className = 'board-status is-ok';
       } else {
         dom.boardEmptyText.textContent = '这个筛选下还没有记录。';
-        dom.boardStatus.textContent = `全球排行榜 · 已同步 ${state.onlineBoard.length} 条`;
+        const rankSuffix = outsideRank ? ` · 本局第 ${outsideRank.rank} 名（榜单底部）` : '';
+        dom.boardStatus.textContent = `全球排行榜 · 每档显示前 ${ONLINE.limit} 名${rankSuffix}`;
         dom.boardStatus.className = 'board-status is-ok';
       }
     } else {
@@ -3185,9 +3217,13 @@
       dom.boardStatus.className = 'board-status';
     }
 
-    dom.boardCount.textContent = entries.length
-      ? `共 ${entries.length} 条记录 · 最高 ${formatNumber(entries[0].score)}`
-      : '共 0 条记录';
+    dom.boardCount.textContent = online
+      ? (entries.length
+        ? `${state.boardFilter === 'all' ? '全部难度' : `${RULES_BY_KEY[state.boardFilter]?.label || ''}难度`}前 ${ONLINE.limit} 名 · 最高 ${formatNumber(entries[0].score)}`
+        : '暂无记录')
+      : (entries.length
+        ? `共 ${entries.length} 条记录 · 最高 ${formatNumber(entries[0].score)}`
+        : '共 0 条记录');
     dom.boardFilters.querySelectorAll('[data-filter]').forEach((button) => {
       const active = button.dataset.filter === state.boardFilter;
       button.classList.toggle('is-active', active);
@@ -3258,6 +3294,7 @@
     state.clearArmedAt = 0;
     state.board = [];
     state.lastRunId = '';
+    state.onlineRunRank = null;
     saveBoard();
     renderBoard();
     showToast('本机排行榜已清空');
@@ -3305,31 +3342,116 @@
     return list.sort((a, b) => b.score - a.score || a.seconds - b.seconds || b.date - a.date).slice(0, ONLINE.limit);
   }
 
+  function currentRunEntry() {
+    if (!state.lastRunId) return null;
+    return state.board.find((entry) => entry.id === state.lastRunId && entry.distance >= MIN_LEADERBOARD_DISTANCE) || null;
+  }
+
+  function onlineCountParams(filters, extraCreatedAt = '') {
+    const params = new URLSearchParams();
+    params.set('select', 'id');
+    params.set('limit', '1');
+    if (extraCreatedAt) {
+      params.append('and', `(created_at.gte.${ONLINE.epoch},created_at.${extraCreatedAt})`);
+    } else {
+      params.append('created_at', `gte.${ONLINE.epoch}`);
+    }
+    params.append('distance', `gte.${MIN_LEADERBOARD_DISTANCE}`);
+    Object.entries(filters).forEach(([key, value]) => {
+      if (key === 'created_at') params.append('created_at', value);
+      else params.set(key, value);
+    });
+    return params;
+  }
+
+  async function countOnlineRows(filters, extraCreatedAt = '') {
+    const params = onlineCountParams(filters, extraCreatedAt);
+    const response = await fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}?${params.toString()}`, {
+      headers: onlineHeaders({
+        Accept: 'application/json',
+        Prefer: 'count=exact',
+      }),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const contentRange = response.headers.get('content-range') || '';
+    const total = Number(contentRange.split('/')[1]);
+    if (!Number.isFinite(total)) throw new Error('Missing count');
+    return total;
+  }
+
+  async function computeOnlineRunRank(entry) {
+    const createdAt = new Date(Number(entry.date) || Date.now()).toISOString();
+    const base = { mode: `eq.${entry.mode}` };
+    const [betterScore, betterTime, sameTimeLater] = await Promise.all([
+      countOnlineRows({ ...base, score: `gt.${entry.score}` }),
+      countOnlineRows({ ...base, score: `eq.${entry.score}`, seconds: `lt.${entry.seconds}` }),
+      countOnlineRows(
+        { ...base, score: `eq.${entry.score}`, seconds: `eq.${entry.seconds}` },
+        `gt.${createdAt}`,
+      ),
+    ]);
+    return 1 + betterScore + betterTime + sameTimeLater;
+  }
+
+  async function refreshOnlineRunRank() {
+    state.onlineRunRank = null;
+    const entry = currentRunEntry();
+    if (!entry) return;
+    if (state.onlineBoard.some((item) => item.id === entry.id)) return;
+    state.onlineRankLoading = true;
+    try {
+      const rank = await computeOnlineRunRank(entry);
+      if (rank > ONLINE.limit) {
+        state.onlineRunRank = {
+          id: entry.id,
+          entry,
+          rank,
+          mode: entry.mode,
+        };
+      }
+    } catch (error) {
+      state.onlineRunRank = null;
+    } finally {
+      state.onlineRankLoading = false;
+      if (state.boardOpen && state.boardSource === 'global') renderBoard();
+    }
+  }
+
   async function fetchOnlineScores(options = {}) {
     if (state.onlineLoading) return;
     if (!options.force && state.onlineFetchedAt && Date.now() - state.onlineFetchedAt < 20000) return;
     state.onlineLoading = true;
     state.onlineError = '';
+    state.onlineRunRank = null;
     if (state.boardOpen && state.boardSource === 'global') renderBoard();
     try {
-      const query = (select) => {
+      const select = 'id,player_name,mode,score,coins,distance,seconds,created_at';
+      const modes = Object.keys(MODE_RULES);
+      const responses = await Promise.all(modes.map((mode) => {
         const params = new URLSearchParams({
           select,
           order: 'score.desc,seconds.asc,created_at.asc',
           limit: String(ONLINE.limit),
           created_at: `gte.${ONLINE.epoch}`,
           distance: `gte.${MIN_LEADERBOARD_DISTANCE}`,
+          mode: `eq.${mode}`,
         });
         return fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}?${params.toString()}`, {
           headers: onlineHeaders({ Accept: 'application/json' }),
         });
-      };
-      const response = await query('id,player_name,mode,score,coins,distance,seconds,created_at');
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const rows = await response.json();
-      state.onlineBoard = (Array.isArray(rows) ? rows : []).map(mapRemoteScore).filter(Boolean);
+      }));
+      const rows = [];
+      for (const response of responses) {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const part = await response.json();
+        if (Array.isArray(part)) rows.push(...part);
+      }
+      const unique = new Map();
+      rows.map(mapRemoteScore).filter(Boolean).forEach((entry) => unique.set(entry.id, entry));
+      state.onlineBoard = Array.from(unique.values());
       state.onlineFetchedAt = Date.now();
       state.onlineError = '';
+      await refreshOnlineRunRank();
     } catch (error) {
       state.onlineError = error && error.name === 'AbortError' ? '连接超时' : '连接失败';
     } finally {
@@ -3403,6 +3525,8 @@
     if (!isUuid(entry.id)) return;
     uploadRemoteScore(entry).then(() => {
       state.onlineFetchedAt = 0;
+      state.onlineRunRank = null;
+      if (state.boardOpen && state.boardSource === 'global') fetchOnlineScores({ force: true });
     }).catch(() => {
       addPendingScore(entry);
     });
