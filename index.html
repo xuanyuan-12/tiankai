@@ -164,9 +164,9 @@
                 <span class="side-card__icon"><svg class="icon"><use href="#i-star"></use></svg></span>
                 <span class="side-card__body">
                   <span class="side-card__eyebrow">MILESTONES</span>
-                  <strong>成就 <b id="achievementCount">0/10</b></strong>
+                  <strong>成就 <b id="achievementCount">0/11</b></strong>
                   <span class="side-card__meter" aria-hidden="true"><i id="achievementMeter"></i></span>
-                  <span class="side-card__hint">四套进度独立记录</span>
+                  <span class="side-card__hint">四模式通用进度</span>
                 </span>
                 <span class="side-card__arrow" aria-hidden="true">→</span>
               </button>
@@ -350,9 +350,8 @@
 
         <div class="board-filter-row">
           <div class="board-filters" id="boardFilters" role="group" aria-label="按模式筛选排行榜">
-            <button class="board-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>
             <button class="board-filter" type="button" data-filter="easy" aria-pressed="false">简单</button>
-            <button class="board-filter" type="button" data-filter="normal" aria-pressed="false">普通</button>
+            <button class="board-filter is-active" type="button" data-filter="normal" aria-pressed="true">普通</button>
             <button class="board-filter" type="button" data-filter="hard" aria-pressed="false">困难</button>
             <button class="board-filter" type="button" data-filter="extreme" aria-pressed="false">极限</button>
           </div>
@@ -378,6 +377,11 @@
           <span id="boardEmptyText">还没有记录，跑一局就会出现在这里。</span>
         </p>
 
+        <div class="board-current" id="boardCurrent" hidden>
+          <div class="board-current__note" id="boardCurrentNote">本局排名</div>
+          <div class="board-current__row" id="boardCurrentRow"></div>
+        </div>
+
         <div class="modal-footer">
           <span class="board-count" id="boardCount">共 0 条记录</span>
           <button class="text-button" id="boardClearButton" type="button">清空记录</button>
@@ -393,17 +397,11 @@
         <div class="modal-heading modal-heading--center">
           <span class="micro-label">MILESTONES</span>
           <h2 id="achievementTitle">成就</h2>
-          <p>达到指定分数或距离即可解锁，记录达成时间</p>
-        </div>
-        <div class="achievement-modes" id="achievementModes" role="group" aria-label="按模式查看成就">
-          <button class="achievement-mode" type="button" data-ach-mode="easy" aria-pressed="false">简单</button>
-          <button class="achievement-mode is-active" type="button" data-ach-mode="normal" aria-pressed="true">普通</button>
-          <button class="achievement-mode" type="button" data-ach-mode="hard" aria-pressed="false">困难</button>
-          <button class="achievement-mode" type="button" data-ach-mode="extreme" aria-pressed="false">极限</button>
+          <p>四档模式通用，达到指定分数、距离或条件即可解锁，记录达成时间</p>
         </div>
         <div class="achievement-list" id="achievementList"></div>
         <div class="modal-footer">
-          <span class="board-count" id="achievementProgress">0 / 10</span>
+          <span class="board-count" id="achievementProgress">0 / 11</span>
           <span class="achievement-note">仅保存在本机浏览器</span>
         </div>
       </div>

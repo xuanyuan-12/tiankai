@@ -452,6 +452,7 @@
     { id: 'c3', type: 'combo', combo: 3, title: '连击新星', label: '连续踩中 3 只小怪' },
     { id: 'c5', type: 'combo', combo: 5, title: '五连绝世', label: '连续踩中 5 只小怪' },
     { id: 'b4900', type: 'blockScore', blockScore: 4900, title: '幸运暴击', label: '问号砖单次获得 4,900+ 分' },
+    { id: 'heartPrize', type: 'heartPrize', title: '物超所值', label: '在问号砖里获得回一颗心的奖励' },
     { id: 'm21k', type: 'distance', meters: 21000, title: '半马选手', label: '半程马拉松 · 21 公里' },
     { id: 'm42k', type: 'distance', meters: 42000, title: '全马传奇', label: '全程马拉松 · 42 公里' },
     { id: 'm100k', type: 'distance', meters: 100000, title: '百公里神话', label: '100 公里' },
@@ -1870,13 +1871,15 @@
     boardEmpty: document.getElementById('boardEmpty'),
     boardEmptyText: document.getElementById('boardEmptyText'),
     boardCount: document.getElementById('boardCount'),
+    boardCurrent: document.getElementById('boardCurrent'),
+    boardCurrentNote: document.getElementById('boardCurrentNote'),
+    boardCurrentRow: document.getElementById('boardCurrentRow'),
     boardClearButton: document.getElementById('boardClearButton'),
     achievementScreen: document.getElementById('achievementScreen'),
     achievementButton: document.getElementById('achievementButton'),
     achievementCount: document.getElementById('achievementCount'),
     achievementMeter: document.getElementById('achievementMeter'),
     achievementCloseButton: document.getElementById('achievementCloseButton'),
-    achievementModes: document.getElementById('achievementModes'),
     achievementList: document.getElementById('achievementList'),
     achievementProgress: document.getElementById('achievementProgress'),
     achievementToast: document.getElementById('achievementToast'),
@@ -1993,10 +1996,6 @@
     }
   }
 
-  function emptyAchievementSets() {
-    return { easy: {}, normal: {}, hard: {}, extreme: {} };
-  }
-
   function readAchievementBucket(parsed) {
     const result = {};
     for (const milestone of MILESTONES) {
@@ -2007,23 +2006,30 @@
   }
 
   function loadAchievements() {
-    const result = emptyAchievementSets();
+    const result = {};
     try {
       const rawV2 = readStore(STORAGE.achievementsV2, null);
       if (rawV2) {
         const parsed = JSON.parse(rawV2);
-        for (const mode of Object.keys(result)) {
-          result[mode] = readAchievementBucket(parsed && parsed[mode]);
+        const hasModeBuckets = Object.keys(MODE_RULES).some((mode) => parsed && typeof parsed[mode] === 'object');
+        if (hasModeBuckets) {
+          // 旧版四套独立成就：合并成一套通用成就，保留最早解锁时间。
+          for (const mode of Object.keys(MODE_RULES)) {
+            const bucket = readAchievementBucket(parsed && parsed[mode]);
+            for (const [id, timestamp] of Object.entries(bucket)) {
+              result[id] = result[id] ? Math.min(result[id], timestamp) : timestamp;
+            }
+          }
+        } else {
+          Object.assign(result, readAchievementBucket(parsed));
         }
         return result;
       }
-      // 旧版全局成就：迁移到“普通”这一套
+      // 更早的全局成就：直接作为通用成就。
       const oldRaw = readStore(STORAGE.achievements, null);
-      if (oldRaw) {
-        result.normal = readAchievementBucket(JSON.parse(oldRaw));
-      }
+      if (oldRaw) Object.assign(result, readAchievementBucket(JSON.parse(oldRaw)));
     } catch (error) {
-      // keep empty sets
+      // keep empty achievements
     }
     return result;
   }
@@ -2069,13 +2075,12 @@
     nicknamePromptOpen: false,
     bests: loadBests(),
     achievements: loadAchievements(),
-    achievementView: 'normal',
     achievementQueue: [],
     achievementTimer: 0,
     achievementOpen: false,
     achievementReturn: 'start',
     board: loadBoard(),
-    boardFilter: 'all',
+    boardFilter: 'normal',
     boardSource: 'global',
     onlineBoard: [],
     onlineLoading: false,
@@ -2393,6 +2398,7 @@
     combo: 0,
     maxCombo: 0,
     maxBlockScore: 0,
+    gotHeartPrize: false,
     healCoins: 0,
     comboTimer: 0,
     invincible: 0,
@@ -2884,8 +2890,7 @@
     });
     dom.pauseMode.textContent = `当前模式 · ${rules.label}`;
     dom.startButton.dataset.mode = state.difficulty;
-    state.achievementView = state.difficulty;
-    updateAchievementBadge(state.achievementView);
+    updateAchievementBadge();
     updateMenuBest();
   }
 
@@ -2996,6 +3001,7 @@
     const run = state.run;
     if (!run) return;
     const rules = run.rules || MODE_RULES.normal;
+    state.boardFilter = isModeKey(rules.key) ? rules.key : 'normal';
     state.mode = 'gameover';
     state.accumulator = 0;
     audio.stopMusic();
@@ -3157,17 +3163,29 @@
     return row;
   }
 
-  function buildOutsideRankRow(info) {
-    const wrap = document.createElement('div');
-    wrap.className = 'board-outside-rank';
-    const note = document.createElement('div');
-    note.className = 'board-outside-note';
+  function currentBoardRunInfo(online) {
+    const entry = currentRunEntry();
+    if (!entry || state.boardFilter !== entry.mode) return null;
+    if (online) {
+      const ranked = state.onlineRunRank && state.onlineRunRank.id === entry.id ? state.onlineRunRank : null;
+      return {
+        entry,
+        mode: entry.mode,
+        rank: ranked ? ranked.rank : 0,
+        loading: !ranked && (state.onlineRankLoading || state.onlineLoading),
+      };
+    }
+    const index = sortedBoardEntries(entry.mode).findIndex((item) => item.id === entry.id);
+    return { entry, mode: entry.mode, rank: index >= 0 ? index + 1 : 0, loading: false };
+  }
+
+  function currentRunNote(info) {
     const modeLabel = RULES_BY_KEY[info.mode] ? RULES_BY_KEY[info.mode].label : '本模式';
-    note.textContent = `仅显示前 ${ONLINE.limit} 名 · 本局${modeLabel}榜排名`;
-    const row = buildBoardRow(info.entry, info.rank);
-    row.classList.add('is-outside');
-    wrap.append(note, row);
-    return wrap;
+    if (!info.rank) return info.loading ? `正在同步本局${modeLabel}榜排名…` : `本局${modeLabel}榜排名暂不可用`;
+    if (info.rank > ONLINE.limit) {
+      return `仅显示前 ${ONLINE.limit} 名 · 本局${modeLabel}榜第 ${info.rank} 名`;
+    }
+    return `本局${modeLabel}榜排名`;
   }
 
   function renderBoard() {
@@ -3175,20 +3193,26 @@
     const entries = online
       ? sortedOnlineEntries(state.boardFilter)
       : sortedBoardEntries(state.boardFilter);
-    const outsideRank = online
-      && state.onlineRunRank
-      && state.onlineRunRank.rank > ONLINE.limit
-      && (state.boardFilter === 'all' || state.boardFilter === state.onlineRunRank.mode)
-      ? state.onlineRunRank
-      : null;
+    const currentInfo = currentBoardRunInfo(online);
     dom.boardBody.innerHTML = '';
     const fragment = document.createDocumentFragment();
     entries.forEach((entry, index) => fragment.appendChild(buildBoardRow(entry, index + 1)));
     dom.boardBody.appendChild(fragment);
-    if (outsideRank) dom.boardBody.appendChild(buildOutsideRankRow(outsideRank));
-    const hasRows = entries.length > 0 || Boolean(outsideRank);
+    const hasRows = entries.length > 0;
     dom.boardTable.hidden = !hasRows;
-    dom.boardEmpty.hidden = hasRows;
+    dom.boardEmpty.hidden = hasRows || Boolean(currentInfo);
+
+    if (currentInfo) {
+      dom.boardCurrentNote.textContent = currentRunNote(currentInfo);
+      dom.boardCurrentRow.innerHTML = '';
+      const currentRow = buildBoardRow(currentInfo.entry, currentInfo.rank || '—');
+      currentRow.classList.add('is-current');
+      dom.boardCurrentRow.appendChild(currentRow);
+      dom.boardCurrent.hidden = false;
+    } else {
+      dom.boardCurrent.hidden = true;
+      dom.boardCurrentRow.innerHTML = '';
+    }
 
     if (online) {
       if (state.onlineLoading) {
@@ -3205,8 +3229,7 @@
         dom.boardStatus.className = 'board-status is-ok';
       } else {
         dom.boardEmptyText.textContent = '这个筛选下还没有记录。';
-        const rankSuffix = outsideRank ? ` · 本局第 ${outsideRank.rank} 名（榜单底部）` : '';
-        dom.boardStatus.textContent = `全球排行榜 · 每档显示前 ${ONLINE.limit} 名${rankSuffix}`;
+        dom.boardStatus.textContent = `全球排行榜 · 每档显示前 ${ONLINE.limit} 名`;
         dom.boardStatus.className = 'board-status is-ok';
       }
     } else {
@@ -3219,7 +3242,7 @@
 
     dom.boardCount.textContent = online
       ? (entries.length
-        ? `${state.boardFilter === 'all' ? '全部难度' : `${RULES_BY_KEY[state.boardFilter]?.label || ''}难度`}前 ${ONLINE.limit} 名 · 最高 ${formatNumber(entries[0].score)}`
+        ? `${RULES_BY_KEY[state.boardFilter]?.label || ''}难度前 ${ONLINE.limit} 名 · 最高 ${formatNumber(entries[0].score)}`
         : '暂无记录')
       : (entries.length
         ? `共 ${entries.length} 条记录 · 最高 ${formatNumber(entries[0].score)}`
@@ -3268,8 +3291,8 @@
   }
 
   function setBoardFilter(filter) {
-    const valid = ['all', 'easy', 'normal', 'hard', 'extreme'];
-    state.boardFilter = valid.includes(filter) ? filter : 'all';
+    const valid = Object.keys(MODE_RULES);
+    state.boardFilter = valid.includes(filter) ? filter : (isModeKey(state.difficulty) ? state.difficulty : 'normal');
     state.clearArmedAt = 0;
     renderBoard();
   }
@@ -3397,18 +3420,17 @@
     state.onlineRunRank = null;
     const entry = currentRunEntry();
     if (!entry) return;
-    if (state.onlineBoard.some((item) => item.id === entry.id)) return;
     state.onlineRankLoading = true;
     try {
-      const rank = await computeOnlineRunRank(entry);
-      if (rank > ONLINE.limit) {
-        state.onlineRunRank = {
-          id: entry.id,
-          entry,
-          rank,
-          mode: entry.mode,
-        };
-      }
+      const modeEntries = sortedOnlineEntries(entry.mode);
+      const index = modeEntries.findIndex((item) => item.id === entry.id);
+      const rank = index >= 0 ? index + 1 : await computeOnlineRunRank(entry);
+      state.onlineRunRank = {
+        id: entry.id,
+        entry,
+        rank,
+        mode: entry.mode,
+      };
     } catch (error) {
       state.onlineRunRank = null;
     } finally {
@@ -3556,21 +3578,20 @@
     }
   }
 
-  function achievementBucket(mode = state.achievementView) {
-    return state.achievements[mode] || {};
+  function achievementBucket() {
+    return state.achievements || {};
   }
 
-  function updateAchievementBadge(mode = state.achievementView) {
-    const count = Object.keys(achievementBucket(mode)).length;
+  function updateAchievementBadge() {
+    const count = Object.keys(achievementBucket()).length;
     dom.achievementCount.textContent = `${count}/${MILESTONES.length}`;
     if (dom.achievementMeter) {
       dom.achievementMeter.style.width = `${Math.min(100, count / MILESTONES.length * 100)}%`;
     }
   }
 
-  function renderAchievements(mode = state.achievementView) {
-    state.achievementView = isModeKey(mode) ? mode : 'normal';
-    const bucket = achievementBucket(state.achievementView);
+  function renderAchievements() {
+    const bucket = achievementBucket();
     dom.achievementList.innerHTML = '';
     const fragment = document.createDocumentFragment();
     for (const milestone of MILESTONES) {
@@ -3600,25 +3621,15 @@
     dom.achievementList.appendChild(fragment);
     const count = Object.keys(bucket).length;
     dom.achievementProgress.textContent = `已解锁 ${count} / ${MILESTONES.length}`;
-    if (dom.achievementModes) {
-      dom.achievementModes.querySelectorAll('[data-ach-mode]').forEach((button) => {
-        const active = button.dataset.achMode === state.achievementView;
-        button.classList.toggle('is-active', active);
-        button.setAttribute('aria-pressed', active ? 'true' : 'false');
-      });
-    }
-    updateAchievementBadge(state.achievementView);
+    updateAchievementBadge();
   }
 
   function openAchievements() {
     state.achievementReturn = state.mode === 'gameover' ? 'over' : state.mode === 'paused' ? 'pause' : 'start';
-    state.achievementView = state.mode === 'menu'
-      ? state.difficulty
-      : (state.run && state.run.rules && isModeKey(state.run.rules.key) ? state.run.rules.key : state.difficulty);
     state.achievementOpen = true;
     audio.unlock();
     audio.sfx('click');
-    renderAchievements(state.achievementView);
+    renderAchievements();
     showScreen('achievements');
     window.setTimeout(() => {
       dom.achievementCloseButton.focus({ preventScroll: true });
@@ -3630,8 +3641,7 @@
     state.achievementOpen = false;
     audio.sfx('click');
     showScreen(state.achievementReturn === 'over' ? 'over' : state.achievementReturn === 'pause' ? 'pause' : 'start');
-    state.achievementView = state.difficulty;
-    updateAchievementBadge(state.achievementView);
+    updateAchievementBadge();
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
     }
@@ -3652,9 +3662,7 @@
   }
 
   function checkAchievements(run) {
-    const mode = run.rules && isModeKey(run.rules.key) ? run.rules.key : 'normal';
-    if (!state.achievements[mode]) state.achievements[mode] = {};
-    const bucket = state.achievements[mode];
+    const bucket = state.achievements;
     let unlocked = false;
     for (const milestone of MILESTONES) {
       if (bucket[milestone.id]) continue;
@@ -3663,6 +3671,7 @@
       else if (milestone.type === 'distance') reached = run.distance >= milestone.meters;
       else if (milestone.type === 'combo') reached = (run.maxCombo || 0) >= milestone.combo;
       else if (milestone.type === 'blockScore') reached = (run.maxBlockScore || 0) >= milestone.blockScore;
+      else if (milestone.type === 'heartPrize') reached = Boolean(run.gotHeartPrize);
       if (!reached) continue;
       bucket[milestone.id] = Date.now();
       state.achievementQueue.push(milestone);
@@ -3670,8 +3679,8 @@
     }
     if (!unlocked) return;
     saveAchievements();
-    updateAchievementBadge(state.achievementView);
-    if (state.achievementOpen && state.achievementView === mode) renderAchievements(mode);
+    updateAchievementBadge();
+    if (state.achievementOpen) renderAchievements();
     showNextAchievement();
   }
 
@@ -3790,6 +3799,7 @@
 
       if (prize && rules.heartPrize !== false && Math.random() < prize.heartChance && run.hearts < run.maxHearts) {
         // 一等奖：回一颗心
+        run.gotHeartPrize = true;
         run.hearts++;
         updateHearts(false);
         audio.sfx('heart');
@@ -5709,13 +5719,6 @@
     dom.achievementCloseButton.addEventListener('click', closeAchievements);
     dom.achievementScreen.addEventListener('click', (event) => {
       if (event.target === dom.achievementScreen) closeAchievements();
-    });
-    dom.achievementModes.querySelectorAll('[data-ach-mode]').forEach((button) => {
-      button.addEventListener('click', () => {
-        audio.sfx('click');
-        renderAchievements(button.dataset.achMode);
-        button.blur();
-      });
     });
     dom.overBoardButton.addEventListener('click', () => openBoard());
     dom.boardCloseButton.addEventListener('click', closeBoard);

@@ -4292,3 +4292,42 @@ kbd {
   background: rgba(255, 210, 63, .58);
   font-size: .9em;
 }
+
+/* Pinned current-run rank below the scrollable leaderboard */
+.board-current {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  margin-top: .45em;
+  border: 1px solid rgba(23, 36, 59, .16);
+  border-radius: .8em;
+  background: rgba(255, 246, 205, .88);
+  box-shadow: 0 .25em .7em rgba(4, 24, 33, .1);
+}
+
+.board-current__note {
+  padding: .35em .7em .05em;
+  color: rgba(23, 36, 59, .62);
+  font-size: .54em;
+  font-weight: 900;
+  letter-spacing: .02em;
+  text-align: center;
+}
+
+.board-current__row .board-row {
+  border-top: 1px dashed rgba(23, 36, 59, .14);
+  background: rgba(255, 210, 63, .16);
+}
+
+.board-current__row .board-row.is-current {
+  background: rgba(255, 198, 40, .28);
+}
+
+.board-current__row .board-rank {
+  color: var(--ink);
+  background: rgba(255, 210, 63, .58);
+}
+
+.board-body {
+  max-height: 14.5em;
+}
