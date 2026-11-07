@@ -55,6 +55,7 @@
   });
 
   const BOARD_LIMIT = 300;
+  const MIN_LEADERBOARD_DISTANCE = 100;
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -2999,12 +3000,13 @@
     setHudVisible(false);
     updateComboBadge();
     const score = Math.floor(run.scoreFloat);
-    const isRecord = score > (state.bests[rules.key] || 0);
+    const qualified = run.distance >= MIN_LEADERBOARD_DISTANCE;
+    const isRecord = qualified && score > (state.bests[rules.key] || 0);
     if (isRecord) {
       state.bests[rules.key] = score;
       saveBests();
     }
-    const entry = recordRun(run, score, rules.key);
+    const entry = qualified ? recordRun(run, score, rules.key) : null;
     const rank = rankOfEntry(entry ? entry.id : '');
     updateMenuBest();
     dom.overKicker.textContent = `RUN COMPLETE · ${rules.label}`;
@@ -3014,22 +3016,29 @@
     dom.finalMeters.textContent = `跑了 ${run.distance} 米 · 用时 ${formatDuration(run.playTime)}`;
     dom.finalBest.textContent = formatNumber(state.bests[rules.key] || 0);
     dom.recordBadge.hidden = !isRecord || score === 0;
-    if (rank > 0) {
-      dom.finalRank.innerHTML = `本局排名 <b>#${rank}</b> · 共 ${state.board.length} 条记录`;
+    if (!qualified) {
+      dom.finalRank.textContent = `不足 ${MIN_LEADERBOARD_DISTANCE} 米 · 本局未计入排行榜`;
+      dom.finalRank.hidden = false;
+    } else if (rank > 0) {
+      dom.finalRank.innerHTML = `本局排名 <b>#${rank}</b> · 共 ${sortedBoardEntries('all').length} 条记录`;
       dom.finalRank.hidden = false;
     } else {
       dom.finalRank.hidden = true;
     }
-    if (run.distance < 10) dom.overTitle.textContent = '热身结束！';
-    else if (isRecord) dom.overTitle.textContent = '新的最高纪录！';
-    else dom.overTitle.textContent = '哎呀，被追上了！';
-    dom.overSubtitle.textContent = isRecord
-      ? '这一趟跑得漂亮，下次再刷新它。'
-      : '金币会记得你，蘑菇王国也会。';
+    if (!qualified) {
+      dom.overTitle.textContent = '本局未计入排行榜';
+      dom.overSubtitle.textContent = `只跑了 ${run.distance} 米；达到 ${MIN_LEADERBOARD_DISTANCE} 米后才会记录成绩。`;
+    } else if (isRecord) {
+      dom.overTitle.textContent = '新的最高纪录！';
+      dom.overSubtitle.textContent = '这一趟跑得漂亮，下次再刷新它。';
+    } else {
+      dom.overTitle.textContent = '哎呀，被追上了！';
+      dom.overSubtitle.textContent = '金币会记得你，蘑菇王国也会。';
+    }
     drawResultAvatar();
     showScreen('over');
     audio.sfx('gameover');
-    if (isRecord && score > 0) {
+    if (qualified && isRecord && score > 0) {
       audio.sfx('record');
       spawnConfetti();
     }
@@ -3060,6 +3069,7 @@
   }
 
   function recordRun(run, score, modeKey) {
+    if (Math.floor(run.distance) < MIN_LEADERBOARD_DISTANCE) return null;
     const entry = {
       v: 2,
       id: makeUuid(),
@@ -3080,9 +3090,10 @@
   }
 
   function sortedBoardEntries(filter = 'all') {
-    const list = filter === 'all'
+    const list = (filter === 'all'
       ? state.board.slice()
-      : state.board.filter((entry) => entry.mode === filter);
+      : state.board.filter((entry) => entry.mode === filter))
+      .filter((entry) => entry.distance >= MIN_LEADERBOARD_DISTANCE);
     return list.sort((a, b) => b.score - a.score || a.seconds - b.seconds || b.date - a.date);
   }
 
@@ -3286,9 +3297,10 @@
   }
 
   function sortedOnlineEntries(filter = 'all') {
-    const list = filter === 'all'
+    const list = (filter === 'all'
       ? state.onlineBoard.slice()
-      : state.onlineBoard.filter((entry) => entry.mode === filter);
+      : state.onlineBoard.filter((entry) => entry.mode === filter))
+      .filter((entry) => entry.distance >= MIN_LEADERBOARD_DISTANCE);
     return list.sort((a, b) => b.score - a.score || a.seconds - b.seconds || b.date - a.date).slice(0, ONLINE.limit);
   }
 
@@ -3305,6 +3317,7 @@
           order: 'score.desc,seconds.asc,created_at.asc',
           limit: String(ONLINE.limit),
           created_at: `gte.${ONLINE.epoch}`,
+          distance: `gte.${MIN_LEADERBOARD_DISTANCE}`,
         });
         return fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}?${params.toString()}`, {
           headers: onlineHeaders({ Accept: 'application/json' }),
