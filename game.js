@@ -339,11 +339,11 @@
     easy: Object.freeze({
       key: 'easy',
       label: '简单',
-      tagline: '570 极速 · 30 币回心 · 跳跃 100%',
+      tagline: '570 极速 · 20 币回心 · 跳跃 100%',
       stompBase: 1000,
       comboMultiply: true,
       blockPrize: BLOCK_PRIZE,
-      coinsPerHeart: 30,
+      coinsPerHeart: 20,
       maxSpeed: 570,
       jumpHeightScale: 1,
       hurtInvincible: 1.75,
@@ -360,11 +360,11 @@
     normal: Object.freeze({
       key: 'normal',
       label: '普通',
-      tagline: '700 极速 · 50 币回心 · 跳跃 95%',
+      tagline: '700 极速 · 30 币回心 · 跳跃 95%',
       stompBase: 1000,
       comboMultiply: true,
       blockPrize: BLOCK_PRIZE,
-      coinsPerHeart: 50,
+      coinsPerHeart: 30,
       maxSpeed: 700,
       jumpHeightScale: .95,
       hurtInvincible: 1.225,
@@ -379,11 +379,11 @@
     hard: Object.freeze({
       key: 'hard',
       label: '困难',
-      tagline: '805 极速 · 100 币回心 · 跳跃 92.15%',
+      tagline: '805 极速 · 60 币回心 · 跳跃 92.15%',
       stompBase: 1000,
       comboMultiply: true,
       blockPrize: BLOCK_PRIZE,
-      coinsPerHeart: 100,
+      coinsPerHeart: 60,
       maxSpeed: 805,
       jumpHeightScale: .9215,
       hurtInvincible: .8,
@@ -401,7 +401,7 @@
       stompBase: 1000,
       comboMultiply: true,
       blockPrize: BLOCK_PRIZE,
-      coinsPerHeart: 100,
+      coinsPerHeart: 60,
       maxSpeed: 805,
       jumpHeightScale: .9215,
       hurtInvincible: .8,
@@ -2391,6 +2391,7 @@
     combo: 0,
     maxCombo: 0,
     maxBlockScore: 0,
+    healCoins: 0,
     comboTimer: 0,
     invincible: 0,
     shake: 0,
@@ -3619,6 +3620,7 @@
     }
 
     run.hearts = Math.max(0, run.hearts - 1);
+    run.healCoins = 0;
     run.invincible = rules.hurtInvincible || 1.75;
     run.shake = .34;
     run.combo = 0;
@@ -3760,13 +3762,17 @@
     run.scoreFloat += 100;
     audio.sfx('coin');
     spawnBurst(run, coin.x, coin.y, '#ffe24e', 8, 130);
-    const perHeart = (run.rules && run.rules.coinsPerHeart) || 50;
+    const perHeart = (run.rules && run.rules.coinsPerHeart) || 30;
     const canHeal = !run.rules || run.rules.heal !== false;
-    if (canHeal && run.coins > 0 && run.coins % perHeart === 0 && run.hearts < run.maxHearts && !run.dead) {
-      run.hearts++;
-      updateHearts(false);
-      showToast(`收集 ${perHeart} 枚金币，<strong>恢复一颗心！</strong>`);
-      audio.sfx('heart');
+    if (canHeal && !run.dead && run.hearts < run.maxHearts) {
+      run.healCoins = (run.healCoins || 0) + 1;
+      if (run.healCoins >= perHeart) {
+        run.healCoins = 0;
+        run.hearts++;
+        updateHearts(false);
+        showToast(`收集 ${perHeart} 枚金币，<strong>恢复一颗心！</strong>`);
+        audio.sfx('heart');
+      }
     }
   }
 
