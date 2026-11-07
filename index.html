@@ -126,11 +126,8 @@
 
     <section class="screen screen--start is-visible" id="startScreen" aria-labelledby="gameTitle">
       <div class="start-topline">
+        <span class="home-kicker">SUPER MARIO RUN · LOCAL ARCADE</span>
         <div class="start-topline__right">
-          <button class="chip-button" id="boardButton" type="button" aria-haspopup="dialog">
-            <svg class="icon"><use href="#i-trophy"></use></svg>
-            <span>排行榜</span>
-          </button>
           <button class="round-button js-sound sound-toggle round-button--glass" type="button" aria-label="关闭声音">
             <svg class="icon icon-sound"><use href="#i-sound"></use></svg>
             <svg class="icon icon-muted"><use href="#i-muted"></use></svg>
@@ -139,6 +136,28 @@
       </div>
 
       <div class="start-grid">
+        <aside class="home-side home-side--left" aria-label="游戏记录">
+          <button class="side-card side-card--board" id="boardButton" type="button" aria-haspopup="dialog" aria-label="排行榜">
+            <span class="side-card__icon"><svg class="icon"><use href="#i-trophy"></use></svg></span>
+            <span class="side-card__body">
+              <span class="side-card__eyebrow">HALL OF FAME</span>
+              <strong>排行榜</strong>
+              <span class="side-card__hint">历史成绩与用时</span>
+            </span>
+            <span class="side-card__arrow" aria-hidden="true">→</span>
+          </button>
+          <button class="side-card side-card--achievements" id="achievementButton" type="button" aria-haspopup="dialog" aria-label="成就">
+            <span class="side-card__icon"><svg class="icon"><use href="#i-star"></use></svg></span>
+            <span class="side-card__body">
+              <span class="side-card__eyebrow">MILESTONES</span>
+              <strong>成就 <b id="achievementCount">0/10</b></strong>
+              <span class="side-card__meter" aria-hidden="true"><i id="achievementMeter"></i></span>
+              <span class="side-card__hint">四套进度独立记录</span>
+            </span>
+            <span class="side-card__arrow" aria-hidden="true">→</span>
+          </button>
+        </aside>
+
         <div class="hero-panel">
           <div class="logo-lockup" aria-label="Super Mario Run">
             <span class="logo-super">SUPER</span>
@@ -148,19 +167,16 @@
           <h2 class="hero-title">马里奥 · 极速跑酷</h2>
 
           <div class="mode-dock" id="modeDock">
-            <div class="version-switch" id="versionSwitch" role="group" aria-label="选择游戏版本">
-              <button class="version-option is-active" type="button" data-version="classic" aria-pressed="true">怀旧版</button>
-              <button class="version-option" type="button" data-version="remake" aria-pressed="false">重置版</button>
-            </div>
-            <div class="difficulty-switch" id="difficultySwitch" role="group" aria-label="选择重置版难度" hidden>
-              <span class="difficulty-switch__label">难度</span>
-              <button class="difficulty-option is-active" type="button" data-difficulty="easy" aria-pressed="true">简单</button>
-              <button class="difficulty-option" type="button" data-difficulty="hard" aria-pressed="false">困难</button>
+            <div class="difficulty-switch" id="difficultySwitch" role="group" aria-label="选择模式">
+              <button class="difficulty-option" type="button" data-mode="easy" aria-pressed="false">简单</button>
+              <button class="difficulty-option is-active" type="button" data-mode="normal" aria-pressed="true">普通</button>
+              <button class="difficulty-option" type="button" data-mode="hard" aria-pressed="false">困难</button>
+              <button class="difficulty-option" type="button" data-mode="extreme" aria-pressed="false">极限</button>
             </div>
           </div>
 
           <div class="hero-actions">
-            <button class="button button--primary" id="startButton" type="button">
+            <button class="button button--primary" id="startButton" type="button" data-mode="normal">
               <span class="button__play"><svg class="icon"><use href="#i-play"></use></svg></span>
               <span>开始跑酷</span>
               <span class="button__key">SPACE</span>
@@ -175,8 +191,16 @@
 
         <aside class="selector-panel" aria-labelledby="selectorTitle">
           <div class="selector-panel__tape" aria-hidden="true"></div>
-          <h3 class="selector-title" id="selectorTitle">选择跑者</h3>
-          <div class="avatar-grid" id="startAvatarGrid"></div>
+          <h3 class="selector-title" id="selectorTitle">跑者</h3>
+          <button class="avatar-preview" id="openAvatarButton" type="button" aria-label="打开头像选择页">
+            <canvas id="menuAvatarCanvas" width="200" height="200"></canvas>
+            <span class="avatar-preview__edit">更换头像</span>
+          </button>
+          <div class="avatar-preview__name" id="menuAvatarName">默认头像</div>
+          <div class="name-field">
+            <label for="playerNameInput">名字</label>
+            <input id="playerNameInput" type="text" maxlength="10" autocomplete="off" placeholder="输入名字" aria-label="角色名字">
+          </div>
         </aside>
       </div>
     </section>
@@ -189,7 +213,7 @@
           <span class="micro-label">TAKE A BREATH</span>
           <h2 id="pauseTitle">暂停一下</h2>
           <p>喝口水，顺便换张头像。</p>
-          <span class="pause-mode" id="pauseMode">怀旧版</span>
+          <span class="pause-mode" id="pauseMode">当前模式 · 普通</span>
         </div>
 
         <div class="pause-stats">
@@ -197,12 +221,6 @@
           <div><span>已跑距离</span><strong><b id="pauseDistance">0</b> m</strong></div>
           <div><span>金币</span><strong id="pauseCoins">0</strong></div>
         </div>
-
-        <div class="mini-select-head">
-          <span>换个跑者</span>
-          <span class="mini-select-head__hint">点击立即换装</span>
-        </div>
-        <div class="avatar-grid avatar-grid--compact" id="pauseAvatarGrid"></div>
 
         <div class="modal-actions">
           <button class="button button--primary button--wide" id="resumeButton" type="button">
@@ -217,6 +235,9 @@
         <div class="modal-footer">
           <button class="text-button" id="homeButton" type="button">
             <svg class="icon"><use href="#i-home"></use></svg> 返回首页
+          </button>
+          <button class="text-button" id="pauseAvatarButton" type="button">
+            <svg class="icon"><use href="#i-camera"></use></svg> 头像
           </button>
           <button class="text-button js-sound sound-toggle" type="button" aria-label="关闭声音">
             <svg class="icon icon-sound"><use href="#i-sound"></use></svg>
@@ -304,9 +325,10 @@
 
         <div class="board-filters" id="boardFilters" role="group" aria-label="按模式筛选排行榜">
           <button class="board-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>
-          <button class="board-filter" type="button" data-filter="classic" aria-pressed="false">怀旧版</button>
           <button class="board-filter" type="button" data-filter="easy" aria-pressed="false">简单</button>
+          <button class="board-filter" type="button" data-filter="normal" aria-pressed="false">普通</button>
           <button class="board-filter" type="button" data-filter="hard" aria-pressed="false">困难</button>
+          <button class="board-filter" type="button" data-filter="extreme" aria-pressed="false">极限</button>
         </div>
 
         <div class="board-table" id="boardTable">
@@ -332,28 +354,49 @@
       </div>
     </section>
 
+    <section class="screen screen--achievements" id="achievementScreen" aria-labelledby="achievementTitle" aria-hidden="true">
+      <div class="modal achievement-card">
+        <button class="round-button board-close" id="achievementCloseButton" type="button" aria-label="关闭成就">
+          <span aria-hidden="true">✕</span>
+        </button>
+        <div class="modal-heading modal-heading--center">
+          <span class="micro-label">MILESTONES</span>
+          <h2 id="achievementTitle">成就</h2>
+          <p>达到指定分数或距离即可解锁，记录达成时间</p>
+        </div>
+        <div class="achievement-modes" id="achievementModes" role="group" aria-label="按模式查看成就">
+          <button class="achievement-mode" type="button" data-ach-mode="easy" aria-pressed="false">简单</button>
+          <button class="achievement-mode is-active" type="button" data-ach-mode="normal" aria-pressed="true">普通</button>
+          <button class="achievement-mode" type="button" data-ach-mode="hard" aria-pressed="false">困难</button>
+          <button class="achievement-mode" type="button" data-ach-mode="extreme" aria-pressed="false">极限</button>
+        </div>
+        <div class="achievement-list" id="achievementList"></div>
+        <div class="modal-footer">
+          <span class="board-count" id="achievementProgress">0 / 10</span>
+          <span class="achievement-note">仅保存在本机浏览器</span>
+        </div>
+      </div>
+    </section>
+
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <div class="achievement-toast" id="achievementToast" role="status" aria-live="polite">
+      <span class="achievement-toast__medal"><svg class="icon"><use href="#i-star"></use></svg></span>
+      <span class="achievement-toast__body">
+        <small>成就解锁</small>
+        <strong id="achievementToastTitle">500 米</strong>
+      </span>
+    </div>
+
     <div class="screen-flash" id="screenFlash" aria-hidden="true"></div>
     <input type="file" id="avatarUpload" accept="image/*" hidden>
   </main>
-
-  <div class="orientation-gate" role="dialog" aria-label="请将手机横屏游玩">
-    <div class="orientation-gate__sun" aria-hidden="true"></div>
-    <div class="rotate-phone" aria-hidden="true">
-      <span class="rotate-phone__dot"></span>
-      <span class="rotate-phone__arrow">↻</span>
-    </div>
-    <span class="orientation-gate__kicker">MARIO RUN</span>
-    <h2>把手机横过来</h2>
-    <p>横屏才能看清整条蘑菇王国跑道。<br>旋转设备后即可进入游戏。</p>
-    <span class="orientation-gate__hint">记得打开手机的自动旋转功能</span>
-    <div class="orientation-gate__mushroom" aria-hidden="true"></div>
-  </div>
 
   <noscript>
     <div class="noscript-note">请开启 JavaScript 后再来跑酷。</div>
   </noscript>
 
+  <script src="avatars/manifest.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

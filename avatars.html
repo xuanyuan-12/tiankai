@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>选择头像 · 马里奥跑酷</title>
+<style>
+  :root {
+    --ink: #17243b;
+    --cream: #fff9e9;
+    --paper: #fffdf5;
+    --yellow: #ffd23f;
+    --yellow-deep: #e89b16;
+    --green: #2e9e50;
+    --red: #ef3f45;
+    --font: "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { min-height: 100%; margin: 0; }
+  body {
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 48px;
+    background:
+      radial-gradient(circle at 15% 10%, rgba(84, 190, 135, .24), transparent 36%),
+      radial-gradient(circle at 85% 90%, rgba(255, 210, 63, .16), transparent 38%),
+      linear-gradient(150deg, #071421, #0b2d36 55%, #07131b);
+    color: var(--ink);
+    font-family: var(--font);
+  }
+  .page {
+    width: min(100%, 1080px);
+    padding: 28px clamp(18px, 4vw, 44px) 26px;
+    border: 3px solid var(--ink);
+    border-radius: 26px;
+    background:
+      radial-gradient(circle at 85% 0%, rgba(255, 223, 113, .3), transparent 28%),
+      var(--cream);
+    box-shadow: 12px 16px 0 rgba(3, 18, 25, .35);
+  }
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .kicker {
+    color: var(--yellow-deep);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .22em;
+  }
+  h1 {
+    margin: 6px 0 4px;
+    font-size: clamp(26px, 4vw, 38px);
+    letter-spacing: -.04em;
+  }
+  p.lead {
+    margin: 0;
+    color: #5b6478;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    background: var(--yellow);
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 900;
+    text-decoration: none;
+    box-shadow: 3px 4px 0 rgba(23, 36, 59, .8);
+    white-space: nowrap;
+  }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 22px 0 16px;
+    padding-top: 16px;
+    border-top: 1px dashed rgba(23, 36, 59, .2);
+  }
+  .toolbar button, .toolbar label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 14px;
+    border: 2px solid var(--ink);
+    border-radius: 10px;
+    background: var(--paper);
+    color: var(--ink);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 2px 3px 0 rgba(23, 36, 59, .2);
+  }
+  .toolbar button.primary { background: var(--green); color: #fff; }
+  .toolbar .hint { color: #6b7280; font-size: 12px; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 14px;
+  }
+  .card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 8px 10px;
+    border: 2px solid rgba(23, 36, 59, .16);
+    border-radius: 16px;
+    background: rgba(255, 253, 245, .8);
+    cursor: pointer;
+    transition: transform .16s, border-color .16s, box-shadow .16s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--yellow-deep); }
+  .card.is-selected {
+    border-color: var(--ink);
+    box-shadow: 0 0 0 3px rgba(255, 210, 63, .45), 3px 4px 0 rgba(23, 36, 59, .18);
+  }
+  .card img, .card .custom-plus {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    background: #e8f6df;
+    border: 3px solid var(--ink);
+  }
+  .card .custom-plus {
+    display: grid;
+    place-items: center;
+    border-style: dashed;
+    background: #fffdf5;
+    color: var(--red);
+    font-size: 38px;
+    font-weight: 900;
+  }
+  .card strong {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .card .check {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: none;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--yellow);
+    font-size: 13px;
+    font-weight: 900;
+  }
+  .card.is-selected .check { display: grid; }
+  .empty {
+    padding: 34px 18px;
+    border: 2px dashed rgba(23, 36, 59, .22);
+    border-radius: 16px;
+    color: #6b7280;
+    font-size: 14px;
+    text-align: center;
+  }
+  .status {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translate(-50%, 20px);
+    opacity: 0;
+    pointer-events: none;
+    padding: 10px 18px;
+    border: 2px solid var(--ink);
+    border-radius: 12px;
+    background: var(--yellow);
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 900;
+    transition: opacity .2s, transform .24s;
+  }
+  .status.is-visible { opacity: 1; transform: translate(-50%, 0); }
+  footer {
+    margin-top: 20px;
+    color: #6b7280;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+</style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <div>
+      <span class="kicker">AVATAR SELECT</span>
+      <h1>选择头像</h1>
+      <p class="lead">从 avatars/ 文件夹里挑一个，或导入你自己的图片。<br>选择会自动保存到本机浏览器。</p>
+    </div>
+    <a class="back" href="index.html" id="backLink">← 返回游戏</a>
+  </header>
+
+  <div class="toolbar">
+    <button class="primary" id="importFolder" type="button">从文件夹导入</button>
+    <button id="uploadPhoto" type="button">上传一张照片</button>
+    <span class="hint" id="countHint"></span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>
+    还没有头像。把图片放进 avatars/ 文件夹，点「从文件夹导入」；<br>
+    或在 manifest.js 里登记文件名后刷新页面。
+  </div>
+
+  <footer>
+    浏览器不能自动扫描本地文件夹，所以需要手动导入或登记 manifest.js。<br>
+    图片只保存在你的浏览器里，不会上传到服务器。
+  </footer>
+</main>
+
+<div class="status" id="status" role="status" aria-live="polite">已选择</div>
+
+<input type="file" id="folderInput" accept="image/*" webkitdirectory multiple hidden>
+<input type="file" id="photoInput" accept="image/*" hidden>
+
+<script src="avatars/manifest.js"></script>
+<script>
+(() => {
+  'use strict';
+  const STORAGE = {
+    avatar: 'mario-run-avatar-v1',
+    custom: 'mario-run-custom-v1',
+    imports: 'mario-run-avatar-imports-v1',
+  };
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+  const countHint = document.getElementById('countHint');
+  const status = document.getElementById('status');
+  const folderInput = document.getElementById('folderInput');
+  const photoInput = document.getElementById('photoInput');
+
+  const readJSON = (key, fallback) => {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (error) {
+      return fallback;
+    }
+  };
+  const writeJSON = (key, value) => {
+    try { localStorage.setItem(key, JSON.stringify(value)); } catch (error) { /* ignore */ }
+  };
+
+  let imported = readJSON(STORAGE.imports, []);
+  if (!Array.isArray(imported)) imported = [];
+
+  const manifest = Array.isArray(window.AVATAR_MANIFEST) ? window.AVATAR_MANIFEST : [];
+  const items = [];
+  for (const item of manifest) {
+    if (!item || !item.file) continue;
+    items.push({
+      id: String(item.id || item.file),
+      name: String(item.name || '头像'),
+      src: item.file.startsWith('data:') ? item.file : `avatars/${item.file}`,
+    });
+  }
+  for (const item of imported) {
+    if (!item || !item.data) continue;
+    items.push({ id: String(item.id), name: String(item.name || '我的头像'), src: item.data });
+  }
+
+  const current = () => localStorage.getItem(STORAGE.avatar) || 'default';
+
+  const showStatus = (text) => {
+    status.textContent = text;
+    status.classList.add('is-visible');
+    clearTimeout(showStatus.timer);
+    showStatus.timer = setTimeout(() => status.classList.remove('is-visible'), 1800);
+  };
+
+  const select = (item) => {
+    try { localStorage.setItem(STORAGE.avatar, item.id); } catch (error) { /* ignore */ }
+    if (item.id === 'custom' && item.src) {
+      try { localStorage.setItem(STORAGE.custom, item.src); } catch (error) { /* ignore */ }
+    }
+    render();
+    showStatus(`已选择：${item.name}`);
+    if (window.opener && !window.opener.closed) {
+      window.opener.postMessage({ type: 'avatar-selected', id: item.id }, '*');
+    }
+  };
+
+  const render = () => {
+    grid.innerHTML = '';
+    const custom = (() => {
+      try { return localStorage.getItem(STORAGE.custom); } catch (error) { return null; }
+    })();
+
+    const all = items.slice();
+    all.push({ id: 'custom', name: '上传照片', src: custom || '', custom: true });
+
+    const selected = current();
+    for (const item of all) {
+      const card = document.createElement('button');
+      card.type = 'button';
+      card.className = 'card' + (item.id === selected ? ' is-selected' : '');
+      card.setAttribute('aria-pressed', item.id === selected ? 'true' : 'false');
+
+      if (item.src) {
+        const img = document.createElement('img');
+        img.src = item.src;
+        img.alt = item.name;
+        img.loading = 'lazy';
+        card.appendChild(img);
+      } else {
+        const plus = document.createElement('span');
+        plus.className = 'custom-plus';
+        plus.textContent = '+';
+        card.appendChild(plus);
+      }
+
+      const name = document.createElement('strong');
+      name.textContent = item.name;
+      card.appendChild(name);
+
+      const check = document.createElement('span');
+      check.className = 'check';
+      check.textContent = '✓';
+      card.appendChild(check);
+
+      card.addEventListener('click', () => {
+        if (item.custom && !item.src) {
+          photoInput.click();
+          return;
+        }
+        select(item);
+      });
+      grid.appendChild(card);
+    }
+    empty.hidden = all.length > 1;
+    countHint.textContent = `共 ${all.length - 1} 个头像 · 当前：${selected === 'custom' ? '上传照片' : (all.find((i) => i.id === selected)?.name || '默认头像')}`;
+  };
+
+  const downscale = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const size = 200;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        const scale = Math.max(size / img.width, size / img.height);
+        const w = img.width * scale;
+        const h = img.height * scale;
+        ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+        resolve(canvas.toDataURL('image/jpeg', .86));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+
+  document.getElementById('importFolder').addEventListener('click', () => folderInput.click());
+  document.getElementById('uploadPhoto').addEventListener('click', () => photoInput.click());
+  document.getElementById('backLink').addEventListener('click', (event) => {
+    if (window.opener && !window.opener.closed) {
+      event.preventDefault();
+      window.close();
+    }
+  });
+
+  folderInput.addEventListener('change', async () => {
+    const files = [...(folderInput.files || [])].filter((file) => file.type.startsWith('image/'));
+    if (!files.length) return;
+    showStatus(`正在导入 ${files.length} 张图片…`);
+    const added = [];
+    for (const file of files.slice(0, 24)) {
+      try {
+        const data = await downscale(file);
+        added.push({
+          id: `import-${Date.now().toString(36)}-${added.length}`,
+          name: file.name.replace(/\.[^.]+$/, '').slice(0, 20),
+          data,
+        });
+      } catch (error) { /* skip broken file */ }
+    }
+    imported = imported.concat(added).slice(-24);
+    writeJSON(STORAGE.imports, imported);
+    folderInput.value = '';
+    render();
+    showStatus(added.length ? `已导入 ${added.length} 个头像` : '没有可导入的图片');
+  });
+
+  photoInput.addEventListener('change', async () => {
+    const file = photoInput.files && photoInput.files[0];
+    if (!file) return;
+    try {
+      const data = await downscale(file);
+      try { localStorage.setItem(STORAGE.custom, data); } catch (error) { /* ignore */ }
+      localStorage.setItem(STORAGE.avatar, 'custom');
+      render();
+      showStatus('已选择：上传照片');
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'avatar-selected', id: 'custom' }, '*');
+      }
+    } catch (error) {
+      showStatus('这张图片读取失败');
+    }
+    photoInput.value = '';
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>

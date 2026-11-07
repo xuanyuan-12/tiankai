@@ -27,12 +27,18 @@
   const STORAGE = {
     best: 'mario-run-best-v1',
     bests: 'mario-run-best-v2',
+    bestsV3: 'mario-run-best-v3',
+    mode: 'mario-run-mode-v1',
     avatar: 'mario-run-avatar-v1',
     custom: 'mario-run-custom-v1',
     muted: 'mario-run-muted-v1',
     version: 'mario-run-version-v1',
     difficulty: 'mario-run-difficulty-v1',
     board: 'mario-run-board-v1',
+    achievements: 'mario-run-achievements-v1',
+    achievementsV2: 'mario-run-achievements-v2',
+    playerName: 'mario-run-name-v1',
+    avatarImports: 'mario-run-avatar-imports-v1',
   };
 
   const BOARD_LIMIT = 300;
@@ -138,88 +144,233 @@
     },
   };
 
-  const AVATARS = [
-    {
-      id: 'mario', name: '马里奥', role: '全能选手', head: 'mario',
-      letter: 'M', portrait: ['#ffe2a6', '#ffab59'], accent: '#ef4245',
-    },
-    {
-      id: 'luigi', name: '路易吉', role: '弹簧腿', head: 'luigi',
-      letter: 'L', portrait: ['#dcf5b9', '#7acd70'], accent: '#2eae50',
-    },
-    {
-      id: 'peach', name: '桃花公主', role: '轻盈跃动', head: 'peach',
-      letter: 'P', portrait: ['#ffe2ee', '#ff99bd'], accent: '#e85f92',
-    },
-    {
-      id: 'toad', name: '奇诺比奥', role: '萌力满格', head: 'toad',
-      letter: 'T', portrait: ['#e0f2ff', '#79baf0'], accent: '#4b87e5',
-    },
-    {
-      id: 'custom', name: '我的头像', role: '独一无二', head: 'custom',
-      letter: '★', portrait: ['#eee7ff', '#b398f4'], accent: '#e14347',
-    },
-  ];
+  const DEFAULT_AVATAR = {
+    id: 'default', name: '默认头像', head: 'image',
+    file: 'default.svg', src: 'avatars/default.svg',
+    portrait: ['#e8f6df', '#8fd6a6'], accent: '#2f9e50', image: null,
+  };
 
-  const avatarById = (id) => AVATARS.find((a) => a.id === id) || AVATARS[0];
-  const paletteFor = (id) => PALETTES[id] || PALETTES.mario;
+  const CUSTOM_AVATAR = {
+    id: 'custom', name: '上传照片', head: 'custom', letter: '＋',
+    portrait: ['#eee7ff', '#b398f4'], accent: '#e14347',
+  };
+
+  let AVATARS = [DEFAULT_AVATAR, CUSTOM_AVATAR];
+
+  const avatarById = (id) => AVATARS.find((a) => a.id === id) || AVATARS[0] || DEFAULT_AVATAR;
+  const paletteFor = (id) => PALETTES[id] || PALETTES.custom;
+  const paletteForAvatar = (avatar) => {
+    if (avatar && avatar.head === 'image') {
+      return {
+        ...PALETTES.custom,
+        cap: avatar.accent || PALETTES.custom.cap,
+        shirt: avatar.accent || PALETTES.custom.shirt,
+      };
+    }
+    return paletteFor(avatar && avatar.id);
+  };
+
+  function makeImageAvatar(item) {
+    const file = String(item.file || '');
+    const src = file.startsWith('data:') ? file : `avatars/${file}`;
+    return {
+      id: String(item.id || file || 'avatar'),
+      name: String(item.name || '头像'),
+      head: 'image',
+      file,
+      src,
+      portrait: ['#e8f6df', item.accent || '#8fd6a6'],
+      accent: item.accent || '#2f9e50',
+      image: null,
+    };
+  }
+
+  function readImportedAvatars() {
+    try {
+      const parsed = JSON.parse(readStore(STORAGE.avatarImports, '[]') || '[]');
+      if (!Array.isArray(parsed)) return [];
+      return parsed.filter((item) => item && item.data).slice(-24);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function buildAvatarList() {
+    const list = [];
+    const seen = new Set();
+    const manifest = Array.isArray(window.AVATAR_MANIFEST) ? window.AVATAR_MANIFEST : [];
+    for (const item of manifest) {
+      if (!item || !item.file) continue;
+      const avatar = makeImageAvatar(item);
+      if (seen.has(avatar.id)) continue;
+      seen.add(avatar.id);
+      list.push(avatar);
+    }
+    for (const item of readImportedAvatars()) {
+      const avatar = makeImageAvatar({ id: item.id, name: item.name, file: item.data, accent: '#4b87e5' });
+      if (seen.has(avatar.id)) continue;
+      seen.add(avatar.id);
+      list.push(avatar);
+    }
+    if (!list.length) {
+      list.push(makeImageAvatar({ id: 'default', name: '默认头像', file: 'default.svg' }));
+    }
+    list.push(CUSTOM_AVATAR);
+    return list;
+  }
+
+  function loadAvatarImage(avatar) {
+    if (!avatar || avatar.head !== 'image' || !avatar.src || avatar.image) return;
+    const image = new Image();
+    image.onload = () => {
+      avatar.image = image;
+      if (selectedAvatar().id === avatar.id) {
+        refreshAvatarUI();
+        drawHudAvatar(avatar);
+      }
+    };
+    image.onerror = () => {
+      avatar.image = null;
+    };
+    image.src = avatar.src;
+  }
+
+  function loadAllAvatarImages(list = AVATARS) {
+    for (const avatar of list) loadAvatarImage(avatar);
+  }
+
+  function loadCustomImageData(data) {
+    state.customData = data;
+    state.customImage = null;
+    if (!data) {
+      refreshAvatarUI();
+      return;
+    }
+    const image = new Image();
+    image.onload = () => {
+      state.customImage = image;
+      refreshAvatarUI();
+      drawHudAvatar(selectedAvatar());
+    };
+    image.onerror = () => {
+      state.customImage = null;
+      if (state.selected === 'custom') {
+        state.selected = (AVATARS[0] && AVATARS[0].id) || 'default';
+        writeStore(STORAGE.avatar, state.selected);
+      }
+      refreshAvatarUI();
+    };
+    image.src = data;
+  }
+
+  function applyAvatarFromStorage() {
+    const stored = readStore(STORAGE.avatar, null);
+    const custom = readStore(STORAGE.custom, null);
+    AVATARS = buildAvatarList();
+    loadAllAvatarImages();
+    state.selected = AVATARS.some((avatar) => avatar.id === stored) ? stored : ((AVATARS[0] && AVATARS[0].id) || 'default');
+    if (state.selected === 'custom' && !custom) state.selected = (AVATARS[0] && AVATARS[0].id) || 'default';
+    if (custom !== state.customData || (custom && !state.customImage)) loadCustomImageData(custom);
+    refreshAvatarUI();
+  }
 
   /* ==========================================================
-     Game rules: classic (untouched) vs remake (easy / hard)
+     Game rules: easy / normal / hard / extreme
      ========================================================== */
 
-  const CLASSIC_RULES = Object.freeze({
-    key: 'classic',
-    label: '怀旧版',
-    tagline: '原版数值，一分未改',
-    stompBase: 0,
-    comboMultiply: false,
-    blockPrize: null,
-    coinsPerHeart: 30,
-    maxSpeed: 570,
-    jumpHeightScale: 1,
-    hurtInvincible: 1.75,
-    pitInvincible: 2.1,
-    pitRescue: false,
-  });
+  const BLOCK_PRIZE = Object.freeze({ heartChance: .25, score: [1000, 5000] });
 
-  const REMAKE_RULES = Object.freeze({
+  const MODE_RULES = Object.freeze({
     easy: Object.freeze({
       key: 'easy',
       label: '简单',
-      tagline: '踩怪 500×连击分 · 砖 25% 回心',
-      stompBase: 500,
+      tagline: '570 极速 · 30 币回心 · 跳跃 100%',
+      stompBase: 1000,
       comboMultiply: true,
-      blockPrize: Object.freeze({ heartChance: .25, score: [1000, 5000] }),
+      blockPrize: BLOCK_PRIZE,
       coinsPerHeart: 30,
       maxSpeed: 570,
       jumpHeightScale: 1,
       hurtInvincible: 1.75,
       pitInvincible: 2.1,
       pitRescue: true,
+      maxHearts: 3,
+      heal: true,
+      heartPrize: true,
+      enemies: false,
+      flyers: false,
+      spikes: false,
+      groundSpeed: 1.5,
     }),
-    hard: Object.freeze({
-      key: 'hard',
-      label: '困难',
-      tagline: '50 币回心 · 极速 700 · 跳跃 95% · 无敌 70%',
-      stompBase: 500,
+    normal: Object.freeze({
+      key: 'normal',
+      label: '普通',
+      tagline: '700 极速 · 50 币回心 · 跳跃 95%',
+      stompBase: 1000,
       comboMultiply: true,
-      blockPrize: Object.freeze({ heartChance: .25, score: [1000, 5000] }),
+      blockPrize: BLOCK_PRIZE,
       coinsPerHeart: 50,
       maxSpeed: 700,
       jumpHeightScale: .95,
       hurtInvincible: 1.225,
       pitInvincible: 1.47,
       pitRescue: true,
+      maxHearts: 3,
+      heal: true,
+      heartPrize: true,
+      flyers: false,
+      groundSpeed: 2,
+    }),
+    hard: Object.freeze({
+      key: 'hard',
+      label: '困难',
+      tagline: '805 极速 · 100 币回心 · 跳跃 92.15%',
+      stompBase: 1000,
+      comboMultiply: true,
+      blockPrize: BLOCK_PRIZE,
+      coinsPerHeart: 100,
+      maxSpeed: 805,
+      jumpHeightScale: .9215,
+      hurtInvincible: .8,
+      pitInvincible: .8,
+      pitRescue: true,
+      maxHearts: 3,
+      heal: true,
+      heartPrize: true,
+      groundSpeed: 2.5,
+    }),
+    extreme: Object.freeze({
+      key: 'extreme',
+      label: '极限',
+      tagline: '一颗心 · 无法回血 · 805 极速 · 跳跃 92.15%',
+      stompBase: 1000,
+      comboMultiply: true,
+      blockPrize: BLOCK_PRIZE,
+      coinsPerHeart: 100,
+      maxSpeed: 805,
+      jumpHeightScale: .9215,
+      hurtInvincible: .8,
+      pitInvincible: .8,
+      pitRescue: true,
+      maxHearts: 1,
+      heal: false,
+      heartPrize: true,
+      groundSpeed: 2.5,
     }),
   });
 
-  const RULES_BY_KEY = { classic: CLASSIC_RULES, easy: REMAKE_RULES.easy, hard: REMAKE_RULES.hard };
+  const LEGACY_RULES = Object.freeze({ key: 'legacy', label: '旧版' });
+  const RULES_BY_KEY = {
+    easy: MODE_RULES.easy,
+    normal: MODE_RULES.normal,
+    hard: MODE_RULES.hard,
+    extreme: MODE_RULES.extreme,
+    legacy: LEGACY_RULES,
+  };
 
-  const rulesFor = (version, difficulty) =>
-    version === 'remake' ? REMAKE_RULES[difficulty] || REMAKE_RULES.easy : CLASSIC_RULES;
-
-  const modeKeyFor = (version, difficulty) => (version === 'remake' ? (difficulty === 'hard' ? 'hard' : 'easy') : 'classic');
+  const rulesFor = (difficulty) => MODE_RULES[difficulty] || MODE_RULES.normal;
+  const modeKeyFor = (difficulty) => (MODE_RULES[difficulty] ? difficulty : 'normal');
+  const isModeKey = (value) => Object.prototype.hasOwnProperty.call(MODE_RULES, value);
 
   const formatNumber = (value) => String(Math.max(0, Math.floor(value))).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 
@@ -236,6 +387,25 @@
     const date = new Date(timestamp);
     const pad = (value) => String(value).padStart(2, '0');
     return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  }
+
+  const MILESTONES = Object.freeze([
+    { id: 's50k', type: 'score', score: 50000, title: '小试牛刀', label: '50,000 分' },
+    { id: 's100k', type: 'score', score: 100000, title: '十万分', label: '100,000 分' },
+    { id: 's500k', type: 'score', score: 500000, title: '一骑绝尘', label: '500,000 分' },
+    { id: 's1m', type: 'score', score: 1000000, title: '登峰造极', label: '1,000,000 分' },
+    { id: 'c3', type: 'combo', combo: 3, title: '连击新星', label: '连续踩中 3 只小怪' },
+    { id: 'c5', type: 'combo', combo: 5, title: '五连绝世', label: '连续踩中 5 只小怪' },
+    { id: 'b4900', type: 'blockScore', blockScore: 4900, title: '幸运暴击', label: '问号砖单次获得 4,900+ 分' },
+    { id: 'm21k', type: 'distance', meters: 21000, title: '半马选手', label: '半程马拉松 · 21 公里' },
+    { id: 'm42k', type: 'distance', meters: 42000, title: '全马传奇', label: '全程马拉松 · 42 公里' },
+    { id: 'm100k', type: 'distance', meters: 100000, title: '百公里神话', label: '100 公里' },
+  ]);
+
+  function formatAchievementDate(timestamp) {
+    const date = new Date(timestamp);
+    const pad = (value) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
   function drawBlinkEye(ctx, x, y, rx, ry, blink, irisColor = '#7a4a28') {
@@ -842,12 +1012,55 @@
     }
   }
 
+  function drawImageHead(ctx, avatar) {
+    const image = avatar.image;
+    ctx.beginPath();
+    ctx.arc(0, 1, 24.5, 0, TAU);
+    ctx.fillStyle = 'rgba(25,36,59,.22)';
+    ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(0, 0, 23.2, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = avatar.accent || '#8fd6a6';
+    ctx.fillRect(-24, -24, 48, 48);
+    if (image) {
+      drawImageCover(ctx, image, -23.2, -23.2, 46.4, 46.4, 0.44);
+    } else {
+      ctx.fillStyle = '#fff9e9';
+      ctx.font = '900 20px "Arial Black", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText((avatar.name || '?').slice(0, 1), 0, 1);
+    }
+    const vignette = ctx.createLinearGradient(0, 9, 0, 23);
+    vignette.addColorStop(0, 'rgba(12,22,36,0)');
+    vignette.addColorStop(1, 'rgba(12,22,36,.18)');
+    ctx.fillStyle = vignette;
+    ctx.fillRect(-24, 9, 48, 15);
+    ctx.restore();
+
+    ctx.beginPath();
+    ctx.arc(0, 0, 23.2, 0, TAU);
+    ctx.strokeStyle = '#fff9e9';
+    ctx.lineWidth = 3.4;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, 25.2, 0, TAU);
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+  }
+
   function drawAvatarHead(ctx, avatar, cx, cy, size, opts = {}) {
     const k = size / 56;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(k, k);
-    if (avatar.head === 'custom') {
+    if (avatar.head === 'image') {
+      drawImageHead(ctx, avatar);
+    } else if (avatar.head === 'custom') {
       drawCustomHead(ctx, opts);
     } else if (avatar.head === 'peach') {
       drawPeachHead(ctx, avatar, opts);
@@ -1109,7 +1322,7 @@
   }
 
   function drawRunner(ctx, avatar, x, feetY, options = {}) {
-    const p = paletteFor(avatar.id);
+    const p = paletteForAvatar(avatar);
     const runPhase = options.runPhase || 0;
     const grounded = !!options.grounded;
     const vy = options.vy || 0;
@@ -1160,7 +1373,7 @@
     ctx.rotate(bodyTilt);
 
     const headCenterY = avatar.head === 'toad' ? -58 : -63;
-    const headSize = avatar.head === 'toad' ? 55 : avatar.head === 'custom' ? 47 : 49;
+    const headSize = avatar.head === 'toad' ? 55 : (avatar.head === 'custom' || avatar.head === 'image') ? 47 : 49;
 
     // back arm
     drawArm(ctx, p, -12, armBack, true);
@@ -1220,7 +1433,26 @@
     ctx.arc(cx, cy, w * .485, 0, TAU);
     ctx.clip();
 
-    if (avatar.head === 'custom' && state.customImage) {
+    if (avatar.head === 'image' && avatar.image) {
+      const bg = ctx.createLinearGradient(0, 0, w, h);
+      bg.addColorStop(0, avatar.portrait[0]);
+      bg.addColorStop(1, avatar.portrait[1]);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+      drawImageCover(ctx, avatar.image, 0, 0, w, h, 0.44);
+      const shade = ctx.createLinearGradient(0, h * .55, 0, h);
+      shade.addColorStop(0, 'rgba(13,25,40,0)');
+      shade.addColorStop(1, 'rgba(13,25,40,.24)');
+      ctx.fillStyle = shade;
+      ctx.fillRect(0, 0, w, h);
+      ctx.strokeStyle = 'rgba(255,249,233,.8)';
+      ctx.lineWidth = w * .012;
+      ctx.setLineDash([w * .035, w * .025]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, w * .43, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    } else if (avatar.head === 'custom' && state.customImage) {
       ctx.fillStyle = '#f4dfb7';
       ctx.fillRect(0, 0, w, h);
       drawImageCover(ctx, state.customImage, 0, 0, w, h, 0.46);
@@ -1275,7 +1507,7 @@
       ctx.restore();
 
       // shoulders
-      const p = paletteFor(avatar.id);
+      const p = paletteForAvatar(avatar);
       ctx.fillStyle = p.shirt;
       ctx.beginPath();
       ctx.ellipse(cx, h + 7, w * .39, h * .28, 0, Math.PI, TAU);
@@ -1573,7 +1805,16 @@
     boardEmptyText: document.getElementById('boardEmptyText'),
     boardCount: document.getElementById('boardCount'),
     boardClearButton: document.getElementById('boardClearButton'),
-    versionSwitch: document.getElementById('versionSwitch'),
+    achievementScreen: document.getElementById('achievementScreen'),
+    achievementButton: document.getElementById('achievementButton'),
+    achievementCount: document.getElementById('achievementCount'),
+    achievementMeter: document.getElementById('achievementMeter'),
+    achievementCloseButton: document.getElementById('achievementCloseButton'),
+    achievementModes: document.getElementById('achievementModes'),
+    achievementList: document.getElementById('achievementList'),
+    achievementProgress: document.getElementById('achievementProgress'),
+    achievementToast: document.getElementById('achievementToast'),
+    achievementToastTitle: document.getElementById('achievementToastTitle'),
     difficultySwitch: document.getElementById('difficultySwitch'),
     pauseMode: document.getElementById('pauseMode'),
     overKicker: document.getElementById('overKicker'),
@@ -1589,6 +1830,11 @@
     overHomeButton: document.getElementById('overHomeButton'),
     startAvatarGrid: document.getElementById('startAvatarGrid'),
     pauseAvatarGrid: document.getElementById('pauseAvatarGrid'),
+    menuAvatarCanvas: document.getElementById('menuAvatarCanvas'),
+    menuAvatarName: document.getElementById('menuAvatarName'),
+    openAvatarButton: document.getElementById('openAvatarButton'),
+    pauseAvatarButton: document.getElementById('pauseAvatarButton'),
+    playerNameInput: document.getElementById('playerNameInput'),
     menuBest: document.getElementById('menuBest'),
     menuBestLabel: document.getElementById('menuBestLabel'),
     pauseScore: document.getElementById('pauseScore'),
@@ -1610,40 +1856,57 @@
   };
 
   function loadBests() {
-    const bests = {
-      classic: parseInt(readStore(STORAGE.best, '0'), 10) || 0,
-      easy: 0,
-      hard: 0,
-    };
-    const raw = readStore(STORAGE.bests, null);
-    if (!raw) return bests;
-    try {
-      const parsed = JSON.parse(raw);
-      for (const key of Object.keys(bests)) {
-        const value = Number(parsed && parsed[key]);
-        if (Number.isFinite(value) && value > bests[key]) bests[key] = Math.floor(value);
+    const bests = { easy: 0, normal: 0, hard: 0, extreme: 0 };
+    const raw = readStore(STORAGE.bestsV3, null);
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        for (const key of Object.keys(bests)) {
+          const value = Number(parsed && parsed[key]);
+          if (Number.isFinite(value) && value > bests[key]) bests[key] = Math.floor(value);
+        }
+      } catch (error) {
+        // corrupted bests: keep defaults
       }
-    } catch (error) {
-      // corrupted bests: keep whatever we could read
+    }
+    // 旧版：原来的“困难”就是现在的“普通”，原来的“简单”就是现在的“简单”
+    const oldRaw = readStore(STORAGE.bests, null);
+    if (oldRaw) {
+      try {
+        const old = JSON.parse(oldRaw);
+        bests.normal = Math.max(bests.normal, Math.floor(Number(old.hard) || 0));
+        bests.easy = Math.max(bests.easy, Math.floor(Number(old.easy) || 0));
+      } catch (error) {
+        // ignore
+      }
     }
     return bests;
   }
 
   function saveBests() {
-    writeStore(STORAGE.bests, JSON.stringify(state.bests));
+    writeStore(STORAGE.bestsV3, JSON.stringify(state.bests));
   }
 
   function normalizeBoardEntry(entry) {
     if (!entry || typeof entry !== 'object') return null;
     const score = Number(entry.score);
     if (!Number.isFinite(score)) return null;
+    const isV2 = Number(entry.v) === 2;
+    let mode = entry.mode;
+    if (!isV2) {
+      // 旧数据：原困难 = 普通；原简单 = 简单；原怀旧版归入“旧版”
+      mode = mode === 'hard' ? 'normal' : mode === 'easy' ? 'easy' : 'legacy';
+    } else if (!MODE_RULES[mode] && mode !== 'legacy') {
+      mode = 'normal';
+    }
     return {
+      v: 2,
       id: String(entry.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(Number(entry.coins) || 0)),
       distance: Math.max(0, Math.floor(Number(entry.distance) || 0)),
       seconds: Math.max(0, Math.round(Number(entry.seconds) || 0)),
-      mode: RULES_BY_KEY[entry.mode] ? entry.mode : 'classic',
+      mode,
       date: Number(entry.date) || Date.now(),
     };
   }
@@ -1652,10 +1915,55 @@
     try {
       const parsed = JSON.parse(readStore(STORAGE.board, '[]') || '[]');
       if (!Array.isArray(parsed)) return [];
-      return parsed.map(normalizeBoardEntry).filter(Boolean).slice(-BOARD_LIMIT);
+      let migrated = false;
+      const list = parsed.map((entry) => {
+        if (Number(entry && entry.v) !== 2) migrated = true;
+        return normalizeBoardEntry(entry);
+      }).filter(Boolean).slice(-BOARD_LIMIT);
+      if (migrated) writeStore(STORAGE.board, JSON.stringify(list));
+      return list;
     } catch (error) {
       return [];
     }
+  }
+
+  function emptyAchievementSets() {
+    return { easy: {}, normal: {}, hard: {}, extreme: {} };
+  }
+
+  function readAchievementBucket(parsed) {
+    const result = {};
+    for (const milestone of MILESTONES) {
+      const value = Number(parsed && parsed[milestone.id]);
+      if (Number.isFinite(value) && value > 0) result[milestone.id] = value;
+    }
+    return result;
+  }
+
+  function loadAchievements() {
+    const result = emptyAchievementSets();
+    try {
+      const rawV2 = readStore(STORAGE.achievementsV2, null);
+      if (rawV2) {
+        const parsed = JSON.parse(rawV2);
+        for (const mode of Object.keys(result)) {
+          result[mode] = readAchievementBucket(parsed && parsed[mode]);
+        }
+        return result;
+      }
+      // 旧版全局成就：迁移到“普通”这一套
+      const oldRaw = readStore(STORAGE.achievements, null);
+      if (oldRaw) {
+        result.normal = readAchievementBucket(JSON.parse(oldRaw));
+      }
+    } catch (error) {
+      // keep empty sets
+    }
+    return result;
+  }
+
+  function saveAchievements() {
+    writeStore(STORAGE.achievementsV2, JSON.stringify(state.achievements));
   }
 
   const state = {
@@ -1664,9 +1972,15 @@
     customImage: null,
     customData: null,
     pendingCustomSelection: false,
-    version: readStore(STORAGE.version, 'classic') === 'remake' ? 'remake' : 'classic',
-    difficulty: readStore(STORAGE.difficulty, 'easy') === 'hard' ? 'hard' : 'easy',
+    difficulty: isModeKey(readStore(STORAGE.mode, '')) ? readStore(STORAGE.mode, 'normal') : 'normal',
+    playerName: (readStore(STORAGE.playerName, '跑者') || '跑者').slice(0, 10),
     bests: loadBests(),
+    achievements: loadAchievements(),
+    achievementView: 'normal',
+    achievementQueue: [],
+    achievementTimer: 0,
+    achievementOpen: false,
+    achievementReturn: 'start',
     board: loadBoard(),
     boardFilter: 'all',
     boardReturn: 'start',
@@ -1711,8 +2025,11 @@
      ========================================================== */
 
   function selectedAvatar() {
-    if (state.selected === 'custom' && !state.customImage) return avatarById('mario');
-    return avatarById(state.selected);
+    const found = AVATARS.find((avatar) => avatar.id === state.selected);
+    if (state.selected === 'custom') {
+      return state.customImage ? (found || avatarById('custom')) : (AVATARS[0] || DEFAULT_AVATAR);
+    }
+    return found || AVATARS[0] || DEFAULT_AVATAR;
   }
 
   function buildAvatarGrid(container) {
@@ -1772,24 +2089,11 @@
 
   function refreshAvatarUI() {
     const chosen = selectedAvatar();
-    for (const ref of state.avatarCards) {
-      const isSelected = ref.id === state.selected;
-      ref.card.classList.toggle('is-selected', isSelected);
-      ref.card.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-      if (ref.id === 'custom') {
-        ref.disc.classList.toggle('avatar-disc--empty', !state.customImage);
-        ref.card.classList.toggle('is-custom', true);
-        const edit = ref.disc.querySelector('.custom-edit');
-        if (edit) edit.hidden = !state.customImage;
-        ref.card.title = state.customImage
-          ? '使用我的头像 · 再次点击可更换照片'
-          : '上传一张照片作为主角头像';
-        if (state.customImage) paintPortrait(ref.canvas, avatarById('custom'));
-        else {
-          const c = ref.canvas.getContext('2d');
-          c.clearRect(0, 0, ref.canvas.width, ref.canvas.height);
-        }
-      }
+    if (dom.menuAvatarCanvas) drawPortrait(dom.menuAvatarCanvas, chosen);
+    if (dom.menuAvatarName) {
+      dom.menuAvatarName.textContent = chosen.id === 'custom'
+        ? (state.customImage ? '我的照片' : '上传照片')
+        : chosen.name;
     }
     drawHudAvatar(chosen);
     if (state.mode === 'gameover') drawResultAvatar();
@@ -1803,7 +2107,9 @@
     c.beginPath();
     c.arc(48, 48, 46, 0, TAU);
     c.clip();
-    if (avatar.id === 'custom' && state.customImage) {
+    if (avatar.head === 'image' && avatar.image) {
+      drawImageCover(c, avatar.image, 0, 0, 96, 96, .44);
+    } else if (avatar.id === 'custom' && state.customImage) {
       drawImageCover(c, state.customImage, 0, 0, 96, 96, .46);
     } else {
       const grad = c.createLinearGradient(0, 0, 96, 96);
@@ -1976,7 +2282,7 @@
     cameraX: 0,
     speed: 330,
     playTime: 0,
-    rules: CLASSIC_RULES,
+    rules: MODE_RULES.normal,
     hearts: 3,
     maxHearts: 3,
     coins: 0,
@@ -1984,6 +2290,8 @@
     runDistance: 0,
     distance: 0,
     combo: 0,
+    maxCombo: 0,
+    maxBlockScore: 0,
     comboTimer: 0,
     invincible: 0,
     shake: 0,
@@ -1995,6 +2303,7 @@
     grounds: [],
     pipes: [],
     blocks: [],
+    spikes: [],
     coinsArr: [],
     enemies: [],
     particles: [],
@@ -2011,6 +2320,8 @@
   function resetRun() {
     const run = emptyRun();
     run.rules = currentRules();
+    run.maxHearts = run.rules.maxHearts || 3;
+    run.hearts = run.maxHearts;
     const seed = (Date.now() ^ Math.floor(Math.random() * 0xffffffff)) >>> 0;
     run.rng = seedRandom(seed);
     run.player.x = PLAYER_SCREEN_X;
@@ -2088,13 +2399,49 @@
   }
 
   function addGoomba(run, x) {
+    const rules = run.rules || MODE_RULES.normal;
+    if (rules.enemies === false) return;
+    const speedScale = rules.groundSpeed || 1;
+    const direction = run.rng() < .5 ? -1 : 1;
+    const speed = (18 + run.rng() * 12) * speedScale;
     run.enemies.push({
       x, y: GROUND_Y - 38, w: 41, h: 38,
-      vx: -18 - run.rng() * 12,
+      vx: direction * speed,
       dead: false,
       squash: 0,
       walkPhase: run.rng() * TAU,
     });
+  }
+
+  function addFlyer(run, x) {
+    const rules = run.rules || MODE_RULES.normal;
+    if (rules.flyers === false) return;
+    // 只保留一半的飞行小怪生成量
+    if (run.rng() < .5) return;
+    const baseY = GROUND_Y - 115 - run.rng() * 35;
+    run.enemies.push({
+      x, y: baseY, baseY, w: 38, h: 30,
+      vx: -28 - run.rng() * 10,
+      dead: false,
+      squash: 0,
+      walkPhase: run.rng() * TAU,
+      flying: true,
+      phase: run.rng() * TAU,
+      amp: 12 + run.rng() * 16,
+    });
+  }
+
+  function addSpikes(run, x, count = 2) {
+    const rules = run.rules || MODE_RULES.normal;
+    if (rules.spikes === false) return;
+    for (let i = 0; i < count; i++) {
+      run.spikes.push({
+        x: x + i * 25,
+        y: GROUND_Y - 19,
+        w: 22,
+        h: 19,
+      });
+    }
   }
 
   function groundAt(run, x) {
@@ -2122,11 +2469,11 @@
     else {
       const r = run.rng();
       if (progress < .18) {
-        type = r < .28 ? 'gap' : r < .57 ? 'pipe' : r < .8 ? 'goomba' : 'blocks';
+        type = r < .24 ? 'gap' : r < .48 ? 'pipe' : r < .7 ? 'goomba' : r < .88 ? 'blocks' : 'spikes';
       } else if (progress < .42) {
-        type = r < .2 ? 'gap' : r < .38 ? 'doublegap' : r < .58 ? 'pipe' : r < .75 ? 'blocks' : r < .9 ? 'goomba' : 'coins';
+        type = r < .18 ? 'gap' : r < .34 ? 'doublegap' : r < .52 ? 'pipe' : r < .65 ? 'blocks' : r < .78 ? 'goomba' : r < .9 ? 'spikes' : 'coins';
       } else {
-        type = r < .18 ? 'gap' : r < .33 ? 'doublegap' : r < .5 ? 'pipe' : r < .63 ? 'pipePair' : r < .76 ? 'blocks' : r < .88 ? 'goomba' : 'coins';
+        type = r < .16 ? 'gap' : r < .3 ? 'doublegap' : r < .45 ? 'pipe' : r < .57 ? 'pipePair' : r < .69 ? 'blocks' : r < .81 ? 'goomba' : r < .92 ? 'spikes' : 'coins';
       }
     }
     buildPattern(run, type, x, progress);
@@ -2152,6 +2499,17 @@
         addCoinLine(run, x + 180, y, 5, 36);
         addGoomba(run, x + 220 + rng() * 60);
         if (progress > .16) addGoomba(run, x + 390 + rng() * 80);
+        if (progress > .22 && rng() < .42) addFlyer(run, x + w - 145);
+        run.nextSpawnX = x + w;
+        break;
+      }
+      case 'spikes': {
+        const w = 500 + rng() * 70;
+        addGround(run, x, w);
+        const count = 2 + Math.floor(rng() * 2);
+        addSpikes(run, x + 250, count);
+        addCoinArc(run, x + 250 + count * 12, 4, 34, 70);
+        if (progress > .28 && rng() < .5) addFlyer(run, x + w - 120);
         run.nextSpawnX = x + w;
         break;
       }
@@ -2163,6 +2521,7 @@
         addPipe(run, pipeX, height);
         addCoinArc(run, pipeX + 29, 4, 36, height + 58);
         if (rng() < .55) addGoomba(run, x + w - 90);
+        if (progress > .32 && rng() < .38) addFlyer(run, x + 120);
         run.nextSpawnX = x + w;
         break;
       }
@@ -2235,6 +2594,7 @@
       pause: dom.pauseScreen,
       over: dom.gameOverScreen,
       board: dom.boardScreen,
+      achievements: dom.achievementScreen,
     };
     for (const [key, node] of Object.entries(mapping)) {
       const active = key === name;
@@ -2247,8 +2607,11 @@
   function updateHearts(animate = false) {
     const run = state.run;
     if (!run) return;
-    if (!state.heartNodes.length) {
-      for (let i = 0; i < 3; i++) {
+    const count = Math.max(1, run.maxHearts || 3);
+    if (state.heartNodes.length !== count) {
+      dom.hearts.innerHTML = '';
+      state.heartNodes = [];
+      for (let i = 0; i < count; i++) {
         const heart = document.createElement('span');
         heart.className = 'heart';
         heart.innerHTML = '<svg class="icon"><use href="#i-heart"></use></svg>';
@@ -2311,11 +2674,11 @@
   }
 
   function currentRules() {
-    return rulesFor(state.version, state.difficulty);
+    return rulesFor(state.difficulty);
   }
 
   function currentModeKey() {
-    return modeKeyFor(state.version, state.difficulty);
+    return modeKeyFor(state.difficulty);
   }
 
   function bestForMode() {
@@ -2323,42 +2686,28 @@
   }
 
   function modeLabelFor(key) {
-    if (key === 'hard') return '困难';
-    if (key === 'easy') return '简单';
-    return '怀旧';
+    return (RULES_BY_KEY[key] || MODE_RULES.normal).label;
   }
 
   function refreshModeUI() {
     const rules = currentRules();
-    dom.versionSwitch.querySelectorAll('[data-version]').forEach((button) => {
-      const active = button.dataset.version === state.version;
-      button.classList.toggle('is-active', active);
-      button.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-    dom.difficultySwitch.hidden = state.version !== 'remake';
-    dom.difficultySwitch.querySelectorAll('[data-difficulty]').forEach((button) => {
-      const active = button.dataset.difficulty === state.difficulty;
+    dom.difficultySwitch.querySelectorAll('[data-mode]').forEach((button) => {
+      const active = button.dataset.mode === state.difficulty;
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
     dom.pauseMode.textContent = `当前模式 · ${rules.label}`;
+    dom.startButton.dataset.mode = state.difficulty;
+    state.achievementView = state.difficulty;
+    updateAchievementBadge(state.achievementView);
     updateMenuBest();
   }
 
-  function setVersion(version) {
-    const next = version === 'remake' ? 'remake' : 'classic';
-    if (state.version === next) return;
-    state.version = next;
-    writeStore(STORAGE.version, next);
-    audio.sfx('click');
-    refreshModeUI();
-  }
-
-  function setDifficulty(difficulty) {
-    const next = difficulty === 'hard' ? 'hard' : 'easy';
+  function setMode(mode) {
+    const next = isModeKey(mode) ? mode : 'normal';
     if (state.difficulty === next) return;
     state.difficulty = next;
-    writeStore(STORAGE.difficulty, next);
+    writeStore(STORAGE.mode, next);
     audio.sfx('click');
     refreshModeUI();
   }
@@ -2460,7 +2809,7 @@
   function finishGameOver() {
     const run = state.run;
     if (!run) return;
-    const rules = run.rules || CLASSIC_RULES;
+    const rules = run.rules || MODE_RULES.normal;
     state.mode = 'gameover';
     state.accumulator = 0;
     audio.stopMusic();
@@ -2517,12 +2866,13 @@
 
   function recordRun(run, score, modeKey) {
     const entry = {
+      v: 2,
       id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(run.coins)),
       distance: Math.max(0, Math.floor(run.distance)),
       seconds: Math.max(0, Math.round(run.playTime)),
-      mode: modeKey || 'classic',
+      mode: isModeKey(modeKey) ? modeKey : 'normal',
       date: Date.now(),
     };
     state.board.push(entry);
@@ -2628,7 +2978,7 @@
   }
 
   function setBoardFilter(filter) {
-    const valid = ['all', 'classic', 'easy', 'hard'];
+    const valid = ['all', 'easy', 'normal', 'hard', 'extreme'];
     state.boardFilter = valid.includes(filter) ? filter : 'all';
     state.clearArmedAt = 0;
     renderBoard();
@@ -2647,6 +2997,125 @@
     saveBoard();
     renderBoard();
     showToast('排行榜已清空');
+  }
+
+  function achievementBucket(mode = state.achievementView) {
+    return state.achievements[mode] || {};
+  }
+
+  function updateAchievementBadge(mode = state.achievementView) {
+    const count = Object.keys(achievementBucket(mode)).length;
+    dom.achievementCount.textContent = `${count}/${MILESTONES.length}`;
+    if (dom.achievementMeter) {
+      dom.achievementMeter.style.width = `${Math.min(100, count / MILESTONES.length * 100)}%`;
+    }
+  }
+
+  function renderAchievements(mode = state.achievementView) {
+    state.achievementView = isModeKey(mode) ? mode : 'normal';
+    const bucket = achievementBucket(state.achievementView);
+    dom.achievementList.innerHTML = '';
+    const fragment = document.createDocumentFragment();
+    for (const milestone of MILESTONES) {
+      const unlockedAt = bucket[milestone.id];
+      const item = document.createElement('div');
+      item.className = 'achievement-item' + (unlockedAt ? ' is-unlocked' : ' is-locked');
+
+      const medal = document.createElement('span');
+      medal.className = 'achievement-medal';
+      medal.innerHTML = '<svg class="icon"><use href="#i-star"></use></svg>';
+
+      const info = document.createElement('div');
+      info.className = 'achievement-info';
+      const title = document.createElement('strong');
+      title.textContent = milestone.title;
+      const label = document.createElement('small');
+      label.textContent = milestone.label;
+      info.append(title, label);
+
+      const date = document.createElement('span');
+      date.className = 'achievement-unlock-date' + (unlockedAt ? '' : ' is-locked');
+      date.textContent = unlockedAt ? formatAchievementDate(unlockedAt) : '未解锁';
+
+      item.append(medal, info, date);
+      fragment.appendChild(item);
+    }
+    dom.achievementList.appendChild(fragment);
+    const count = Object.keys(bucket).length;
+    dom.achievementProgress.textContent = `已解锁 ${count} / ${MILESTONES.length}`;
+    if (dom.achievementModes) {
+      dom.achievementModes.querySelectorAll('[data-ach-mode]').forEach((button) => {
+        const active = button.dataset.achMode === state.achievementView;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
+    updateAchievementBadge(state.achievementView);
+  }
+
+  function openAchievements() {
+    state.achievementReturn = state.mode === 'gameover' ? 'over' : state.mode === 'paused' ? 'pause' : 'start';
+    state.achievementView = state.mode === 'menu'
+      ? state.difficulty
+      : (state.run && state.run.rules && isModeKey(state.run.rules.key) ? state.run.rules.key : state.difficulty);
+    state.achievementOpen = true;
+    audio.unlock();
+    audio.sfx('click');
+    renderAchievements(state.achievementView);
+    showScreen('achievements');
+    window.setTimeout(() => {
+      dom.achievementCloseButton.focus({ preventScroll: true });
+    }, 80);
+  }
+
+  function closeAchievements() {
+    if (!state.achievementOpen) return;
+    state.achievementOpen = false;
+    audio.sfx('click');
+    showScreen(state.achievementReturn === 'over' ? 'over' : state.achievementReturn === 'pause' ? 'pause' : 'start');
+    state.achievementView = state.difficulty;
+    updateAchievementBadge(state.achievementView);
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+  }
+
+  function showNextAchievement() {
+    if (state.achievementTimer || !state.achievementQueue.length) return;
+    const milestone = state.achievementQueue.shift();
+    dom.achievementToastTitle.textContent = `${milestone.title} · ${milestone.label}`;
+    dom.achievementToast.classList.add('is-visible');
+    state.achievementTimer = window.setTimeout(() => {
+      dom.achievementToast.classList.remove('is-visible');
+      state.achievementTimer = window.setTimeout(() => {
+        state.achievementTimer = 0;
+        showNextAchievement();
+      }, 280);
+    }, 2600);
+  }
+
+  function checkAchievements(run) {
+    const mode = run.rules && isModeKey(run.rules.key) ? run.rules.key : 'normal';
+    if (!state.achievements[mode]) state.achievements[mode] = {};
+    const bucket = state.achievements[mode];
+    let unlocked = false;
+    for (const milestone of MILESTONES) {
+      if (bucket[milestone.id]) continue;
+      let reached = false;
+      if (milestone.type === 'score') reached = run.scoreFloat >= milestone.score;
+      else if (milestone.type === 'distance') reached = run.distance >= milestone.meters;
+      else if (milestone.type === 'combo') reached = (run.maxCombo || 0) >= milestone.combo;
+      else if (milestone.type === 'blockScore') reached = (run.maxBlockScore || 0) >= milestone.blockScore;
+      if (!reached) continue;
+      bucket[milestone.id] = Date.now();
+      state.achievementQueue.push(milestone);
+      unlocked = true;
+    }
+    if (!unlocked) return;
+    saveAchievements();
+    updateAchievementBadge(state.achievementView);
+    if (state.achievementOpen && state.achievementView === mode) renderAchievements(mode);
+    showNextAchievement();
   }
 
   function spawnConfetti() {
@@ -2706,7 +3175,7 @@
 
   function loseHeart(run, reason = 'hit') {
     if (run.dead) return;
-    const rules = run.rules || CLASSIC_RULES;
+    const rules = run.rules || MODE_RULES.normal;
 
     if (run.invincible > 0) {
       // 重制版：无敌期掉坑直接回地面，不扣血、不刷新无敌时间；怀旧版保留原 bug
@@ -2755,13 +3224,13 @@
     if (block.bump > 0) return;
     block.bump = .24;
     block.hits++;
-    const rules = run.rules || CLASSIC_RULES;
+    const rules = run.rules || MODE_RULES.normal;
     if (block.type === 'question' && !block.used) {
       block.used = true;
       const cx = block.x + block.w / 2;
       const prize = rules.blockPrize;
 
-      if (prize && Math.random() < prize.heartChance && run.hearts < run.maxHearts) {
+      if (prize && rules.heartPrize !== false && Math.random() < prize.heartChance && run.hearts < run.maxHearts) {
         // 一等奖：回一颗心
         run.hearts++;
         updateHearts(false);
@@ -2778,6 +3247,7 @@
           run.coins++;
         }
         run.scoreFloat += gained;
+        run.maxBlockScore = Math.max(run.maxBlockScore || 0, gained);
         run.blockCoins.push({
           x: cx,
           y: block.y - 10,
@@ -2858,8 +3328,9 @@
     run.scoreFloat += 100;
     audio.sfx('coin');
     spawnBurst(run, coin.x, coin.y, '#ffe24e', 8, 130);
-    const perHeart = (run.rules && run.rules.coinsPerHeart) || 30;
-    if (run.coins > 0 && run.coins % perHeart === 0 && run.hearts < run.maxHearts && !run.dead) {
+    const perHeart = (run.rules && run.rules.coinsPerHeart) || 50;
+    const canHeal = !run.rules || run.rules.heal !== false;
+    if (canHeal && run.coins > 0 && run.coins % perHeart === 0 && run.hearts < run.maxHearts && !run.dead) {
       run.hearts++;
       updateHearts(false);
       showToast(`收集 ${perHeart} 枚金币，<strong>恢复一颗心！</strong>`);
@@ -2917,7 +3388,8 @@
     run.speed = Math.min(run.rules.maxSpeed, 330 + (p.x - run.startX) * .012 + run.time * 1.2);
     run.runDistance += run.speed * dt;
     run.distance = Math.floor(run.runDistance / 20);
-    run.scoreFloat += run.speed * dt * .56;
+    checkAchievements(run);
+    run.scoreFloat += run.speed * dt * .55;
     run.runPhase += dt * (7.8 + run.speed / 90);
 
     p.prevX = p.x;
@@ -2988,6 +3460,32 @@
       }
     }
 
+    // 空中砖块侧面碰撞：重心在砖块上半部分 → 上方，否则 → 下方
+    for (const block of run.blocks) {
+      const overlapX = p.x + p.w > block.x + 1 && p.x < block.x + block.w - 1;
+      const overlapY = p.y + p.h > block.y + 1 && p.y < block.y + block.h - 1;
+      if (!overlapX || !overlapY) continue;
+
+      const playerCenterY = p.y + p.h / 2;
+      const blockCenterY = block.y + block.h / 2;
+      if (playerCenterY < blockCenterY) {
+        p.y = block.y - p.h;
+        p.vy = 0;
+        p.onGround = true;
+        p.jumps = 0;
+        p.doubleJumped = false;
+        p.coyote = .09;
+      } else {
+        p.y = block.y + block.h;
+        if (p.vy < 0) {
+          p.vy = 0;
+          bumpBlock(run, block);
+          run.shake = Math.max(run.shake, .06);
+        }
+      }
+      break;
+    }
+
     // side collisions with pipes
     if (!run.invincible) {
       for (const pipe of run.pipes) {
@@ -3037,7 +3535,20 @@
         enemy.squash += dt;
         continue;
       }
-      enemy.x += enemy.vx * dt;
+      if (enemy.flying) {
+        enemy.x += enemy.vx * dt;
+        enemy.phase += dt * 2.4;
+        enemy.y = enemy.baseY + Math.sin(enemy.phase) * enemy.amp;
+      } else {
+        const dir = Math.sign(enemy.vx) || 1;
+        const nextX = enemy.x + enemy.vx * dt;
+        const probeX = nextX + dir * (enemy.w / 2 + 8);
+        if (!groundAt(run, probeX)) {
+          enemy.vx *= -1;
+        } else {
+          enemy.x = nextX;
+        }
+      }
       enemy.walkPhase += dt * 7;
       const overlap = p.x + p.w > enemy.x - enemy.w / 2 &&
         p.x < enemy.x + enemy.w / 2 &&
@@ -3053,8 +3564,9 @@
         p.jumps = 1;
         p.doubleJumped = false;
         run.combo = run.comboTimer > 0 ? run.combo + 1 : 1;
+        run.maxCombo = Math.max(run.maxCombo || 0, run.combo);
         run.comboTimer = 2.7;
-        const rules = run.rules || CLASSIC_RULES;
+        const rules = run.rules || MODE_RULES.normal;
         const points = rules.comboMultiply
           ? rules.stompBase * Math.max(1, run.combo)
           : 160 + 90 * Math.max(1, run.combo);
@@ -3069,6 +3581,22 @@
         p.vy = -380;
         p.onGround = false;
         p.y = Math.min(p.y, enemy.y - p.h + 4);
+      }
+    }
+
+    // spikes
+    if (!run.invincible) {
+      for (const spike of run.spikes) {
+        const overlap = p.x + p.w > spike.x + 3 &&
+          p.x < spike.x + spike.w - 3 &&
+          p.y + p.h > spike.y + 4 &&
+          p.y < spike.y + spike.h;
+        if (!overlap) continue;
+        p.vy = -380;
+        p.onGround = false;
+        loseHeart(run, 'spike');
+        spawnBurst(run, spike.x + spike.w / 2, spike.y + 4, '#d9e6ef', 10, 150);
+        break;
       }
     }
 
@@ -3112,6 +3640,7 @@
     const minX = run.cameraX - 700;
     run.pipes = run.pipes.filter((pipe) => pipe.x + pipe.w > minX);
     run.blocks = run.blocks.filter((block) => block.x + block.w > minX);
+    run.spikes = run.spikes.filter((spike) => spike.x + spike.w > minX);
     run.enemies = run.enemies.filter((enemy) => enemy.x > minX - 200);
     run.coinsArr = run.coinsArr.filter((coin) => !coin.collected && coin.x > minX - 100);
     run.popups = run.popups.filter((popupItem) => popupItem.x > minX - 200);
@@ -3290,6 +3819,111 @@
     }
   }
 
+  function drawMountainRange(camera) {
+    const drawRidge = (parallax, baseY, tile, fill, stroke, snow, snowAlpha) => {
+      const offset = mod(camera * parallax, tile);
+      ctx.save();
+      for (let i = -1; i < 4; i++) {
+        const x = i * tile - offset + 100;
+        ctx.beginPath();
+        ctx.moveTo(x - 480, baseY);
+        ctx.lineTo(x - 350, baseY - 150);
+        ctx.lineTo(x - 260, baseY - 70);
+        ctx.lineTo(x - 110, baseY - 235);
+        ctx.lineTo(x + 30, baseY - 92);
+        ctx.lineTo(x + 170, baseY - 175);
+        ctx.lineTo(x + 340, baseY - 55);
+        ctx.lineTo(x + 480, baseY);
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+
+        // soft snow caps on the three peaks
+        ctx.fillStyle = snow;
+        ctx.globalAlpha = snowAlpha;
+        for (const [peakX, peakY, width, height] of [
+          [x - 350, baseY - 150, 38, 48],
+          [x - 110, baseY - 235, 52, 68],
+          [x + 170, baseY - 175, 42, 54],
+        ]) {
+          ctx.beginPath();
+          ctx.moveTo(peakX, peakY);
+          ctx.lineTo(peakX - width, peakY + height);
+          ctx.lineTo(peakX - width * .28, peakY + height * .58);
+          ctx.lineTo(peakX + width * .18, peakY + height * .82);
+          ctx.lineTo(peakX + width, peakY + height);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+      }
+      ctx.restore();
+    };
+
+    // two very distant, misty ridges
+    drawRidge(.045, 412, 760, 'rgba(156, 207, 202, .55)', 'rgba(114, 174, 169, .22)', '#f5fffb', .42);
+    drawRidge(.075, 425, 820, 'rgba(118, 184, 177, .36)', 'rgba(84, 150, 143, .18)', '#effcf7', .3);
+  }
+
+  function drawBalloon(camera, time) {
+    const x = 560 - mod(camera * .055 + time * 7, 1500);
+    if (x < -70 || x > DESIGN_W + 70) return;
+    const y = 112 + Math.sin(time * .45) * 5;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(.52, .52);
+    ctx.rotate(Math.sin(time * .3) * .035);
+
+    // ropes
+    ctx.strokeStyle = 'rgba(91, 62, 44, .55)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(-16, 28);
+    ctx.lineTo(-8, 48);
+    ctx.moveTo(16, 28);
+    ctx.lineTo(8, 48);
+    ctx.stroke();
+
+    // envelope
+    const balloon = ctx.createLinearGradient(-28, -35, 24, 32);
+    balloon.addColorStop(0, '#ff9b83');
+    balloon.addColorStop(.48, '#f25557');
+    balloon.addColorStop(1, '#c9323d');
+    ctx.fillStyle = balloon;
+    ctx.beginPath();
+    ctx.ellipse(0, -2, 29, 36, 0, 0, TAU);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(112, 45, 43, .35)';
+    ctx.lineWidth = 1.4;
+    ctx.stroke();
+
+    // cream stripe
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(0, -2, 28, 35, 0, 0, TAU);
+    ctx.clip();
+    ctx.fillStyle = 'rgba(255, 239, 193, .78)';
+    ctx.beginPath();
+    ctx.moveTo(-8, -38);
+    ctx.quadraticCurveTo(2, -4, -4, 34);
+    ctx.lineTo(9, 34);
+    ctx.quadraticCurveTo(15, -4, 5, -38);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+
+    // basket
+    ctx.fillStyle = '#9a6133';
+    roundedRectPath(ctx, -9, 43, 18, 13, 3);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 226, 165, .42)';
+    ctx.fillRect(-9, 43, 18, 3);
+    ctx.restore();
+  }
+
   function drawHillLayer(camera, time) {
     // far pale hills
     const farOffset = mod(camera * .15, 520);
@@ -3439,6 +4073,8 @@
     drawSky();
     drawClouds(camera, time);
     drawBirds(camera, time);
+    drawBalloon(camera, time);
+    drawMountainRange(camera);
     drawHillLayer(camera, time);
     drawBushes(camera);
   }
@@ -3791,11 +4427,119 @@
     }
   }
 
+  function drawSpikes(run) {
+    for (const spike of run.spikes) {
+      const sx = spike.x - run.cameraX;
+      if (sx > DESIGN_W + 60 || sx + spike.w < -60) continue;
+      ctx.save();
+      ctx.translate(sx, GROUND_Y);
+      // base
+      ctx.fillStyle = 'rgba(33,50,66,.28)';
+      ctx.beginPath();
+      ctx.ellipse(spike.w / 2, 3, spike.w * .55, 4, 0, 0, TAU);
+      ctx.fill();
+      for (let i = 0; i < 2; i++) {
+        const x0 = i * 11;
+        ctx.beginPath();
+        ctx.moveTo(x0 + 1, 0);
+        ctx.lineTo(x0 + 5.5, -spike.h);
+        ctx.lineTo(x0 + 10, 0);
+        ctx.closePath();
+        const grad = ctx.createLinearGradient(0, -spike.h, 0, 0);
+        grad.addColorStop(0, '#f2f7fb');
+        grad.addColorStop(.45, '#b9c9d8');
+        grad.addColorStop(1, '#6f8293');
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.strokeStyle = '#3d4c59';
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+      }
+      ctx.fillStyle = '#4b5c6b';
+      ctx.fillRect(0, -2, spike.w, 4);
+      ctx.restore();
+    }
+  }
+
+  function drawFlyer(x, enemy, time) {
+    const dead = enemy.dead;
+    const flap = Math.sin(time * 11 + enemy.phase) * .55;
+    ctx.save();
+    ctx.translate(x, enemy.y + enemy.h / 2);
+    if (dead) {
+      ctx.globalAlpha = clamp(1 - enemy.squash * 1.4, 0, 1);
+      ctx.rotate(enemy.squash * 3.2);
+      ctx.scale(1 + enemy.squash, 1 - enemy.squash * .5);
+    }
+    // wings
+    ctx.fillStyle = '#7b5bd6';
+    ctx.strokeStyle = '#31234f';
+    ctx.lineWidth = 1.8;
+    for (const dir of [-1, 1]) {
+      ctx.save();
+      ctx.scale(dir, 1);
+      ctx.rotate(flap * .7);
+      ctx.beginPath();
+      ctx.moveTo(7, -2);
+      ctx.quadraticCurveTo(24, -16, 30, -3);
+      ctx.quadraticCurveTo(22, 3, 8, 6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+    // body
+    const bodyGrad = ctx.createLinearGradient(0, -14, 0, 12);
+    bodyGrad.addColorStop(0, '#9a7bf0');
+    bodyGrad.addColorStop(1, '#5b3eb5');
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 14, 13, 0, 0, TAU);
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+    ctx.strokeStyle = '#31234f';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+    // ears
+    ctx.beginPath();
+    ctx.moveTo(-10, -10);
+    ctx.lineTo(-13, -20);
+    ctx.lineTo(-3, -12);
+    ctx.moveTo(10, -10);
+    ctx.lineTo(13, -20);
+    ctx.lineTo(3, -12);
+    ctx.fillStyle = '#6d4ecb';
+    ctx.fill();
+    // eyes
+    ctx.fillStyle = dead ? '#2a2338' : '#fff9e9';
+    ctx.beginPath();
+    ctx.ellipse(-5, -2, 3.4, 4.1, 0, 0, TAU);
+    ctx.ellipse(5, -2, 3.4, 4.1, 0, 0, TAU);
+    ctx.fill();
+    if (!dead) {
+      ctx.fillStyle = '#2a2338';
+      ctx.beginPath();
+      ctx.arc(-5, -1, 1.7, 0, TAU);
+      ctx.arc(5, -1, 1.7, 0, TAU);
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = '#ffe14e';
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-7.5, -4.5); ctx.lineTo(-2.5, .5);
+      ctx.moveTo(-2.5, -4.5); ctx.lineTo(-7.5, .5);
+      ctx.moveTo(2.5, -4.5); ctx.lineTo(7.5, .5);
+      ctx.moveTo(7.5, -4.5); ctx.lineTo(2.5, .5);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
   function drawEnemies(run) {
     for (const enemy of run.enemies) {
       const sx = enemy.x - run.cameraX;
       if (sx < -70 || sx > DESIGN_W + 70) continue;
-      drawGoomba(sx, enemy, run.time);
+      if (enemy.flying) drawFlyer(sx, enemy, run.time);
+      else drawGoomba(sx, enemy, run.time);
     }
   }
 
@@ -3955,6 +4699,21 @@
       artScale: 1.1,
     });
     ctx.globalAlpha = 1;
+
+    const playerName = (state.playerName || '').trim();
+    if (playerName && !run.dead) {
+      ctx.save();
+      ctx.font = '800 14px "Microsoft YaHei UI", "Microsoft YaHei", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(13,27,43,.72)';
+      ctx.strokeText(playerName, sx, p.y - 15);
+      ctx.fillStyle = '#fff9e9';
+      ctx.fillText(playerName, sx, p.y - 15);
+      ctx.restore();
+    }
   }
 
   function drawBlockCoins(run) {
@@ -4146,6 +4905,7 @@
     drawBackground(run.cameraX, run.time);
     drawGrounds(run);
     drawPipes(run);
+    drawSpikes(run);
     drawBlocks(run);
     drawCoins(run);
     drawBlockCoins(run);
@@ -4172,6 +4932,7 @@
     drawBackground(run.cameraX, run.time);
     drawGrounds(run);
     drawPipes(run);
+    drawSpikes(run);
     drawBlocks(run);
     drawCoins(run);
     drawEnemies(run);
@@ -4214,6 +4975,14 @@
     const key = event.key;
     const target = event.target;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+
+    if (state.achievementOpen) {
+      if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
+        event.preventDefault();
+        closeAchievements();
+      }
+      return;
+    }
 
     if (state.boardOpen) {
       if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
@@ -4272,13 +5041,6 @@
     window.addEventListener('keydown', handleKeyDown, { passive: false });
     window.addEventListener('keyup', handleKeyUp);
 
-    const pauseForPortrait = () => {
-      const portrait = window.innerHeight > window.innerWidth && window.innerWidth <= 900;
-      if (portrait && state.mode === 'playing') pauseRun();
-    };
-    window.addEventListener('orientationchange', () => window.setTimeout(pauseForPortrait, 200));
-    window.addEventListener('resize', pauseForPortrait);
-
     dom.canvas.addEventListener('pointerdown', (event) => {
       if (state.mode !== 'playing') return;
       if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -4310,17 +5072,25 @@
 
     dom.startButton.addEventListener('click', () => startRun());
 
-    dom.versionSwitch.querySelectorAll('[data-version]').forEach((button) => {
-      button.addEventListener('click', () => {
-        audio.unlock();
-        setVersion(button.dataset.version);
-        button.blur();
-      });
+    const openAvatarPicker = () => {
+      audio.unlock();
+      audio.sfx('click');
+      window.open('avatars.html', 'avatarPicker');
+    };
+    dom.openAvatarButton.addEventListener('click', openAvatarPicker);
+    dom.pauseAvatarButton.addEventListener('click', openAvatarPicker);
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'avatar-selected') applyAvatarFromStorage();
     });
-    dom.difficultySwitch.querySelectorAll('[data-difficulty]').forEach((button) => {
+    window.addEventListener('storage', (event) => {
+      if (!event.key) return;
+      if ([STORAGE.avatar, STORAGE.custom, STORAGE.avatarImports].includes(event.key)) applyAvatarFromStorage();
+    });
+
+    dom.difficultySwitch.querySelectorAll('[data-mode]').forEach((button) => {
       button.addEventListener('click', () => {
         audio.unlock();
-        setDifficulty(button.dataset.difficulty);
+        setMode(button.dataset.mode);
         button.blur();
       });
     });
@@ -4329,6 +5099,22 @@
       audio.unlock();
       openBoard();
       dom.boardButton.blur();
+    });
+    dom.achievementButton.addEventListener('click', () => {
+      audio.unlock();
+      openAchievements();
+      dom.achievementButton.blur();
+    });
+    dom.achievementCloseButton.addEventListener('click', closeAchievements);
+    dom.achievementScreen.addEventListener('click', (event) => {
+      if (event.target === dom.achievementScreen) closeAchievements();
+    });
+    dom.achievementModes.querySelectorAll('[data-ach-mode]').forEach((button) => {
+      button.addEventListener('click', () => {
+        audio.sfx('click');
+        renderAchievements(button.dataset.achMode);
+        button.blur();
+      });
     });
     dom.overBoardButton.addEventListener('click', () => openBoard());
     dom.boardCloseButton.addEventListener('click', closeBoard);
@@ -4357,7 +5143,8 @@
     dom.retryButton.addEventListener('click', () => startRun());
     dom.changeAvatarButton.addEventListener('click', () => {
       audio.sfx('click');
-      openMenu({ highlightAvatar: true });
+      openMenu();
+      window.open('avatars.html', 'avatarPicker');
     });
     dom.overHomeButton.addEventListener('click', () => {
       audio.sfx('click');
@@ -4423,11 +5210,6 @@
     state.lastTime = now;
     const dt = Math.min(.05, Math.max(0, dtRaw));
 
-    // The portrait gate is CSS-only; make sure a live run is paused behind it.
-    if (state.mode === 'playing' && window.innerHeight > window.innerWidth && window.innerWidth <= 900) {
-      pauseRun();
-    }
-
     if (state.mode === 'playing') {
       state.accumulator += dt;
       let steps = 0;
@@ -4484,42 +5266,28 @@
       const query = window.matchMedia('(pointer: coarse)');
       if (query.addEventListener) query.addEventListener('change', detectTouchDevice);
     }
-    const storedAvatar = readStore(STORAGE.avatar, 'mario') || 'mario';
-    state.selected = AVATARS.some((avatar) => avatar.id === storedAvatar) ? storedAvatar : 'mario';
+    AVATARS = buildAvatarList();
+    loadAllAvatarImages();
+    const storedAvatar = readStore(STORAGE.avatar, null);
+    state.selected = AVATARS.some((avatar) => avatar.id === storedAvatar) ? storedAvatar : ((AVATARS[0] && AVATARS[0].id) || 'default');
     state.customData = readStore(STORAGE.custom, null);
-    if (state.selected === 'custom' && !state.customData) state.selected = 'mario';
+    if (state.selected === 'custom' && !state.customData) state.selected = (AVATARS[0] && AVATARS[0].id) || 'default';
 
-    buildAvatarGrid(dom.startAvatarGrid);
-    buildAvatarGrid(dom.pauseAvatarGrid);
-    state.avatarCards.forEach((ref) => {
-      if (!dom.pauseAvatarGrid.contains(ref.card)) return;
+    dom.playerNameInput.value = state.playerName;
+    dom.playerNameInput.addEventListener('input', () => {
+      const value = dom.playerNameInput.value.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 10);
+      state.playerName = value;
+      writeStore(STORAGE.playerName, value);
     });
 
-    // The same references list is used by refreshAvatarUI for both grids.
     refreshAvatarUI();
     refreshModeUI();
+    renderAchievements();
     syncSoundButtons();
     updateMenuBest();
     state.customImage = null;
     if (state.customData) {
-      state.pendingCustomSelection = state.selected === 'custom';
-      const image = new Image();
-      image.onload = () => {
-        state.customImage = image;
-        if (state.pendingCustomSelection) state.selected = 'custom';
-        state.pendingCustomSelection = false;
-        refreshAvatarUI();
-        drawHudAvatar(selectedAvatar());
-      };
-      image.onerror = () => {
-        state.pendingCustomSelection = false;
-        if (state.selected === 'custom') {
-          state.selected = 'mario';
-          writeStore(STORAGE.avatar, 'mario');
-        }
-        refreshAvatarUI();
-      };
-      image.src = state.customData;
+      loadCustomImageData(state.customData);
     }
 
     // Clean up initial hidden screens for accessibility and layout.
