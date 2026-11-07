@@ -320,16 +320,26 @@
         <div class="modal-heading modal-heading--center">
           <span class="micro-label">HALL OF FAME</span>
           <h2 id="boardTitle">排行榜</h2>
-          <p>每一局的分数与游玩时间，都记在这台设备上</p>
+          <p>本机记录与全球玩家共用同一套筛选</p>
         </div>
 
-        <div class="board-filters" id="boardFilters" role="group" aria-label="按模式筛选排行榜">
-          <button class="board-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>
-          <button class="board-filter" type="button" data-filter="easy" aria-pressed="false">简单</button>
-          <button class="board-filter" type="button" data-filter="normal" aria-pressed="false">普通</button>
-          <button class="board-filter" type="button" data-filter="hard" aria-pressed="false">困难</button>
-          <button class="board-filter" type="button" data-filter="extreme" aria-pressed="false">极限</button>
+        <div class="board-sources" id="boardSources" role="group" aria-label="选择排行榜范围">
+          <button class="board-source" type="button" data-source="local" aria-pressed="false">本机</button>
+          <button class="board-source is-active" type="button" data-source="global" aria-pressed="true">全球</button>
         </div>
+
+        <div class="board-filter-row">
+          <div class="board-filters" id="boardFilters" role="group" aria-label="按模式筛选排行榜">
+            <button class="board-filter is-active" type="button" data-filter="all" aria-pressed="true">全部</button>
+            <button class="board-filter" type="button" data-filter="easy" aria-pressed="false">简单</button>
+            <button class="board-filter" type="button" data-filter="normal" aria-pressed="false">普通</button>
+            <button class="board-filter" type="button" data-filter="hard" aria-pressed="false">困难</button>
+            <button class="board-filter" type="button" data-filter="extreme" aria-pressed="false">极限</button>
+          </div>
+          <button class="board-refresh" id="boardRefreshButton" type="button">刷新</button>
+        </div>
+
+        <p class="board-status" id="boardStatus">正在连接全球排行榜…</p>
 
         <div class="board-table" id="boardTable">
           <div class="board-row board-row--head" aria-hidden="true">

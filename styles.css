@@ -2392,6 +2392,121 @@ kbd {
   margin-bottom: .8em;
 }
 
+.board-sources {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: .4em;
+  margin-bottom: .45em;
+}
+
+.board-source {
+  min-width: 4.2em;
+  padding: .42em 1.15em;
+  border: 1.5px solid rgba(23, 36, 59, .2);
+  border-radius: 999px;
+  background: rgba(244, 232, 201, .42);
+  color: rgba(23, 36, 59, .58);
+  font-size: .66em;
+  font-weight: 900;
+  letter-spacing: .06em;
+  cursor: pointer;
+  transition: background .16s, color .16s, transform .16s, box-shadow .16s;
+}
+
+.board-source:hover {
+  transform: translateY(-1px);
+  background: #fffdf5;
+  color: var(--ink);
+}
+
+.board-source.is-active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+  box-shadow: 0 .12em 0 rgba(23, 36, 59, .24);
+}
+
+.board-filter-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .45em;
+  margin-bottom: .35em;
+}
+
+.board-filter-row .board-filters {
+  margin-bottom: 0;
+}
+
+.board-refresh {
+  flex: none;
+  padding: .38em .7em;
+  border: 1px solid rgba(23, 36, 59, .18);
+  border-radius: 999px;
+  background: rgba(255, 253, 245, .7);
+  color: rgba(23, 36, 59, .62);
+  font-size: .62em;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.board-refresh:hover {
+  background: #fff;
+  color: var(--ink);
+}
+
+.board-refresh:disabled {
+  opacity: .45;
+  cursor: default;
+}
+
+.board-status {
+  position: relative;
+  z-index: 1;
+  min-height: 1.35em;
+  margin: .15em 0 .65em;
+  color: rgba(23, 36, 59, .5);
+  font-size: .62em;
+  font-weight: 700;
+  text-align: center;
+}
+
+.board-status.is-ok {
+  color: #277b45;
+}
+
+.board-status.is-error {
+  color: #b13b32;
+}
+
+.board-status.is-loading {
+  color: #8a6b24;
+}
+
+.board-mode-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .12em;
+  min-width: 0;
+}
+
+.board-player {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: rgba(23, 36, 59, .5);
+  font-size: .78em;
+  font-weight: 700;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .board-filter {
   padding: .4em .95em;
   border: .1em solid rgba(23, 36, 59, .16);

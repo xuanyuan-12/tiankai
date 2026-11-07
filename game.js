@@ -39,7 +39,17 @@
     achievementsV2: 'mario-run-achievements-v2',
     playerName: 'mario-run-name-v1',
     avatarImports: 'mario-run-avatar-imports-v1',
+    playerId: 'mario-run-player-id-v1',
+    pendingScores: 'mario-run-pending-scores-v1',
   };
+
+  const ONLINE = Object.freeze({
+    url: 'https://jwhfpixplrltncxeoydb.supabase.co',
+    key: 'sb_publishable_cGTEJNDDMo5rN9wha6EJ2w_Iao0DV1y',
+    table: 'scores',
+    timeout: 9000,
+    limit: 200,
+  });
 
   const BOARD_LIMIT = 300;
 
@@ -77,6 +87,40 @@
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
     };
+  }
+
+  function makeUuid() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return window.crypto.randomUUID();
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
+      const random = Math.floor(Math.random() * 16);
+      const value = character === 'x' ? random : (random & 0x3) | 0x8;
+      return value.toString(16);
+    });
+  }
+
+  function isUuid(value) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || ''));
+  }
+
+  function getOnlinePlayerId() {
+    let id = readStore(STORAGE.playerId, '');
+    if (!isUuid(id)) {
+      id = makeUuid();
+      writeStore(STORAGE.playerId, id);
+    }
+    return id;
+  }
+
+  async function fetchWithTimeout(url, options = {}, timeout = ONLINE.timeout) {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), timeout);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      window.clearTimeout(timer);
+    }
   }
 
   function roundedRectPath(ctx, x, y, w, h, r) {
@@ -1799,6 +1843,9 @@
     boardButton: document.getElementById('boardButton'),
     boardCloseButton: document.getElementById('boardCloseButton'),
     boardFilters: document.getElementById('boardFilters'),
+    boardSources: document.getElementById('boardSources'),
+    boardStatus: document.getElementById('boardStatus'),
+    boardRefreshButton: document.getElementById('boardRefreshButton'),
     boardTable: document.getElementById('boardTable'),
     boardBody: document.getElementById('boardBody'),
     boardEmpty: document.getElementById('boardEmpty'),
@@ -1902,6 +1949,7 @@
     return {
       v: 2,
       id: String(entry.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
+      name: String(entry.name || '').slice(0, 12),
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(Number(entry.coins) || 0)),
       distance: Math.max(0, Math.floor(Number(entry.distance) || 0)),
@@ -1983,6 +2031,12 @@
     achievementReturn: 'start',
     board: loadBoard(),
     boardFilter: 'all',
+    boardSource: 'global',
+    onlineBoard: [],
+    onlineLoading: false,
+    onlineError: '',
+    onlineFetchedAt: 0,
+    pendingSyncing: false,
     boardReturn: 'start',
     boardOpen: false,
     lastRunId: '',
@@ -2867,7 +2921,8 @@
   function recordRun(run, score, modeKey) {
     const entry = {
       v: 2,
-      id: `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      id: makeUuid(),
+      name: (state.playerName || '跑者').trim().slice(0, 12) || '跑者',
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(run.coins)),
       distance: Math.max(0, Math.floor(run.distance)),
@@ -2879,6 +2934,7 @@
     if (state.board.length > BOARD_LIMIT) state.board = state.board.slice(-BOARD_LIMIT);
     saveBoard();
     state.lastRunId = entry.id;
+    queueScoreUpload(entry);
     return entry;
   }
 
@@ -2906,10 +2962,17 @@
     rankCell.textContent = String(rank);
 
     const modeCell = document.createElement('span');
+    modeCell.className = 'board-mode-cell';
     const chip = document.createElement('span');
     chip.className = `board-mode-chip mode--${entry.mode}`;
-    chip.textContent = RULES_BY_KEY[entry.mode] ? RULES_BY_KEY[entry.mode].label : '怀旧版';
+    chip.textContent = RULES_BY_KEY[entry.mode] ? RULES_BY_KEY[entry.mode].label : '旧版';
     modeCell.appendChild(chip);
+    if (entry.remote) {
+      const player = document.createElement('small');
+      player.className = 'board-player';
+      player.textContent = entry.name || '跑者';
+      modeCell.appendChild(player);
+    }
 
     const scoreCell = document.createElement('span');
     scoreCell.className = 'board-score';
@@ -2932,16 +2995,43 @@
   }
 
   function renderBoard() {
-    const entries = sortedBoardEntries(state.boardFilter);
+    const online = state.boardSource === 'global';
+    const entries = online
+      ? sortedOnlineEntries(state.boardFilter)
+      : sortedBoardEntries(state.boardFilter);
     dom.boardBody.innerHTML = '';
     const fragment = document.createDocumentFragment();
     entries.forEach((entry, index) => fragment.appendChild(buildBoardRow(entry, index + 1)));
     dom.boardBody.appendChild(fragment);
     dom.boardTable.hidden = entries.length === 0;
     dom.boardEmpty.hidden = entries.length > 0;
-    dom.boardEmptyText.textContent = state.board.length === 0
-      ? '还没有记录，跑一局就会出现在这里。'
-      : '这个筛选下还没有记录。';
+
+    if (online) {
+      if (state.onlineLoading) {
+        dom.boardEmptyText.textContent = '正在加载全球排行榜…';
+        dom.boardStatus.textContent = '正在连接全球排行榜…';
+        dom.boardStatus.className = 'board-status is-loading';
+      } else if (state.onlineError) {
+        dom.boardEmptyText.textContent = '暂时连不上全球排行榜，可以切换「本机」查看本地成绩。';
+        dom.boardStatus.textContent = `全球排行榜${state.onlineError}，点击刷新重试`;
+        dom.boardStatus.className = 'board-status is-error';
+      } else if (!state.onlineBoard.length) {
+        dom.boardEmptyText.textContent = '全球排行榜还没有记录，跑一局来抢第一。';
+        dom.boardStatus.textContent = '全球排行榜已连接 · 暂无记录';
+        dom.boardStatus.className = 'board-status is-ok';
+      } else {
+        dom.boardEmptyText.textContent = '这个筛选下还没有记录。';
+        dom.boardStatus.textContent = `全球排行榜 · 已同步 ${state.onlineBoard.length} 条`;
+        dom.boardStatus.className = 'board-status is-ok';
+      }
+    } else {
+      dom.boardEmptyText.textContent = state.board.length === 0
+        ? '本机还没有记录，跑一局就会出现在这里。'
+        : '这个筛选下还没有记录。';
+      dom.boardStatus.textContent = '本机排行榜 · 只保存在这台设备';
+      dom.boardStatus.className = 'board-status';
+    }
+
     dom.boardCount.textContent = entries.length
       ? `共 ${entries.length} 条记录 · 最高 ${formatNumber(entries[0].score)}`
       : '共 0 条记录';
@@ -2950,8 +3040,15 @@
       button.classList.toggle('is-active', active);
       button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    dom.boardClearButton.hidden = state.board.length === 0;
-    dom.boardClearButton.textContent = '清空记录';
+    dom.boardSources.querySelectorAll('[data-source]').forEach((button) => {
+      const active = button.dataset.source === state.boardSource;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    dom.boardRefreshButton.hidden = !online;
+    dom.boardRefreshButton.disabled = online && state.onlineLoading;
+    dom.boardClearButton.hidden = online || state.board.length === 0;
+    dom.boardClearButton.textContent = '清空本机记录';
   }
 
   function openBoard() {
@@ -2961,6 +3058,10 @@
     audio.sfx('click');
     renderBoard();
     showScreen('board');
+    if (state.boardSource === 'global') {
+      flushPendingScores();
+      fetchOnlineScores({ force: !state.onlineFetchedAt });
+    }
     window.setTimeout(() => {
       dom.boardCloseButton.focus({ preventScroll: true });
     }, 80);
@@ -2984,6 +3085,16 @@
     renderBoard();
   }
 
+  function setBoardSource(source) {
+    state.boardSource = source === 'local' ? 'local' : 'global';
+    state.clearArmedAt = 0;
+    renderBoard();
+    if (state.boardSource === 'global') {
+      flushPendingScores();
+      fetchOnlineScores();
+    }
+  }
+
   function clearBoard() {
     const now = performance.now();
     if (now - state.clearArmedAt > 3200) {
@@ -2996,7 +3107,169 @@
     state.lastRunId = '';
     saveBoard();
     renderBoard();
-    showToast('排行榜已清空');
+    showToast('本机排行榜已清空');
+  }
+
+  /* ==========================================================
+     Online leaderboard (Supabase)
+     ========================================================== */
+
+  function onlineHeaders(extra = {}) {
+    const headers = { apikey: ONLINE.key };
+    // Legacy JWT anon keys also need the Authorization header. The new
+    // sb_publishable_ keys are not JWTs and use the apikey header only.
+    if (/^eyJ/.test(ONLINE.key)) headers.Authorization = `Bearer ${ONLINE.key}`;
+    return {
+      ...headers,
+      ...extra,
+    };
+  }
+
+  function mapRemoteScore(row) {
+    const score = Number(row && row.score);
+    if (!Number.isFinite(score)) return null;
+    const mode = isModeKey(row.mode) ? row.mode : 'normal';
+    const date = Date.parse(row.created_at);
+    return {
+      v: 2,
+      id: String(row.id || ''),
+      remote: true,
+      name: String(row.player_name || '跑者').trim().slice(0, 12) || '跑者',
+      score: Math.max(0, Math.floor(score)),
+      coins: Math.max(0, Math.floor(Number(row.coins) || 0)),
+      distance: Math.max(0, Math.floor(Number(row.distance) || 0)),
+      seconds: Math.max(0, Math.round(Number(row.seconds) || 0)),
+      mode,
+      date: Number.isFinite(date) ? date : Date.now(),
+    };
+  }
+
+  function sortedOnlineEntries(filter = 'all') {
+    const list = filter === 'all'
+      ? state.onlineBoard.slice()
+      : state.onlineBoard.filter((entry) => entry.mode === filter);
+    return list.sort((a, b) => b.score - a.score || a.seconds - b.seconds || b.date - a.date).slice(0, ONLINE.limit);
+  }
+
+  async function fetchOnlineScores(options = {}) {
+    if (state.onlineLoading) return;
+    if (!options.force && state.onlineFetchedAt && Date.now() - state.onlineFetchedAt < 20000) return;
+    state.onlineLoading = true;
+    state.onlineError = '';
+    if (state.boardOpen && state.boardSource === 'global') renderBoard();
+    try {
+      const params = new URLSearchParams({
+        select: 'id,player_name,mode,score,coins,distance,seconds,created_at',
+        order: 'score.desc,seconds.asc,created_at.asc',
+        limit: String(ONLINE.limit),
+      });
+      const response = await fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}?${params.toString()}`, {
+        headers: onlineHeaders({ Accept: 'application/json' }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const rows = await response.json();
+      state.onlineBoard = (Array.isArray(rows) ? rows : []).map(mapRemoteScore).filter(Boolean);
+      state.onlineFetchedAt = Date.now();
+      state.onlineError = '';
+    } catch (error) {
+      state.onlineError = error && error.name === 'AbortError' ? '连接超时' : '连接失败';
+    } finally {
+      state.onlineLoading = false;
+      if (state.boardOpen && state.boardSource === 'global') renderBoard();
+    }
+  }
+
+  function readPendingScores() {
+    try {
+      const parsed = JSON.parse(readStore(STORAGE.pendingScores, '[]') || '[]');
+      if (!Array.isArray(parsed)) return [];
+      const seen = new Set();
+      return parsed.filter((entry) => {
+        if (!entry || !isUuid(entry.id) || seen.has(entry.id)) return false;
+        seen.add(entry.id);
+        return true;
+      }).slice(-50);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function writePendingScores(list) {
+    writeStore(STORAGE.pendingScores, JSON.stringify(list.slice(-50)));
+  }
+
+  function addPendingScore(entry) {
+    if (!isUuid(entry.id)) return;
+    const pending = readPendingScores();
+    if (pending.some((item) => item.id === entry.id)) return;
+    pending.push({
+      id: entry.id,
+      name: String(entry.name || state.playerName || '跑者').slice(0, 12),
+      score: entry.score,
+      coins: entry.coins,
+      distance: entry.distance,
+      seconds: entry.seconds,
+      mode: entry.mode,
+    });
+    writePendingScores(pending);
+  }
+
+  async function uploadRemoteScore(entry) {
+    if (!isUuid(entry.id)) return false;
+    const payload = {
+      id: entry.id,
+      player_id: getOnlinePlayerId(),
+      player_name: String(entry.name || state.playerName || '跑者').trim().slice(0, 12) || '跑者',
+      mode: isModeKey(entry.mode) ? entry.mode : 'normal',
+      score: Math.max(0, Math.floor(Number(entry.score) || 0)),
+      coins: Math.max(0, Math.floor(Number(entry.coins) || 0)),
+      distance: Math.max(0, Math.floor(Number(entry.distance) || 0)),
+      seconds: Math.max(0, Math.round(Number(entry.seconds) || 0)),
+    };
+    const response = await fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}`, {
+      method: 'POST',
+      headers: onlineHeaders({
+        'Content-Type': 'application/json',
+        Prefer: 'return=minimal',
+      }),
+      body: JSON.stringify(payload),
+    });
+    // 409 means this exact run was already uploaded.
+    if (response.ok || response.status === 409) return true;
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  function queueScoreUpload(entry) {
+    if (!isUuid(entry.id)) return;
+    uploadRemoteScore(entry).then(() => {
+      state.onlineFetchedAt = 0;
+    }).catch(() => {
+      addPendingScore(entry);
+    });
+  }
+
+  async function flushPendingScores() {
+    if (state.pendingSyncing) return;
+    const pending = readPendingScores();
+    if (!pending.length) return;
+    state.pendingSyncing = true;
+    const left = [];
+    try {
+      for (const entry of pending) {
+        try {
+          await uploadRemoteScore(entry);
+        } catch (error) {
+          left.push(entry);
+        }
+      }
+      writePendingScores(left);
+      if (left.length < pending.length) {
+        state.onlineFetchedAt = 0;
+        if (state.boardOpen && state.boardSource === 'global') fetchOnlineScores({ force: true });
+      }
+    } finally {
+      state.pendingSyncing = false;
+    }
   }
 
   function achievementBucket(mode = state.achievementView) {
@@ -5128,6 +5401,19 @@
         button.blur();
       });
     });
+    dom.boardSources.querySelectorAll('[data-source]').forEach((button) => {
+      button.addEventListener('click', () => {
+        audio.sfx('click');
+        setBoardSource(button.dataset.source);
+        button.blur();
+      });
+    });
+    dom.boardRefreshButton.addEventListener('click', () => {
+      if (state.boardSource !== 'global' || state.onlineLoading) return;
+      audio.sfx('click');
+      flushPendingScores();
+      fetchOnlineScores({ force: true });
+    });
     dom.boardClearButton.addEventListener('click', clearBoard);
     dom.pauseButton.addEventListener('click', () => pauseRun());
     dom.hudAvatar.addEventListener('click', () => pauseRun());
@@ -5300,6 +5586,9 @@
     setupInput();
     renderScene(performance.now() / 1000);
     window.requestAnimationFrame(frame);
+    window.setTimeout(() => {
+      flushPendingScores().catch(() => {});
+    }, 1800);
   }
 
   init();
