@@ -1490,7 +1490,12 @@ label:focus-visible {
 }
 
 .name-field label {
-  display: none;
+  display: block;
+  flex: none;
+  color: rgba(23, 36, 59, .5);
+  font-size: .55em;
+  font-weight: 800;
+  letter-spacing: .04em;
 }
 
 .name-field input {
