@@ -5587,8 +5587,10 @@
     renderScene(performance.now() / 1000);
     window.requestAnimationFrame(frame);
     window.setTimeout(() => {
-      flushPendingScores().catch(() => {});
-    }, 1800);
+      flushPendingScores().catch(() => {}).finally(() => {
+        fetchOnlineScores({ force: true });
+      });
+    }, 1500);
   }
 
   init();
