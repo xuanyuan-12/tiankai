@@ -47,7 +47,7 @@
     url: 'https://jwhfpixplrltncxeoydb.supabase.co',
     key: 'sb_publishable_cGTEJNDDMo5rN9wha6EJ2w_Iao0DV1y',
     table: 'scores',
-    timeout: 9000,
+    timeout: 15000,
     limit: 200,
   });
 
@@ -5587,10 +5587,9 @@
     renderScene(performance.now() / 1000);
     window.requestAnimationFrame(frame);
     window.setTimeout(() => {
-      flushPendingScores().catch(() => {}).finally(() => {
-        fetchOnlineScores({ force: true });
-      });
-    }, 1500);
+      fetchOnlineScores({ force: true });
+      flushPendingScores().catch(() => {});
+    }, 600);
   }
 
   init();
