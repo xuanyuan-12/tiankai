@@ -37,8 +37,9 @@
     board: 'mario-run-board-v1',
     achievements: 'mario-run-achievements-v1',
     achievementsV2: 'mario-run-achievements-v2',
-    playerName: 'mario-run-name-v1',
     nickname: 'mario-run-nickname-v1',
+    nicknameChanges: 'mario-run-nickname-changes-v1',
+    boardReset: 'mario-run-board-reset-v1',
     avatarImports: 'mario-run-avatar-imports-v1',
     playerId: 'mario-run-player-id-v1',
     pendingScores: 'mario-run-pending-scores-v1',
@@ -50,6 +51,7 @@
     table: 'scores',
     timeout: 15000,
     limit: 200,
+    epoch: '2026-11-07T02:45:30Z',
   });
 
   const BOARD_LIMIT = 300;
@@ -1847,8 +1849,12 @@
     startScreen: document.getElementById('startScreen'),
     nicknameScreen: document.getElementById('nicknameScreen'),
     nicknameButton: document.getElementById('nicknameButton'),
+    nicknameText: document.getElementById('nicknameText'),
     nicknameInput: document.getElementById('nicknameInput'),
+    nicknameWarning: document.getElementById('nicknameWarning'),
     nicknameConfirmButton: document.getElementById('nicknameConfirmButton'),
+    nicknameCancelButton: document.getElementById('nicknameCancelButton'),
+    nicknameTitle: document.getElementById('nicknameTitle'),
     pauseScreen: document.getElementById('pauseScreen'),
     gameOverScreen: document.getElementById('gameOverScreen'),
     boardScreen: document.getElementById('boardScreen'),
@@ -1893,9 +1899,8 @@
     menuAvatarName: document.getElementById('menuAvatarName'),
     openAvatarButton: document.getElementById('openAvatarButton'),
     pauseAvatarButton: document.getElementById('pauseAvatarButton'),
-    playerNameInput: document.getElementById('playerNameInput'),
-    menuBest: document.getElementById('menuBest'),
     menuBestLabel: document.getElementById('menuBestLabel'),
+    menuBest: document.getElementById('menuBest'),
     pauseScore: document.getElementById('pauseScore'),
     pauseDistance: document.getElementById('pauseDistance'),
     pauseCoins: document.getElementById('pauseCoins'),
@@ -1961,8 +1966,7 @@
     return {
       v: 2,
       id: String(entry.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
-      nickname: String(entry.nickname || '').slice(0, 12),
-      name: String(entry.name || '').slice(0, 12),
+      nickname: String(entry.nickname || entry.name || '').slice(0, 12),
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(Number(entry.coins) || 0)),
       distance: Math.max(0, Math.floor(Number(entry.distance) || 0)),
@@ -2027,6 +2031,31 @@
     writeStore(STORAGE.achievementsV2, JSON.stringify(state.achievements));
   }
 
+  const NICKNAME_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
+  const NICKNAME_CHANGE_LIMIT = 2;
+
+  function loadNicknameChanges() {
+    try {
+      const parsed = JSON.parse(readStore(STORAGE.nicknameChanges, '[]') || '[]');
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map(Number).filter((value) => Number.isFinite(value) && value > 0).sort((a, b) => a - b).slice(-20);
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function nicknameChangeInfo() {
+    const now = Date.now();
+    const recent = state.nicknameChanges.filter((timestamp) => now - timestamp < NICKNAME_WINDOW_MS);
+    state.nicknameChanges = recent;
+    writeStore(STORAGE.nicknameChanges, JSON.stringify(recent));
+    return {
+      used: recent.length,
+      remaining: Math.max(0, NICKNAME_CHANGE_LIMIT - recent.length),
+      nextAvailable: recent.length >= NICKNAME_CHANGE_LIMIT ? recent[0] + NICKNAME_WINDOW_MS : 0,
+    };
+  }
+
   const state = {
     mode: 'menu',
     selected: 'mario',
@@ -2034,8 +2063,8 @@
     customData: null,
     pendingCustomSelection: false,
     difficulty: isModeKey(readStore(STORAGE.mode, '')) ? readStore(STORAGE.mode, 'normal') : 'normal',
-    playerName: (readStore(STORAGE.playerName, '跑者') || '跑者').slice(0, 10),
     nickname: (readStore(STORAGE.nickname, '') || '').trim().slice(0, 12),
+    nicknameChanges: loadNicknameChanges(),
     nicknamePromptOpen: false,
     bests: loadBests(),
     achievements: loadAchievements(),
@@ -2675,18 +2704,43 @@
   }
 
   function updateNicknameUI() {
-    dom.nicknameButton.textContent = state.nickname ? `昵称 · ${state.nickname}` : '设置昵称';
+    dom.nicknameText.textContent = state.nickname || '未设置';
     dom.nicknameButton.classList.toggle('is-set', Boolean(state.nickname));
+    dom.nicknameButton.setAttribute('aria-label', state.nickname ? `修改昵称：${state.nickname}` : '设置昵称');
+  }
+
+  function updateNicknameWarning() {
+    const editing = Boolean(state.nickname);
+    const info = nicknameChangeInfo();
+    const blocked = editing && info.remaining <= 0;
+    if (!editing) {
+      dom.nicknameWarning.textContent = '⚠️ 首次设置不占用修改次数；之后 30 天内最多修改 2 次。';
+    } else if (blocked) {
+      dom.nicknameWarning.textContent = `⛔ 本周期 2 次修改已用完，${formatAchievementDate(info.nextAvailable)} 后可再修改。`;
+    } else {
+      dom.nicknameWarning.textContent = `⚠️ 昵称 30 天内最多修改 2 次，本周期还可修改 ${info.remaining} 次。`;
+    }
+    dom.nicknameWarning.classList.toggle('is-error', blocked);
+    dom.nicknameInput.disabled = blocked;
+    dom.nicknameConfirmButton.disabled = blocked;
+    return blocked;
   }
 
   function openNicknamePrompt() {
     state.nicknamePromptOpen = true;
+    const editing = Boolean(state.nickname);
+    dom.nicknameTitle.textContent = editing ? '修改昵称' : '先起一个昵称';
+    dom.nicknameCancelButton.hidden = !editing;
+    dom.nicknameConfirmButton.textContent = editing ? '保存昵称' : '进入游戏';
     dom.nicknameInput.value = state.nickname || '';
     dom.nicknameInput.classList.remove('is-invalid');
+    updateNicknameWarning();
     showScreen('nickname');
     window.setTimeout(() => {
-      dom.nicknameInput.focus({ preventScroll: true });
-      dom.nicknameInput.select();
+      if (!dom.nicknameInput.disabled) {
+        dom.nicknameInput.focus({ preventScroll: true });
+        dom.nicknameInput.select();
+      }
     }, 80);
   }
 
@@ -2697,13 +2751,39 @@
       dom.nicknameInput.focus({ preventScroll: true });
       return;
     }
+    const previous = state.nickname;
+    if (previous && value === previous) {
+      state.nicknamePromptOpen = false;
+      showScreen('start');
+      return;
+    }
+    let remaining = NICKNAME_CHANGE_LIMIT;
+    if (previous) {
+      const info = nicknameChangeInfo();
+      if (info.remaining <= 0) {
+        updateNicknameWarning();
+        return;
+      }
+      state.nicknameChanges.push(Date.now());
+      writeStore(STORAGE.nicknameChanges, JSON.stringify(state.nicknameChanges));
+      remaining = info.remaining - 1;
+    }
     state.nickname = value;
     writeStore(STORAGE.nickname, value);
     state.nicknamePromptOpen = false;
     dom.nicknameInput.classList.remove('is-invalid');
     updateNicknameUI();
     showScreen('start');
-    showToast(`昵称已设为 <strong>${escapeHtml(value)}</strong>`);
+    if (previous) {
+      showToast(`昵称已修改，30 天内还可修改 ${remaining} 次`);
+    } else {
+      showToast(`昵称已设为 <strong>${escapeHtml(value)}</strong>，30 天内还可修改 2 次`);
+    }
+  }
+
+  function cancelNickname() {
+    state.nicknamePromptOpen = false;
+    showScreen('start');
   }
 
   function updateHearts(animate = false) {
@@ -2966,12 +3046,24 @@
     writeStore(STORAGE.board, JSON.stringify(state.board));
   }
 
+  function clearLeaderboardOnce() {
+    if (readStore(STORAGE.boardReset, '')) return;
+    state.board = [];
+    state.lastRunId = '';
+    state.onlineBoard = [];
+    state.onlineFetchedAt = 0;
+    state.bests = { easy: 0, normal: 0, hard: 0, extreme: 0 };
+    saveBoard();
+    saveBests();
+    writeStore(STORAGE.pendingScores, '[]');
+    writeStore(STORAGE.boardReset, '1');
+  }
+
   function recordRun(run, score, modeKey) {
     const entry = {
       v: 2,
       id: makeUuid(),
-      nickname: state.nickname || '',
-      name: (state.playerName || '跑者').trim().slice(0, 12) || '跑者',
+      nickname: state.nickname || '匿名',
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(run.coins)),
       distance: Math.max(0, Math.floor(run.distance)),
@@ -3013,12 +3105,8 @@
     const playerCell = document.createElement('span');
     playerCell.className = 'board-player-cell';
     const playerNickname = document.createElement('strong');
-    const playerRunner = document.createElement('small');
-    const nickname = String(entry.nickname || '').trim();
-    const runner = String(entry.name || '').trim();
-    playerNickname.textContent = nickname || runner || '跑者';
-    playerRunner.textContent = nickname ? (runner || '跑者') : '未设置昵称';
-    playerCell.append(playerNickname, playerRunner);
+    playerNickname.textContent = String(entry.nickname || '匿名').trim() || '匿名';
+    playerCell.appendChild(playerNickname);
 
     const modeCell = document.createElement('span');
     modeCell.className = 'board-mode-cell';
@@ -3187,8 +3275,7 @@
       v: 2,
       id: String(row.id || ''),
       remote: true,
-      nickname: String(row.nickname || '').trim().slice(0, 12),
-      name: String(row.player_name || '跑者').trim().slice(0, 12) || '跑者',
+      nickname: String(row.player_name || row.nickname || '匿名').trim().slice(0, 12) || '匿名',
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(Number(row.coins) || 0)),
       distance: Math.max(0, Math.floor(Number(row.distance) || 0)),
@@ -3217,18 +3304,13 @@
           select,
           order: 'score.desc,seconds.asc,created_at.asc',
           limit: String(ONLINE.limit),
+          created_at: `gte.${ONLINE.epoch}`,
         });
         return fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}?${params.toString()}`, {
           headers: onlineHeaders({ Accept: 'application/json' }),
         });
       };
-      const fullSelect = 'id,nickname,player_name,mode,score,coins,distance,seconds,created_at';
-      let response = await query(fullSelect);
-      // Until the nickname column is added in Supabase, keep the global
-      // leaderboard usable with the original schema.
-      if (!response.ok && response.status === 400) {
-        response = await query('id,player_name,mode,score,coins,distance,seconds,created_at');
-      }
+      const response = await query('id,player_name,mode,score,coins,distance,seconds,created_at');
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const rows = await response.json();
       state.onlineBoard = (Array.isArray(rows) ? rows : []).map(mapRemoteScore).filter(Boolean);
@@ -3267,8 +3349,7 @@
     if (pending.some((item) => item.id === entry.id)) return;
     pending.push({
       id: entry.id,
-      nickname: String(entry.nickname || state.nickname || '').slice(0, 12),
-      name: String(entry.name || state.playerName || '跑者').slice(0, 12),
+      nickname: String(entry.nickname || state.nickname || '匿名').slice(0, 12),
       score: entry.score,
       coins: entry.coins,
       distance: entry.distance,
@@ -3280,31 +3361,25 @@
 
   async function uploadRemoteScore(entry) {
     if (!isUuid(entry.id)) return false;
+    const nickname = String(entry.nickname || state.nickname || '匿名').trim().slice(0, 12) || '匿名';
     const payload = {
       id: entry.id,
       player_id: getOnlinePlayerId(),
-      nickname: String(entry.nickname || state.nickname || '').trim().slice(0, 12),
-      player_name: String(entry.name || state.playerName || '跑者').trim().slice(0, 12) || '跑者',
+      player_name: nickname,
       mode: isModeKey(entry.mode) ? entry.mode : 'normal',
       score: Math.max(0, Math.floor(Number(entry.score) || 0)),
       coins: Math.max(0, Math.floor(Number(entry.coins) || 0)),
       distance: Math.max(0, Math.floor(Number(entry.distance) || 0)),
       seconds: Math.max(0, Math.round(Number(entry.seconds) || 0)),
     };
-    const post = (body) => fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}`, {
+    const response = await fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}`, {
       method: 'POST',
       headers: onlineHeaders({
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       }),
-      body: JSON.stringify(body),
+      body: JSON.stringify(payload),
     });
-    let response = await post(payload);
-    // Allows basic score sync before the nickname column is added.
-    if (!response.ok && response.status === 400) {
-      const { nickname, ...legacyPayload } = payload;
-      response = await post(legacyPayload);
-    }
     // 409 means this exact run was already uploaded.
     if (response.ok || response.status === 409) return true;
     throw new Error(`HTTP ${response.status}`);
@@ -5058,8 +5133,8 @@
     });
     ctx.globalAlpha = 1;
 
-    const playerName = (state.playerName || '').trim();
-    if (playerName && !run.dead) {
+    const nickname = (state.nickname || '').trim();
+    if (nickname && !run.dead) {
       ctx.save();
       ctx.font = '800 14px "Microsoft YaHei UI", "Microsoft YaHei", sans-serif';
       ctx.textAlign = 'center';
@@ -5067,9 +5142,9 @@
       ctx.lineJoin = 'round';
       ctx.lineWidth = 4;
       ctx.strokeStyle = 'rgba(13,27,43,.72)';
-      ctx.strokeText(playerName, sx, p.y - 15);
+      ctx.strokeText(nickname, sx, p.y - 15);
       ctx.fillStyle = '#fff9e9';
-      ctx.fillText(playerName, sx, p.y - 15);
+      ctx.fillText(nickname, sx, p.y - 15);
       ctx.restore();
     }
   }
@@ -5441,6 +5516,10 @@
       audio.sfx('click');
       saveNickname();
     });
+    dom.nicknameCancelButton.addEventListener('click', () => {
+      audio.sfx('click');
+      cancelNickname();
+    });
     dom.nicknameInput.addEventListener('input', () => {
       dom.nicknameInput.classList.remove('is-invalid');
     });
@@ -5654,6 +5733,7 @@
   function init() {
     resizeCanvas();
     detectTouchDevice();
+    clearLeaderboardOnce();
     if (window.matchMedia) {
       const query = window.matchMedia('(pointer: coarse)');
       if (query.addEventListener) query.addEventListener('change', detectTouchDevice);
@@ -5664,13 +5744,6 @@
     state.selected = AVATARS.some((avatar) => avatar.id === storedAvatar) ? storedAvatar : ((AVATARS[0] && AVATARS[0].id) || 'default');
     state.customData = readStore(STORAGE.custom, null);
     if (state.selected === 'custom' && !state.customData) state.selected = (AVATARS[0] && AVATARS[0].id) || 'default';
-
-    dom.playerNameInput.value = state.playerName;
-    dom.playerNameInput.addEventListener('input', () => {
-      const value = dom.playerNameInput.value.replace(/[\u0000-\u001f\u007f]/g, '').slice(0, 10);
-      state.playerName = value;
-      writeStore(STORAGE.playerName, value);
-    });
 
     refreshAvatarUI();
     refreshModeUI();

@@ -127,7 +127,11 @@
 
     <section class="screen screen--start is-visible" id="startScreen" aria-labelledby="gameTitle">
       <div class="start-topline">
-        <button class="home-kicker home-kicker--button" id="nicknameButton" type="button">昵称 · 未设置</button>
+        <button class="nickname-chip" id="nicknameButton" type="button" aria-label="修改昵称">
+          <span class="nickname-chip__label">昵称</span>
+          <strong id="nicknameText">未设置</strong>
+          <span class="nickname-chip__edit" aria-hidden="true">✎</span>
+        </button>
         <div class="start-topline__right">
           <button class="round-button js-sound sound-toggle round-button--glass" type="button" aria-label="关闭声音">
             <svg class="icon icon-sound"><use href="#i-sound"></use></svg>
@@ -198,10 +202,6 @@
             <span class="avatar-preview__edit">更换头像</span>
           </button>
           <div class="avatar-preview__name" id="menuAvatarName">默认头像</div>
-          <div class="name-field">
-            <label for="playerNameInput">跑者名</label>
-            <input id="playerNameInput" type="text" maxlength="10" autocomplete="off" placeholder="输入名字" aria-label="角色名字">
-          </div>
         </aside>
       </div>
     </section>
@@ -210,9 +210,13 @@
       <div class="modal nickname-card">
         <span class="micro-label">WELCOME</span>
         <h2 id="nicknameTitle">先起一个昵称</h2>
-        <p>昵称会显示在排行榜上，和角色头顶的跑者名字分开。</p>
+        <p>昵称会显示在角色头顶和排行榜上。</p>
+        <p class="nickname-warning" id="nicknameWarning">⚠️ 首次设置不占用修改次数；之后 30 天内最多修改 2 次。</p>
         <input id="nicknameInput" type="text" maxlength="12" autocomplete="off" placeholder="例如：阿轩">
-        <button class="button button--primary nickname-confirm" id="nicknameConfirmButton" type="button">进入游戏</button>
+        <div class="nickname-actions">
+          <button class="button button--ghost nickname-cancel" id="nicknameCancelButton" type="button" hidden>取消</button>
+          <button class="button button--primary nickname-confirm" id="nicknameConfirmButton" type="button">进入游戏</button>
+        </div>
         <small>之后可以点左上角的昵称修改</small>
       </div>
     </section>

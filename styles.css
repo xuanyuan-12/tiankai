@@ -904,6 +904,57 @@ label:focus-visible {
   transition: width .35s var(--ease-out);
 }
 
+.nickname-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .45em;
+  max-width: 15em;
+  padding: .5em .85em .5em .8em;
+  border: 1.5px solid rgba(255, 249, 232, .38);
+  border-radius: 999px;
+  background: rgba(8, 30, 42, .42);
+  color: var(--cream);
+  font-family: var(--font-ui);
+  font-size: .78em;
+  font-weight: 900;
+  letter-spacing: .03em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 .25em .8em rgba(3, 18, 25, .18);
+  transition: background .16s, border-color .16s, transform .16s;
+}
+
+.nickname-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 249, 232, .7);
+  background: rgba(8, 30, 42, .62);
+}
+
+.nickname-chip__label {
+  flex: none;
+  color: rgba(255, 249, 232, .52);
+  font-size: .62em;
+  letter-spacing: .14em;
+}
+
+.nickname-chip strong {
+  max-width: 8.5em;
+  overflow: hidden;
+  color: #fff9e9;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nickname-chip__edit {
+  flex: none;
+  color: var(--yellow);
+  font-size: .82em;
+}
+
+.nickname-chip.is-set strong {
+  color: var(--yellow);
+}
+
 .home-kicker {
   color: rgba(255, 249, 232, .5);
   font-family: var(--font-round);
@@ -993,9 +1044,45 @@ label:focus-visible {
   box-shadow: 0 0 0 3px rgba(211, 74, 64, .18);
 }
 
-.nickname-confirm {
-  width: 100%;
+.nickname-card input:disabled {
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+.nickname-warning {
+  margin: 0 auto 1em;
+  padding: .6em .8em;
+  border: 1px solid rgba(187, 131, 28, .22);
+  border-radius: .6em;
+  background: rgba(255, 230, 149, .35);
+  color: #7e5b14;
+  font-size: .64em;
+  font-weight: 800;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.nickname-warning.is-error {
+  border-color: rgba(190, 63, 53, .28);
+  background: rgba(255, 206, 201, .5);
+  color: #9a2f28;
+}
+
+.nickname-actions {
+  display: flex;
+  gap: .5em;
   margin-top: .9em;
+}
+
+.nickname-actions .button {
+  flex: 1;
+  width: auto;
+  margin-top: 0;
+}
+
+.nickname-confirm {
+  width: auto;
+  margin-top: 0;
 }
 
 .nickname-card small {
@@ -3411,6 +3498,10 @@ kbd {
     width: auto;
     transform: none;
     z-index: 5;
+  }
+
+  .nickname-chip {
+    display: none;
   }
 
   .home-kicker {
