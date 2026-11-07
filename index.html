@@ -127,7 +127,7 @@
 
     <section class="screen screen--start is-visible" id="startScreen" aria-labelledby="gameTitle">
       <div class="start-topline">
-        <span class="home-kicker">SUPER MARIO RUN · LOCAL ARCADE</span>
+        <button class="home-kicker home-kicker--button" id="nicknameButton" type="button">昵称 · 未设置</button>
         <div class="start-topline__right">
           <button class="round-button js-sound sound-toggle round-button--glass" type="button" aria-label="关闭声音">
             <svg class="icon icon-sound"><use href="#i-sound"></use></svg>
@@ -203,6 +203,17 @@
             <input id="playerNameInput" type="text" maxlength="10" autocomplete="off" placeholder="输入名字" aria-label="角色名字">
           </div>
         </aside>
+      </div>
+    </section>
+
+    <section class="screen screen--nickname" id="nicknameScreen" aria-labelledby="nicknameTitle" aria-hidden="true">
+      <div class="modal nickname-card">
+        <span class="micro-label">WELCOME</span>
+        <h2 id="nicknameTitle">先起一个昵称</h2>
+        <p>昵称会显示在排行榜上，和角色头顶的跑者名字分开。</p>
+        <input id="nicknameInput" type="text" maxlength="12" autocomplete="off" placeholder="例如：阿轩">
+        <button class="button button--primary nickname-confirm" id="nicknameConfirmButton" type="button">进入游戏</button>
+        <small>之后可以点左上角的昵称修改</small>
       </div>
     </section>
 
@@ -345,6 +356,7 @@
         <div class="board-table" id="boardTable">
           <div class="board-row board-row--head" aria-hidden="true">
             <span>#</span>
+            <span>玩家</span>
             <span>模式</span>
             <span class="board-cell--score">分数</span>
             <span>用时</span>

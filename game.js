@@ -38,6 +38,7 @@
     achievements: 'mario-run-achievements-v1',
     achievementsV2: 'mario-run-achievements-v2',
     playerName: 'mario-run-name-v1',
+    nickname: 'mario-run-nickname-v1',
     avatarImports: 'mario-run-avatar-imports-v1',
     playerId: 'mario-run-player-id-v1',
     pendingScores: 'mario-run-pending-scores-v1',
@@ -59,6 +60,13 @@
   const mod = (n, m) => ((n % m) + m) % m;
   const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
   const padScore = (n) => String(Math.max(0, Math.floor(n))).padStart(6, '0');
+  const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[character]));
 
   function readStore(key, fallback = null) {
     try {
@@ -1837,6 +1845,10 @@
     combo: document.getElementById('comboBadge'),
     comboValue: document.getElementById('comboValue'),
     startScreen: document.getElementById('startScreen'),
+    nicknameScreen: document.getElementById('nicknameScreen'),
+    nicknameButton: document.getElementById('nicknameButton'),
+    nicknameInput: document.getElementById('nicknameInput'),
+    nicknameConfirmButton: document.getElementById('nicknameConfirmButton'),
     pauseScreen: document.getElementById('pauseScreen'),
     gameOverScreen: document.getElementById('gameOverScreen'),
     boardScreen: document.getElementById('boardScreen'),
@@ -1949,6 +1961,7 @@
     return {
       v: 2,
       id: String(entry.id || `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`),
+      nickname: String(entry.nickname || '').slice(0, 12),
       name: String(entry.name || '').slice(0, 12),
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(Number(entry.coins) || 0)),
@@ -2022,6 +2035,8 @@
     pendingCustomSelection: false,
     difficulty: isModeKey(readStore(STORAGE.mode, '')) ? readStore(STORAGE.mode, 'normal') : 'normal',
     playerName: (readStore(STORAGE.playerName, '跑者') || '跑者').slice(0, 10),
+    nickname: (readStore(STORAGE.nickname, '') || '').trim().slice(0, 12),
+    nicknamePromptOpen: false,
     bests: loadBests(),
     achievements: loadAchievements(),
     achievementView: 'normal',
@@ -2649,6 +2664,7 @@
       over: dom.gameOverScreen,
       board: dom.boardScreen,
       achievements: dom.achievementScreen,
+      nickname: dom.nicknameScreen,
     };
     for (const [key, node] of Object.entries(mapping)) {
       const active = key === name;
@@ -2656,6 +2672,38 @@
       node.setAttribute('aria-hidden', active ? 'false' : 'true');
       node.inert = !active;
     }
+  }
+
+  function updateNicknameUI() {
+    dom.nicknameButton.textContent = state.nickname ? `昵称 · ${state.nickname}` : '设置昵称';
+    dom.nicknameButton.classList.toggle('is-set', Boolean(state.nickname));
+  }
+
+  function openNicknamePrompt() {
+    state.nicknamePromptOpen = true;
+    dom.nicknameInput.value = state.nickname || '';
+    dom.nicknameInput.classList.remove('is-invalid');
+    showScreen('nickname');
+    window.setTimeout(() => {
+      dom.nicknameInput.focus({ preventScroll: true });
+      dom.nicknameInput.select();
+    }, 80);
+  }
+
+  function saveNickname() {
+    const value = dom.nicknameInput.value.trim().slice(0, 12);
+    if (!value) {
+      dom.nicknameInput.classList.add('is-invalid');
+      dom.nicknameInput.focus({ preventScroll: true });
+      return;
+    }
+    state.nickname = value;
+    writeStore(STORAGE.nickname, value);
+    state.nicknamePromptOpen = false;
+    dom.nicknameInput.classList.remove('is-invalid');
+    updateNicknameUI();
+    showScreen('start');
+    showToast(`昵称已设为 <strong>${escapeHtml(value)}</strong>`);
   }
 
   function updateHearts(animate = false) {
@@ -2922,6 +2970,7 @@
     const entry = {
       v: 2,
       id: makeUuid(),
+      nickname: state.nickname || '',
       name: (state.playerName || '跑者').trim().slice(0, 12) || '跑者',
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(run.coins)),
@@ -2961,18 +3010,22 @@
     if (rank <= 3) rankCell.classList.add(`board-rank--${rank}`);
     rankCell.textContent = String(rank);
 
+    const playerCell = document.createElement('span');
+    playerCell.className = 'board-player-cell';
+    const playerNickname = document.createElement('strong');
+    const playerRunner = document.createElement('small');
+    const nickname = String(entry.nickname || '').trim();
+    const runner = String(entry.name || '').trim();
+    playerNickname.textContent = nickname || runner || '跑者';
+    playerRunner.textContent = nickname ? (runner || '跑者') : '未设置昵称';
+    playerCell.append(playerNickname, playerRunner);
+
     const modeCell = document.createElement('span');
     modeCell.className = 'board-mode-cell';
     const chip = document.createElement('span');
     chip.className = `board-mode-chip mode--${entry.mode}`;
     chip.textContent = RULES_BY_KEY[entry.mode] ? RULES_BY_KEY[entry.mode].label : '旧版';
     modeCell.appendChild(chip);
-    if (entry.remote) {
-      const player = document.createElement('small');
-      player.className = 'board-player';
-      player.textContent = entry.name || '跑者';
-      modeCell.appendChild(player);
-    }
 
     const scoreCell = document.createElement('span');
     scoreCell.className = 'board-score';
@@ -2990,7 +3043,7 @@
     dateCell.className = 'board-date board-cell--date';
     dateCell.textContent = formatBoardDate(entry.date);
 
-    row.append(rankCell, modeCell, scoreCell, timeCell, distanceCell, dateCell);
+    row.append(rankCell, playerCell, modeCell, scoreCell, timeCell, distanceCell, dateCell);
     return row;
   }
 
@@ -3134,6 +3187,7 @@
       v: 2,
       id: String(row.id || ''),
       remote: true,
+      nickname: String(row.nickname || '').trim().slice(0, 12),
       name: String(row.player_name || '跑者').trim().slice(0, 12) || '跑者',
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(Number(row.coins) || 0)),
@@ -3158,14 +3212,23 @@
     state.onlineError = '';
     if (state.boardOpen && state.boardSource === 'global') renderBoard();
     try {
-      const params = new URLSearchParams({
-        select: 'id,player_name,mode,score,coins,distance,seconds,created_at',
-        order: 'score.desc,seconds.asc,created_at.asc',
-        limit: String(ONLINE.limit),
-      });
-      const response = await fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}?${params.toString()}`, {
-        headers: onlineHeaders({ Accept: 'application/json' }),
-      });
+      const query = (select) => {
+        const params = new URLSearchParams({
+          select,
+          order: 'score.desc,seconds.asc,created_at.asc',
+          limit: String(ONLINE.limit),
+        });
+        return fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}?${params.toString()}`, {
+          headers: onlineHeaders({ Accept: 'application/json' }),
+        });
+      };
+      const fullSelect = 'id,nickname,player_name,mode,score,coins,distance,seconds,created_at';
+      let response = await query(fullSelect);
+      // Until the nickname column is added in Supabase, keep the global
+      // leaderboard usable with the original schema.
+      if (!response.ok && response.status === 400) {
+        response = await query('id,player_name,mode,score,coins,distance,seconds,created_at');
+      }
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const rows = await response.json();
       state.onlineBoard = (Array.isArray(rows) ? rows : []).map(mapRemoteScore).filter(Boolean);
@@ -3204,6 +3267,7 @@
     if (pending.some((item) => item.id === entry.id)) return;
     pending.push({
       id: entry.id,
+      nickname: String(entry.nickname || state.nickname || '').slice(0, 12),
       name: String(entry.name || state.playerName || '跑者').slice(0, 12),
       score: entry.score,
       coins: entry.coins,
@@ -3219,6 +3283,7 @@
     const payload = {
       id: entry.id,
       player_id: getOnlinePlayerId(),
+      nickname: String(entry.nickname || state.nickname || '').trim().slice(0, 12),
       player_name: String(entry.name || state.playerName || '跑者').trim().slice(0, 12) || '跑者',
       mode: isModeKey(entry.mode) ? entry.mode : 'normal',
       score: Math.max(0, Math.floor(Number(entry.score) || 0)),
@@ -3226,14 +3291,20 @@
       distance: Math.max(0, Math.floor(Number(entry.distance) || 0)),
       seconds: Math.max(0, Math.round(Number(entry.seconds) || 0)),
     };
-    const response = await fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}`, {
+    const post = (body) => fetchWithTimeout(`${ONLINE.url}/rest/v1/${ONLINE.table}`, {
       method: 'POST',
       headers: onlineHeaders({
         'Content-Type': 'application/json',
         Prefer: 'return=minimal',
       }),
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
+    let response = await post(payload);
+    // Allows basic score sync before the nickname column is added.
+    if (!response.ok && response.status === 400) {
+      const { nickname, ...legacyPayload } = payload;
+      response = await post(legacyPayload);
+    }
     // 409 means this exact run was already uploaded.
     if (response.ok || response.status === 409) return true;
     throw new Error(`HTTP ${response.status}`);
@@ -4142,10 +4213,13 @@
   }
 
   function drawBalloon(camera, time) {
-    const x = 560 - mod(camera * .055 + time * 7, 1500);
-    if (x < -70 || x > DESIGN_W + 70) return;
+    const span = DESIGN_W + 220;
+    const x = DESIGN_W + 110 - mod(camera * .055 + time * 7 + 800, span);
+    if (x < -110 || x > DESIGN_W + 110) return;
+    const fade = clamp(Math.min((x + 110) / 70, (DESIGN_W + 110 - x) / 70), 0, 1);
     const y = 112 + Math.sin(time * .45) * 5;
     ctx.save();
+    ctx.globalAlpha = fade;
     ctx.translate(x, y);
     ctx.scale(.52, .52);
     ctx.rotate(Math.sin(time * .3) * .035);
@@ -4242,7 +4316,18 @@
     const castleOffset = mod(camera * .22, 2400);
     for (let i = 0; i < 2; i++) {
       const x = i * 2400 - castleOffset + 1560;
-      if (x > -180 && x < DESIGN_W + 180) drawCastle(x, GROUND_Y - 58, .72);
+      if (x > -180 && x < DESIGN_W + 180) {
+        // A small hill under the castle stops it from looking suspended in the air.
+        ctx.fillStyle = 'rgba(112, 183, 126, .62)';
+        ctx.beginPath();
+        ctx.ellipse(x, GROUND_Y + 15, 94, 55, 0, Math.PI, TAU);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(72, 148, 91, .18)';
+        ctx.beginPath();
+        ctx.ellipse(x, GROUND_Y + 2, 72, 16, 0, 0, TAU);
+        ctx.fill();
+        drawCastle(x, GROUND_Y - 6, .72);
+      }
     }
 
     // lower valley haze
@@ -5249,6 +5334,8 @@
     const target = event.target;
     if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
 
+    if (state.nicknamePromptOpen) return;
+
     if (state.achievementOpen) {
       if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
         event.preventDefault();
@@ -5344,6 +5431,25 @@
     dom.jumpButton.addEventListener('contextmenu', (event) => event.preventDefault());
 
     dom.startButton.addEventListener('click', () => startRun());
+    dom.nicknameButton.addEventListener('click', () => {
+      audio.unlock();
+      audio.sfx('click');
+      openNicknamePrompt();
+    });
+    dom.nicknameConfirmButton.addEventListener('click', () => {
+      audio.unlock();
+      audio.sfx('click');
+      saveNickname();
+    });
+    dom.nicknameInput.addEventListener('input', () => {
+      dom.nicknameInput.classList.remove('is-invalid');
+    });
+    dom.nicknameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        saveNickname();
+      }
+    });
 
     const openAvatarPicker = () => {
       audio.unlock();
@@ -5584,6 +5690,8 @@
     showScreen('start');
     updateHud(true);
     setupInput();
+    updateNicknameUI();
+    if (!state.nickname) openNicknamePrompt();
     renderScene(performance.now() / 1000);
     window.requestAnimationFrame(frame);
     window.setTimeout(() => {
