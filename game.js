@@ -32,6 +32,8 @@
     avatar: 'mario-run-avatar-v1',
     custom: 'mario-run-custom-v1',
     muted: 'mario-run-muted-v1',
+    musicVolume: 'mario-run-music-volume-v1',
+    sfxVolume: 'mario-run-sfx-volume-v1',
     version: 'mario-run-version-v1',
     difficulty: 'mario-run-difficulty-v1',
     board: 'mario-run-board-v1',
@@ -1614,7 +1616,12 @@
     constructor() {
       this.ctx = null;
       this.master = null;
-      this.muted = readStore(STORAGE.muted, '0') === '1';
+      this.musicBus = null;
+      this.sfxBus = null;
+      this.route = 'sfx';
+      this.muted = false;
+      this.musicVolume = clamp(Number(readStore(STORAGE.musicVolume, '1')) || 0, 0, 1);
+      this.sfxVolume = clamp(Number(readStore(STORAGE.sfxVolume, '1')) || 0, 0, 1);
       this.musicTimer = null;
       this.musicWanted = false;
       this.stepAt = 0;
@@ -1630,7 +1637,13 @@
       try {
         this.ctx = new AudioCtx();
         this.master = this.ctx.createGain();
-        this.master.gain.value = this.muted ? 0 : .56;
+        this.master.gain.value = .56;
+        this.musicBus = this.ctx.createGain();
+        this.sfxBus = this.ctx.createGain();
+        this.musicBus.gain.value = this.musicVolume;
+        this.sfxBus.gain.value = this.sfxVolume;
+        this.musicBus.connect(this.master);
+        this.sfxBus.connect(this.master);
         this.compressor = this.ctx.createDynamicsCompressor();
         this.compressor.threshold.value = -18;
         this.compressor.knee.value = 16;
@@ -1652,26 +1665,24 @@
       }
     }
 
-    setMuted(muted) {
-      this.muted = muted;
-      writeStore(STORAGE.muted, muted ? '1' : '0');
-      if (this.master && this.ctx) {
+    setMusicVolume(value) {
+      this.musicVolume = clamp(Number(value) || 0, 0, 1);
+      writeStore(STORAGE.musicVolume, String(this.musicVolume));
+      if (this.musicBus && this.ctx) {
         const now = this.ctx.currentTime;
-        this.master.gain.cancelScheduledValues(now);
-        this.master.gain.setTargetAtTime(muted ? 0 : .56, now, .025);
+        this.musicBus.gain.cancelScheduledValues(now);
+        this.musicBus.gain.setTargetAtTime(this.musicVolume, now, .025);
       }
-      if (muted) {
-        this.stopMusic();
-      } else if (this.musicWanted) {
-        this.startMusic();
-      }
-      syncSoundButtons();
     }
 
-    toggleMuted() {
-      this.unlock();
-      this.setMuted(!this.muted);
-      if (!this.muted) this.sfx('click');
+    setSfxVolume(value) {
+      this.sfxVolume = clamp(Number(value) || 0, 0, 1);
+      writeStore(STORAGE.sfxVolume, String(this.sfxVolume));
+      if (this.sfxBus && this.ctx) {
+        const now = this.ctx.currentTime;
+        this.sfxBus.gain.cancelScheduledValues(now);
+        this.sfxBus.gain.setTargetAtTime(this.sfxVolume, now, .025);
+      }
     }
 
     tone(freq, duration, type = 'square', volume = .08, slideTo = null, when = null) {
@@ -1689,7 +1700,7 @@
       gain.gain.exponentialRampToValueAtTime(Math.max(.0002, volume), start + .012);
       gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
       osc.connect(gain);
-      gain.connect(this.master);
+      gain.connect(this.route === 'music' && this.musicBus ? this.musicBus : (this.sfxBus || this.master));
       osc.start(start);
       osc.stop(start + duration + .03);
     }
@@ -1714,7 +1725,7 @@
       gain.gain.exponentialRampToValueAtTime(.0001, start + duration);
       source.connect(filter);
       filter.connect(gain);
-      gain.connect(this.master);
+      gain.connect(this.route === 'music' && this.musicBus ? this.musicBus : (this.sfxBus || this.master));
       source.start(start);
       source.stop(start + duration + .01);
     }
@@ -1807,25 +1818,31 @@
       const bass = [48, 45, 41, 43, 48, 45, 41, 43];
       const now = this.ctx.currentTime;
       const lookAhead = .22;
-      while (this.stepAt < now + lookAhead) {
-        const [midi, duration] = melody[this.noteIndex % melody.length];
-        if (midi) {
-          const freq = 440 * Math.pow(2, (midi - 69) / 12);
-          this.tone(freq, eighth * .78, 'square', .019, null, this.stepAt);
-          this.tone(freq * 2, eighth * .3, 'triangle', .006, null, this.stepAt);
+      const previousRoute = this.route;
+      this.route = 'music';
+      try {
+        while (this.stepAt < now + lookAhead) {
+          const [midi, duration] = melody[this.noteIndex % melody.length];
+          if (midi) {
+            const freq = 440 * Math.pow(2, (midi - 69) / 12);
+            this.tone(freq, eighth * .78, 'square', .019, null, this.stepAt);
+            this.tone(freq * 2, eighth * .3, 'triangle', .006, null, this.stepAt);
+          }
+          if (this.noteIndex % 2 === 0) {
+            this.noise(.018, .007, 5000, this.stepAt);
+          }
+          if (this.noteIndex % 4 === 0) {
+            const b = bass[this.bassIndex % bass.length];
+            const bf = 440 * Math.pow(2, (b - 69) / 12);
+            this.tone(bf, eighth * 3.4, 'triangle', .036, null, this.stepAt);
+            this.bassIndex++;
+            if (this.noteIndex % 8 === 0) this.noise(.055, .012, 110, this.stepAt);
+          }
+          this.stepAt += eighth * duration;
+          this.noteIndex++;
         }
-        if (this.noteIndex % 2 === 0) {
-          this.noise(.018, .007, 5000, this.stepAt);
-        }
-        if (this.noteIndex % 4 === 0) {
-          const b = bass[this.bassIndex % bass.length];
-          const bf = 440 * Math.pow(2, (b - 69) / 12);
-          this.tone(bf, eighth * 3.4, 'triangle', .036, null, this.stepAt);
-          this.bassIndex++;
-          if (this.noteIndex % 8 === 0) this.noise(.055, .012, 110, this.stepAt);
-        }
-        this.stepAt += eighth * duration;
-        this.noteIndex++;
+      } finally {
+        this.route = previousRoute;
       }
     }
   }
@@ -1849,6 +1866,19 @@
     combo: document.getElementById('comboBadge'),
     comboValue: document.getElementById('comboValue'),
     startScreen: document.getElementById('startScreen'),
+    settingsScreen: document.getElementById('settingsScreen'),
+    settingsButton: document.getElementById('settingsButton'),
+    hudSettingsButton: document.getElementById('hudSettingsButton'),
+    pauseSettingsButton: document.getElementById('pauseSettingsButton'),
+    settingsCloseButton: document.getElementById('settingsCloseButton'),
+    settingsDoneButton: document.getElementById('settingsDoneButton'),
+    musicVolume: document.getElementById('musicVolume'),
+    musicVolumeValue: document.getElementById('musicVolumeValue'),
+    sfxVolume: document.getElementById('sfxVolume'),
+    sfxVolumeValue: document.getElementById('sfxVolumeValue'),
+    clearLocalBoardButton: document.getElementById('clearLocalBoardButton'),
+    clearAchievementsButton: document.getElementById('clearAchievementsButton'),
+    clearBestsButton: document.getElementById('clearBestsButton'),
     nicknameScreen: document.getElementById('nicknameScreen'),
     nicknameButton: document.getElementById('nicknameButton'),
     nicknameText: document.getElementById('nicknameText'),
@@ -2079,6 +2109,10 @@
     achievementTimer: 0,
     achievementOpen: false,
     achievementReturn: 'start',
+    settingsOpen: false,
+    settingsReturn: 'start',
+    settingsClearArmed: '',
+    settingsClearTimer: 0,
     board: loadBoard(),
     boardFilter: 'normal',
     boardSource: 'global',
@@ -2347,13 +2381,6 @@
       showToast('无法读取这张图片，请换一张试试');
     };
     img.src = objectUrl;
-  }
-
-  function syncSoundButtons() {
-    document.querySelectorAll('.js-sound').forEach((button) => {
-      button.classList.toggle('is-muted', audio.muted);
-      button.setAttribute('aria-label', audio.muted ? '打开声音' : '关闭声音');
-    });
   }
 
   function showToast(html, duration = 2200) {
@@ -2704,12 +2731,114 @@
       board: dom.boardScreen,
       achievements: dom.achievementScreen,
       nickname: dom.nicknameScreen,
+      settings: dom.settingsScreen,
     };
     for (const [key, node] of Object.entries(mapping)) {
       const active = key === name;
       node.classList.toggle('is-visible', active);
       node.setAttribute('aria-hidden', active ? 'false' : 'true');
       node.inert = !active;
+    }
+  }
+
+  const SETTINGS_CLEAR_LABELS = {
+    board: '清空本机排行榜',
+    achievements: '清空成就',
+    bests: '清空最高分',
+  };
+
+  function settingsVolumePercent(value) {
+    return `${Math.round(clamp(Number(value) || 0, 0, 1) * 100)}%`;
+  }
+
+  function syncSettingsUI() {
+    const music = Math.round(audio.musicVolume * 100);
+    const sfx = Math.round(audio.sfxVolume * 100);
+    dom.musicVolume.value = String(music);
+    dom.sfxVolume.value = String(sfx);
+    dom.musicVolumeValue.textContent = `${music}%`;
+    dom.sfxVolumeValue.textContent = `${sfx}%`;
+  }
+
+  function resetSettingsClearButtons() {
+    if (state.settingsClearTimer) {
+      window.clearTimeout(state.settingsClearTimer);
+      state.settingsClearTimer = 0;
+    }
+    state.settingsClearArmed = '';
+    dom.settingsScreen.querySelectorAll('[data-clear]').forEach((button) => {
+      button.classList.remove('is-armed');
+      button.textContent = SETTINGS_CLEAR_LABELS[button.dataset.clear] || '清空';
+    });
+  }
+
+  function clearLocalScores() {
+    state.board = [];
+    state.lastRunId = '';
+    state.onlineRunRank = null;
+    saveBoard();
+    updateMenuBest();
+    showToast('本机排行榜已清空');
+  }
+
+  function clearAchievementsData() {
+    state.achievements = {};
+    state.achievementQueue = [];
+    if (state.achievementTimer) {
+      window.clearTimeout(state.achievementTimer);
+      state.achievementTimer = 0;
+    }
+    dom.achievementToast.classList.remove('is-visible');
+    saveAchievements();
+    updateAchievementBadge();
+    if (state.achievementOpen) renderAchievements();
+    showToast('成就已清空');
+  }
+
+  function clearBestScores() {
+    state.bests = { easy: 0, normal: 0, hard: 0, extreme: 0 };
+    saveBests();
+    updateMenuBest();
+    showToast('最高分已清空');
+  }
+
+  function handleSettingsClear(action, button) {
+    if (state.settingsClearArmed !== action) {
+      resetSettingsClearButtons();
+      state.settingsClearArmed = action;
+      button.classList.add('is-armed');
+      button.textContent = '再次点击确认';
+      state.settingsClearTimer = window.setTimeout(resetSettingsClearButtons, 3200);
+      return;
+    }
+    resetSettingsClearButtons();
+    if (action === 'board') clearLocalScores();
+    else if (action === 'achievements') clearAchievementsData();
+    else if (action === 'bests') clearBestScores();
+  }
+
+  function openSettings() {
+    if (state.mode === 'playing') pauseRun();
+    state.settingsReturn = state.mode === 'paused' ? 'pause' : state.mode === 'gameover' ? 'over' : 'start';
+    state.settingsOpen = true;
+    audio.unlock();
+    audio.sfx('click');
+    syncSettingsUI();
+    resetSettingsClearButtons();
+    showScreen('settings');
+    window.setTimeout(() => {
+      dom.settingsCloseButton.focus({ preventScroll: true });
+    }, 80);
+  }
+
+  function closeSettings() {
+    if (!state.settingsOpen) return;
+    state.settingsOpen = false;
+    resetSettingsClearButtons();
+    audio.sfx('click');
+    showScreen(state.settingsReturn === 'pause' ? 'pause' : state.settingsReturn === 'over' ? 'over' : 'start');
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
     }
   }
 
@@ -4137,10 +4266,11 @@
         p.doubleJumped = false;
         run.combo = run.comboTimer > 0 ? run.combo + 1 : 1;
         run.maxCombo = Math.max(run.maxCombo || 0, run.combo);
-        run.comboTimer = 2.7;
+        run.comboTimer = 4.05;
         const rules = run.rules || MODE_RULES.normal;
+        const stompBase = enemy.flying ? 5000 : (rules.stompBase || 1000);
         const points = rules.comboMultiply
-          ? rules.stompBase * Math.max(1, run.combo)
+          ? stompBase * Math.max(1, run.combo)
           : 160 + 90 * Math.max(1, run.combo);
         run.scoreFloat += points;
         updateComboBadge();
@@ -5564,6 +5694,14 @@
 
     if (state.nicknamePromptOpen) return;
 
+    if (state.settingsOpen) {
+      if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
+        event.preventDefault();
+        closeSettings();
+      }
+      return;
+    }
+
     if (state.achievementOpen) {
       if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
         event.preventDefault();
@@ -5614,9 +5752,6 @@
       return;
     }
 
-    if (event.code === 'KeyM') {
-      audio.toggleMuted();
-    }
   }
 
   function handleKeyUp(event) {
@@ -5720,6 +5855,37 @@
     dom.achievementScreen.addEventListener('click', (event) => {
       if (event.target === dom.achievementScreen) closeAchievements();
     });
+    dom.settingsButton.addEventListener('click', () => openSettings());
+    dom.hudSettingsButton.addEventListener('click', () => openSettings());
+    dom.pauseSettingsButton.addEventListener('click', () => openSettings());
+    dom.settingsCloseButton.addEventListener('click', closeSettings);
+    dom.settingsDoneButton.addEventListener('click', closeSettings);
+    dom.settingsScreen.addEventListener('click', (event) => {
+      if (event.target === dom.settingsScreen) closeSettings();
+    });
+    dom.musicVolume.addEventListener('input', () => {
+      audio.setMusicVolume(Number(dom.musicVolume.value) / 100);
+      dom.musicVolumeValue.textContent = settingsVolumePercent(audio.musicVolume);
+    });
+    dom.musicVolume.addEventListener('change', () => audio.unlock());
+    dom.sfxVolume.addEventListener('input', () => {
+      audio.setSfxVolume(Number(dom.sfxVolume.value) / 100);
+      dom.sfxVolumeValue.textContent = settingsVolumePercent(audio.sfxVolume);
+    });
+    dom.sfxVolume.addEventListener('change', () => {
+      audio.unlock();
+      if (audio.sfxVolume > 0) audio.sfx('click');
+    });
+    [
+      dom.clearLocalBoardButton,
+      dom.clearAchievementsButton,
+      dom.clearBestsButton,
+    ].forEach((button) => {
+      button.addEventListener('click', () => {
+        audio.unlock();
+        handleSettingsClear(button.dataset.clear, button);
+      });
+    });
     dom.overBoardButton.addEventListener('click', () => openBoard());
     dom.boardCloseButton.addEventListener('click', closeBoard);
     dom.boardScreen.addEventListener('click', (event) => {
@@ -5766,12 +5932,6 @@
     dom.overHomeButton.addEventListener('click', () => {
       audio.sfx('click');
       openMenu();
-    });
-
-    document.querySelectorAll('.js-sound').forEach((button) => {
-      button.addEventListener('click', () => {
-        audio.toggleMuted();
-      });
     });
 
     dom.uploadInput.addEventListener('change', (event) => {
@@ -5894,7 +6054,6 @@
     refreshAvatarUI();
     refreshModeUI();
     renderAchievements();
-    syncSoundButtons();
     updateMenuBest();
     state.customImage = null;
     if (state.customData) {

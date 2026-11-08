@@ -35,6 +35,10 @@
       <path d="M4 9.3h3.2L12 5.4v13.2l-4.8-3.9H4V9.3Z" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"/>
       <path d="m16 9 4.5 4.5M20.5 9 16 13.5" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
     </symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="3.7" fill="none" stroke="currentColor" stroke-width="1.8"/>
+      <path d="M12 3.2v2.1M12 18.7v2.1M3.2 12h2.1M18.7 12h2.1M5.8 5.8l1.5 1.5M16.7 16.7l1.5 1.5M18.2 5.8l-1.5 1.5M7.3 16.7l-1.5 1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    </symbol>
     <symbol id="i-pause" viewBox="0 0 24 24">
       <rect x="6.3" y="4.5" width="4" height="15" rx="1.4" fill="currentColor"/>
       <rect x="13.7" y="4.5" width="4" height="15" rx="1.4" fill="currentColor"/>
@@ -103,9 +107,8 @@
       </div>
       <div class="hud-right">
         <div class="hearts" id="hearts" aria-label="剩余生命 3"></div>
-        <button class="round-button js-sound sound-toggle" type="button" aria-label="关闭声音">
-          <svg class="icon icon-sound"><use href="#i-sound"></use></svg>
-          <svg class="icon icon-muted"><use href="#i-muted"></use></svg>
+        <button class="round-button" id="hudSettingsButton" type="button" aria-label="打开设置">
+          <svg class="icon"><use href="#i-gear"></use></svg>
         </button>
         <button class="round-button" id="pauseButton" type="button" aria-label="暂停游戏">
           <svg class="icon"><use href="#i-pause"></use></svg>
@@ -133,9 +136,8 @@
           <span class="nickname-chip__edit" aria-hidden="true">✎</span>
         </button>
         <div class="start-topline__right">
-          <button class="round-button js-sound sound-toggle round-button--glass" type="button" aria-label="关闭声音">
-            <svg class="icon icon-sound"><use href="#i-sound"></use></svg>
-            <svg class="icon icon-muted"><use href="#i-muted"></use></svg>
+          <button class="round-button round-button--glass" id="settingsButton" type="button" aria-label="打开设置">
+            <svg class="icon"><use href="#i-gear"></use></svg>
           </button>
         </div>
       </div>
@@ -225,6 +227,50 @@
       </div>
     </section>
 
+    <section class="screen screen--settings" id="settingsScreen" aria-labelledby="settingsTitle" aria-hidden="true">
+      <div class="modal settings-card">
+        <button class="round-button board-close" id="settingsCloseButton" type="button" aria-label="关闭设置">
+          <span aria-hidden="true">✕</span>
+        </button>
+        <div class="modal-heading modal-heading--center">
+          <span class="micro-label">OPTIONS</span>
+          <h2 id="settingsTitle">设置</h2>
+          <p>调整音乐与音效音量，或清理本机数据</p>
+        </div>
+
+        <div class="settings-volume-list">
+          <label class="settings-volume">
+            <span class="settings-volume__head">
+              <b>音乐</b>
+              <output id="musicVolumeValue" for="musicVolume">100%</output>
+            </span>
+            <input id="musicVolume" type="range" min="0" max="100" step="1" value="100" aria-label="音乐音量">
+          </label>
+          <label class="settings-volume">
+            <span class="settings-volume__head">
+              <b>音效</b>
+              <output id="sfxVolumeValue" for="sfxVolume">100%</output>
+            </span>
+            <input id="sfxVolume" type="range" min="0" max="100" step="1" value="100" aria-label="音效音量">
+          </label>
+        </div>
+
+        <div class="settings-clear">
+          <h3>清理本机数据</h3>
+          <div class="settings-clear__actions">
+            <button class="settings-clear__button" id="clearLocalBoardButton" type="button" data-clear="board">清空本机排行榜</button>
+            <button class="settings-clear__button" id="clearAchievementsButton" type="button" data-clear="achievements">清空成就</button>
+            <button class="settings-clear__button" id="clearBestsButton" type="button" data-clear="bests">清空最高分</button>
+          </div>
+          <small>只影响当前浏览器，不会修改全球排行榜和其他设备。</small>
+        </div>
+
+        <div class="modal-footer modal-footer--center">
+          <button class="button button--primary settings-done" id="settingsDoneButton" type="button">完成</button>
+        </div>
+      </div>
+    </section>
+
     <section class="screen screen--pause" id="pauseScreen" aria-labelledby="pauseTitle" aria-hidden="true">
       <div class="modal pause-card">
         <div class="modal-floating-star modal-floating-star--one" aria-hidden="true">✦</div>
@@ -259,10 +305,9 @@
           <button class="text-button" id="pauseAvatarButton" type="button">
             <svg class="icon"><use href="#i-camera"></use></svg> 头像
           </button>
-          <button class="text-button js-sound sound-toggle" type="button" aria-label="关闭声音">
-            <svg class="icon icon-sound"><use href="#i-sound"></use></svg>
-            <svg class="icon icon-muted"><use href="#i-muted"></use></svg>
-            <span>声音</span>
+          <button class="text-button" id="pauseSettingsButton" type="button">
+            <svg class="icon"><use href="#i-gear"></use></svg>
+            <span>设置</span>
           </button>
         </div>
       </div>

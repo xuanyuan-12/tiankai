@@ -4331,3 +4331,137 @@ kbd {
 .board-body {
   max-height: 14.5em;
 }
+
+/* Settings screen */
+.screen--settings {
+  background:
+    linear-gradient(90deg, rgba(5, 31, 38, .48), rgba(5, 31, 38, .12)),
+    radial-gradient(circle at 78% 18%, rgba(255, 223, 122, .1), transparent 28%);
+}
+
+.settings-card {
+  width: min(94%, 34em);
+  padding: 1.45em 1.6em 1em;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 219, 103, .28), transparent 24%),
+    radial-gradient(circle at 100% 90%, rgba(94, 190, 255, .1), transparent 32%),
+    var(--cream);
+}
+
+.settings-card .modal-heading {
+  margin-bottom: .9em;
+}
+
+.settings-card .modal-heading h2 {
+  font-size: 1.7em;
+}
+
+.settings-volume-list {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: .55em;
+}
+
+.settings-volume {
+  display: block;
+  padding: .55em .7em .6em;
+  border: 1px solid rgba(23, 36, 59, .14);
+  border-radius: .7em;
+  background: rgba(255, 253, 245, .7);
+}
+
+.settings-volume__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  margin-bottom: .25em;
+  color: var(--ink);
+  font-size: .7em;
+  font-weight: 900;
+}
+
+.settings-volume__head output {
+  color: rgba(23, 36, 59, .56);
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-volume input[type="range"] {
+  display: block;
+  width: 100%;
+  height: 1.6em;
+  margin: 0;
+  accent-color: var(--yellow-deep);
+  cursor: pointer;
+}
+
+.settings-clear {
+  position: relative;
+  z-index: 1;
+  margin-top: .9em;
+  padding-top: .8em;
+  border-top: 1px dashed rgba(23, 36, 59, .16);
+}
+
+.settings-clear h3 {
+  margin: 0 0 .45em;
+  color: rgba(23, 36, 59, .7);
+  font-size: .7em;
+  font-weight: 900;
+  letter-spacing: .04em;
+}
+
+.settings-clear__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .4em;
+}
+
+.settings-clear__button {
+  min-height: 2.6em;
+  padding: .35em .4em;
+  border: 1px solid rgba(177, 59, 50, .28);
+  border-radius: .55em;
+  background: rgba(255, 245, 236, .9);
+  color: #9a3c32;
+  font-family: var(--font-ui);
+  font-size: .58em;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+}
+
+.settings-clear__button:hover {
+  border-color: rgba(177, 59, 50, .55);
+  background: rgba(255, 231, 221, 1);
+}
+
+.settings-clear__button.is-armed {
+  border-color: #b13b32;
+  background: #b13b32;
+  color: #fff9e9;
+}
+
+.settings-clear small {
+  display: block;
+  margin-top: .45em;
+  color: rgba(23, 36, 59, .46);
+  font-size: .5em;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.settings-done {
+  min-width: 8em;
+}
+
+@media (max-width: 560px) {
+  .settings-card {
+    padding: 1.2em .9em .8em;
+  }
+
+  .settings-clear__actions {
+    grid-template-columns: 1fr;
+  }
+}
