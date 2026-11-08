@@ -4465,3 +4465,133 @@ kbd {
     grid-template-columns: 1fr;
   }
 }
+
+/* Centered settings/help overlays */
+.screen--settings,
+.screen--help {
+  align-items: center;
+  justify-content: center;
+  padding: 1.3em;
+  background: rgba(5, 23, 29, .62);
+  backdrop-filter: blur(12px) saturate(.86);
+}
+
+.screen--help::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .1;
+  background-image: radial-gradient(rgba(255, 249, 225, .6) .5px, transparent .6px);
+  background-size: 6px 6px;
+}
+
+.help-card {
+  width: min(94%, 42em);
+  padding: 1.45em 1.6em 1em;
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 219, 103, .28), transparent 24%),
+    radial-gradient(circle at 100% 90%, rgba(94, 190, 255, .1), transparent 32%),
+    var(--cream);
+}
+
+.help-card .modal-heading {
+  margin-bottom: .8em;
+}
+
+.help-card .modal-heading h2 {
+  font-size: 1.7em;
+}
+
+.help-content {
+  position: relative;
+  z-index: 1;
+  max-height: 55vh;
+  overflow: auto;
+  padding-right: .35em;
+  scrollbar-width: thin;
+  color: rgba(23, 36, 59, .82);
+  font-size: .7em;
+  line-height: 1.65;
+}
+
+.help-content h3 {
+  margin: .85em 0 .35em;
+  color: var(--ink);
+  font-size: 1em;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+
+.help-content h3:first-child {
+  margin-top: 0;
+}
+
+.help-content p,
+.help-content ul {
+  margin: 0 0 .5em;
+}
+
+.help-content ul {
+  padding-left: 1.2em;
+}
+
+.help-content li + li {
+  margin-top: .18em;
+}
+
+.settings-about {
+  position: relative;
+  z-index: 1;
+  margin-top: .85em;
+  padding-top: .75em;
+  border-top: 1px dashed rgba(23, 36, 59, .16);
+}
+
+.settings-about__row,
+.settings-about__sponsor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  min-height: 2em;
+  padding: .25em .15em;
+  color: rgba(23, 36, 59, .62);
+  font-size: .62em;
+  font-weight: 800;
+}
+
+.settings-about__row strong {
+  color: var(--ink);
+  font-size: 1.05em;
+}
+
+.settings-about__sponsor {
+  margin-top: .25em;
+  padding: .45em .65em;
+  border: 1px solid rgba(187, 131, 28, .3);
+  border-radius: .6em;
+  background: rgba(255, 230, 149, .38);
+  color: #7e5b14;
+  text-decoration: none;
+  transition: background .15s, border-color .15s;
+}
+
+.settings-about__sponsor strong {
+  color: #6b4d0d;
+}
+
+.settings-about__sponsor:hover {
+  border-color: rgba(187, 131, 28, .65);
+  background: rgba(255, 226, 130, .65);
+}
+
+.settings-about__sponsor span:last-child {
+  font-size: 1.15em;
+}
+
+@media (max-width: 560px) {
+  .help-content {
+    max-height: 48vh;
+  }
+}

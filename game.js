@@ -1866,6 +1866,10 @@
     combo: document.getElementById('comboBadge'),
     comboValue: document.getElementById('comboValue'),
     startScreen: document.getElementById('startScreen'),
+    helpScreen: document.getElementById('helpScreen'),
+    helpButton: document.getElementById('helpButton'),
+    helpCloseButton: document.getElementById('helpCloseButton'),
+    helpDoneButton: document.getElementById('helpDoneButton'),
     settingsScreen: document.getElementById('settingsScreen'),
     settingsButton: document.getElementById('settingsButton'),
     hudSettingsButton: document.getElementById('hudSettingsButton'),
@@ -2113,6 +2117,7 @@
     settingsReturn: 'start',
     settingsClearArmed: '',
     settingsClearTimer: 0,
+    helpOpen: false,
     board: loadBoard(),
     boardFilter: 'normal',
     boardSource: 'global',
@@ -2732,6 +2737,7 @@
       achievements: dom.achievementScreen,
       nickname: dom.nicknameScreen,
       settings: dom.settingsScreen,
+      help: dom.helpScreen,
     };
     for (const [key, node] of Object.entries(mapping)) {
       const active = key === name;
@@ -2837,6 +2843,26 @@
     resetSettingsClearButtons();
     audio.sfx('click');
     showScreen(state.settingsReturn === 'pause' ? 'pause' : state.settingsReturn === 'over' ? 'over' : 'start');
+    if (document.activeElement && document.activeElement !== document.body) {
+      document.activeElement.blur();
+    }
+  }
+
+  function openHelp() {
+    state.helpOpen = true;
+    audio.unlock();
+    audio.sfx('click');
+    showScreen('help');
+    window.setTimeout(() => {
+      dom.helpCloseButton.focus({ preventScroll: true });
+    }, 80);
+  }
+
+  function closeHelp() {
+    if (!state.helpOpen) return;
+    state.helpOpen = false;
+    audio.sfx('click');
+    showScreen('start');
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
     }
@@ -5702,6 +5728,14 @@
       return;
     }
 
+    if (state.helpOpen) {
+      if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
+        event.preventDefault();
+        closeHelp();
+      }
+      return;
+    }
+
     if (state.achievementOpen) {
       if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
         event.preventDefault();
@@ -5858,6 +5892,12 @@
     dom.settingsButton.addEventListener('click', () => openSettings());
     dom.hudSettingsButton.addEventListener('click', () => openSettings());
     dom.pauseSettingsButton.addEventListener('click', () => openSettings());
+    dom.helpButton.addEventListener('click', () => openHelp());
+    dom.helpCloseButton.addEventListener('click', closeHelp);
+    dom.helpDoneButton.addEventListener('click', closeHelp);
+    dom.helpScreen.addEventListener('click', (event) => {
+      if (event.target === dom.helpScreen) closeHelp();
+    });
     dom.settingsCloseButton.addEventListener('click', closeSettings);
     dom.settingsDoneButton.addEventListener('click', closeSettings);
     dom.settingsScreen.addEventListener('click', (event) => {
