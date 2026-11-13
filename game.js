@@ -58,6 +58,7 @@
 
   const BOARD_LIMIT = 300;
   const MIN_LEADERBOARD_DISTANCE = 100;
+  const STOMP_MIN_VY = 180;
 
   const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
   const lerp = (a, b, t) => a + (b - a) * t;
@@ -453,8 +454,13 @@
     { id: 's1m', type: 'score', score: 1000000, title: '登峰造极', label: '1,000,000 分' },
     { id: 'c3', type: 'combo', combo: 3, title: '连击新星', label: '连续踩中 3 只小怪' },
     { id: 'c5', type: 'combo', combo: 5, title: '五连绝世', label: '连续踩中 5 只小怪' },
+    { id: 'c10', type: 'combo', combo: 10, title: '天赐良机', label: '连续踩中 10 只小怪' },
     { id: 'b4900', type: 'blockScore', blockScore: 4900, title: '幸运暴击', label: '问号砖单次获得 4,900+ 分' },
     { id: 'heartPrize', type: 'heartPrize', title: '物超所值', label: '在问号砖里获得回一颗心的奖励' },
+    { id: 'dmg3', type: 'tripleDamage', title: '天煞孤星', label: '4 秒内连续受到 3 次伤害' },
+    { id: 'secondDown', type: 'secondHeartDown', title: '超越生死', label: '1 心回到 2 心后 1 秒内又掉一颗心' },
+    { id: 'offscreen', type: 'offscreen', title: '还要啥火箭啊', label: '身体完全超出屏幕外' },
+    { id: 'offscreenPit', type: 'offscreenPit', title: '上天入地', label: '离屏后掉入深坑死亡' },
     { id: 'm21k', type: 'distance', meters: 21000, title: '半马选手', label: '半程马拉松 · 21 公里' },
     { id: 'm42k', type: 'distance', meters: 42000, title: '全马传奇', label: '全程马拉松 · 42 公里' },
     { id: 'm100k', type: 'distance', meters: 100000, title: '百公里神话', label: '100 公里' },
@@ -2431,6 +2437,12 @@
     maxCombo: 0,
     maxBlockScore: 0,
     gotHeartPrize: false,
+    damageTimes: [],
+    gotTripleDamage: false,
+    secondHeartAt: 0,
+    gotSecondHeartDown: false,
+    wentOffscreen: false,
+    gotOffscreenPit: false,
     healCoins: 0,
     comboTimer: 0,
     invincible: 0,
@@ -2589,6 +2601,26 @@
       if (x >= g.x && x <= g.x + g.w) return g;
     }
     return null;
+  }
+
+  function enemyHitsObstacle(run, enemy, nextX) {
+    const left = nextX - enemy.w / 2;
+    const right = nextX + enemy.w / 2;
+    const top = enemy.y + 2;
+    const bottom = enemy.y + enemy.h - 2;
+    for (const pipe of run.pipes) {
+      const capW = pipe.capW || pipe.w;
+      const pipeLeft = pipe.x - (capW - pipe.w) / 2;
+      if (right > pipeLeft && left < pipeLeft + capW && bottom > pipe.y + 2 && top < pipe.y + pipe.h) {
+        return true;
+      }
+    }
+    for (const spike of run.spikes) {
+      if (right > spike.x + 2 && left < spike.x + spike.w - 2 && bottom > spike.y + 2 && top < spike.y + spike.h) {
+        return true;
+      }
+    }
+    return false;
   }
 
   function generateWorldAhead(run, untilX) {
@@ -3827,6 +3859,10 @@
       else if (milestone.type === 'combo') reached = (run.maxCombo || 0) >= milestone.combo;
       else if (milestone.type === 'blockScore') reached = (run.maxBlockScore || 0) >= milestone.blockScore;
       else if (milestone.type === 'heartPrize') reached = Boolean(run.gotHeartPrize);
+      else if (milestone.type === 'tripleDamage') reached = Boolean(run.gotTripleDamage);
+      else if (milestone.type === 'secondHeartDown') reached = Boolean(run.gotSecondHeartDown);
+      else if (milestone.type === 'offscreen') reached = Boolean(run.wentOffscreen);
+      else if (milestone.type === 'offscreenPit') reached = Boolean(run.gotOffscreenPit);
       if (!reached) continue;
       bucket[milestone.id] = Date.now();
       state.achievementQueue.push(milestone);
@@ -3894,6 +3930,18 @@
     run.cameraX = run.player.x - PLAYER_SCREEN_X;
   }
 
+  function restoreHeart(run) {
+    const before = run.hearts;
+    if (before >= run.maxHearts) return false;
+    run.hearts = Math.min(run.maxHearts, before + 1);
+    if (before === 1 && run.hearts === 2) {
+      run.secondHeartAt = run.playTime;
+    } else if (before === 2) {
+      run.secondHeartAt = 0;
+    }
+    return true;
+  }
+
   function loseHeart(run, reason = 'hit') {
     if (run.dead) return;
     const rules = run.rules || MODE_RULES.normal;
@@ -3907,8 +3955,19 @@
       return;
     }
 
+    const previousHearts = run.hearts;
     run.hearts = Math.max(0, run.hearts - 1);
     run.healCoins = 0;
+    const damageTimes = (run.damageTimes || []).filter((time) => run.playTime - time <= 4);
+    damageTimes.push(run.playTime);
+    run.damageTimes = damageTimes;
+    if (damageTimes.length >= 3) run.gotTripleDamage = true;
+    if (previousHearts === 2) {
+      if (run.secondHeartAt > 0 && run.playTime - run.secondHeartAt <= 1) {
+        run.gotSecondHeartDown = true;
+      }
+      run.secondHeartAt = 0;
+    }
     run.invincible = rules.hurtInvincible || 1.75;
     run.shake = .34;
     run.combo = 0;
@@ -3919,6 +3978,8 @@
     audio.sfx('hurt');
     spawnBurst(run, run.player.x + PLAYER_W / 2, run.player.y + 26, '#ffd23f', 14, 210);
     if (run.hearts <= 0) {
+      if (reason === 'pit' && run.wentOffscreen) run.gotOffscreenPit = true;
+      checkAchievements(run);
       triggerDeath();
       return true;
     }
@@ -3931,6 +3992,7 @@
     } else {
       showToast('小心！<strong>消耗一颗心</strong>');
     }
+    checkAchievements(run);
     return false;
   }
 
@@ -3955,7 +4017,7 @@
       if (prize && rules.heartPrize !== false && Math.random() < prize.heartChance && run.hearts < run.maxHearts) {
         // 一等奖：回一颗心
         run.gotHeartPrize = true;
-        run.hearts++;
+        restoreHeart(run);
         updateHearts(false);
         audio.sfx('heart');
         popup(run, cx, block.y - 20, '+1 ♥', '#ff8fb8');
@@ -4057,7 +4119,7 @@
       run.healCoins = (run.healCoins || 0) + 1;
       if (run.healCoins >= perHeart) {
         run.healCoins = 0;
-        run.hearts++;
+        restoreHeart(run);
         updateHearts(false);
         showToast(`收集 ${perHeart} 枚金币，<strong>恢复一颗心！</strong>`);
         audio.sfx('heart');
@@ -4243,6 +4305,14 @@
       p.vy = Math.max(p.vy, -290);
     }
 
+    // body fully above the visible screen
+    if (!run.dead && p.y + p.h < 0) {
+      if (!run.wentOffscreen) {
+        run.wentOffscreen = true;
+        checkAchievements(run);
+      }
+    }
+
     // gap / rescue
     if (p.y > DESIGN_H + 90) {
       if (!run.dead) {
@@ -4257,6 +4327,8 @@
     cleanupWorld(run);
 
     // enemies
+    const canStompByVelocity = p.vy >= STOMP_MIN_VY;
+    let stompedThisFrame = false;
     for (const enemy of run.enemies) {
       if (enemy.dead) {
         enemy.squash += dt;
@@ -4270,7 +4342,7 @@
         const dir = Math.sign(enemy.vx) || 1;
         const nextX = enemy.x + enemy.vx * dt;
         const probeX = nextX + dir * (enemy.w / 2 + 8);
-        if (!groundAt(run, probeX)) {
+        if (!groundAt(run, probeX) || enemyHitsObstacle(run, enemy, nextX)) {
           enemy.vx *= -1;
         } else {
           enemy.x = nextX;
@@ -4282,8 +4354,9 @@
         p.y + p.h > enemy.y + 5 &&
         p.y < enemy.y + enemy.h;
       if (!overlap) continue;
-      const stomped = p.vy > 90 && p.prevY + p.h <= enemy.y + 17;
+      const stomped = canStompByVelocity && (stompedThisFrame || p.prevY + p.h <= enemy.y + 17);
       if (stomped) {
+        stompedThisFrame = true;
         enemy.dead = true;
         enemy.squash = 0;
         p.vy = -520;
