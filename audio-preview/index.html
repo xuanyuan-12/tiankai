@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>成就音效试听 · 超级马里奥 极速跑酷</title>
+  <style>
+    :root {
+      --ink: #17243b;
+      --cream: #fff9e9;
+      --gold: #f2b632;
+      --blue: #2f9e72;
+      --red: #d95745;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: "Microsoft YaHei UI", "Microsoft YaHei", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 18% 12%, rgba(255, 231, 140, .55), transparent 24%),
+        radial-gradient(circle at 84% 82%, rgba(84, 191, 124, .25), transparent 28%),
+        linear-gradient(155deg, #0e3b4c 0%, #0a2734 58%, #071c27 100%);
+    }
+    .card {
+      width: min(680px, 94vw);
+      padding: 28px 28px 22px;
+      border: 2px solid var(--ink);
+      border-radius: 22px;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(255, 219, 103, .3), transparent 26%),
+        var(--cream);
+      box-shadow: 0 10px 0 rgba(4, 20, 28, .38), 0 24px 60px rgba(0, 0, 0, .25);
+    }
+    .kicker {
+      color: #b38523;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: .18em;
+    }
+    h1 { margin: 6px 0 6px; font-size: clamp(26px, 5vw, 38px); letter-spacing: -.03em; }
+    .lead { margin: 0 0 22px; color: rgba(23, 36, 59, .62); font-size: 14px; line-height: 1.7; }
+    .sound {
+      padding: 16px;
+      border: 1px solid rgba(23, 36, 59, .14);
+      border-radius: 14px;
+      background: rgba(255, 255, 255, .52);
+    }
+    .sound + .sound { margin-top: 14px; }
+    .sound__head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .badge {
+      width: 38px; height: 38px; display: grid; place-items: center;
+      border-radius: 9px; color: #fff9e9; font-size: 18px; font-weight: 900;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.3);
+    }
+    .badge--normal { background: var(--blue); }
+    .badge--grand { background: var(--red); }
+    .sound strong { display: block; font-size: 16px; }
+    .sound small { display: block; margin-top: 2px; color: rgba(23, 36, 59, .55); font-size: 12px; }
+    audio { width: 100%; margin-top: 4px; }
+    .note {
+      margin: 18px 0 0; padding-top: 14px; border-top: 1px dashed rgba(23, 36, 59, .16);
+      color: rgba(23, 36, 59, .5); font-size: 12px; line-height: 1.7;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="kicker">ACHIEVEMENT SOUNDS</div>
+    <h1>成就音效试听</h1>
+    <p class="lead">这两个音效对应成就解锁时右上角弹窗的提示音。普通成就使用明亮的上升琶音，挑战成就使用更长的号角和鼓点。</p>
+
+    <section class="sound">
+      <div class="sound__head">
+        <span class="badge badge--normal" aria-hidden="true">★</span>
+        <span>
+          <strong>普通成就音效</strong>
+          <small>普通分数、距离、幸运类成就 · 约 1.35 秒</small>
+        </span>
+      </div>
+      <audio controls preload="auto" src="achievement-normal.wav"></audio>
+    </section>
+
+    <section class="sound">
+      <div class="sound__head">
+        <span class="badge badge--grand" aria-hidden="true">♛</span>
+        <span>
+          <strong>挑战成就音效</strong>
+          <small>全马纪录、隐藏成就、生存挑战 · 约 2.90 秒</small>
+        </span>
+      </div>
+      <audio controls preload="auto" src="achievement-challenge.wav"></audio>
+    </section>
+
+    <p class="note">这两个 WAV 是按游戏内 Web Audio 音序离线渲染的试听版本，方便先试听；游戏内会受设置中的「音效」音量控制。</p>
+  </main>
+</body>
+</html>

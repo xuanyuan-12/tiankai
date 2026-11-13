@@ -523,7 +523,17 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+    <div class="achievement-tooltip" id="achievementTooltip" role="tooltip" hidden>
+      <span class="achievement-tooltip__icon" id="achievementTooltipIcon" aria-hidden="true"></span>
+      <span class="achievement-tooltip__body">
+        <strong id="achievementTooltipTitle" hidden></strong>
+        <span id="achievementTooltipText"></span>
+        <small id="achievementTooltipMeta"></small>
+      </span>
+    </div>
+
     <div class="achievement-toast" id="achievementToast" role="status" aria-live="polite">
+      <span class="achievement-toast__icon" id="achievementToastIcon" aria-hidden="true"></span>
       <strong id="achievementToastTitle">成就</strong>
     </div>
 

@@ -452,18 +452,18 @@
     { id: 's100k', type: 'score', score: 100000, title: '十万分', label: '100,000 分' },
     { id: 's500k', type: 'score', score: 500000, title: '一骑绝尘', label: '500,000 分' },
     { id: 's1m', type: 'score', score: 1000000, title: '登峰造极', label: '1,000,000 分' },
-    { id: 'c3', type: 'combo', combo: 3, title: '连击新星', label: '连续踩中 3 只小怪' },
+    { id: 'c3', type: 'combo', combo: 1, title: '见鬼去吧', label: '连续踩中 1 只小怪' },
     { id: 'c5', type: 'combo', combo: 5, title: '五连绝世', label: '连续踩中 5 只小怪' },
     { id: 'c10', type: 'combo', combo: 10, title: '天赐良机', label: '连续踩中 10 只小怪' },
     { id: 'b4900', type: 'blockScore', blockScore: 4900, title: '幸运暴击', label: '问号砖单次获得 4,900+ 分' },
     { id: 'heartPrize', type: 'heartPrize', title: '物超所值', label: '在问号砖里获得回一颗心的奖励' },
     { id: 'dmg3', type: 'tripleDamage', title: '天煞孤星', label: '4 秒内连续受到 3 次伤害' },
     { id: 'secondDown', type: 'secondHeartDown', title: '超越生死', label: '1 心回到 2 心后 1 秒内又掉一颗心' },
-    { id: 'offscreen', type: 'offscreen', title: '还要啥火箭啊', label: '身体完全超出屏幕外' },
+    { id: 'offscreen', type: 'offscreen', title: '这上面的风景不错', label: '身体完全超出屏幕外' },
     { id: 'offscreenPit', type: 'offscreenPit', title: '上天入地', label: '离屏后掉入深坑死亡' },
     { id: 'm21k', type: 'distance', meters: 21000, title: '半马选手', label: '半程马拉松 · 21 公里' },
-    { id: 'm42k', type: 'distance', meters: 42000, title: '全马传奇', label: '全程马拉松 · 42 公里' },
-    { id: 'm100k', type: 'distance', meters: 100000, title: '百公里神话', label: '100 公里' },
+    { id: 'm42k', type: 'distance', meters: 42000, title: '新的全马世界纪录!', label: '全程马拉松 · 42 公里' },
+    { id: 'm100k', type: 'distance', meters: 100000, title: '热门景点', label: '100 公里' },
   ]);
 
   const ACHIEVEMENT_BRANCHES = Object.freeze([
@@ -474,7 +474,70 @@
     { id: 'survival', label: '生存', color: '#d95745', ids: ['dmg3', 'secondDown', 'offscreen', 'offscreenPit'] },
   ]);
 
-  const HIDDEN_ACHIEVEMENTS = new Set(['c10', 'offscreenPit']);
+  const HIDDEN_ACHIEVEMENTS = new Set(['c10', 'm100k', 'offscreenPit']);
+
+  const ACHIEVEMENT_ICONS = Object.freeze({
+    star: '<path d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9L12 2.6Z"/>',
+    coins: '<circle cx="9" cy="9" r="4.2"/><circle cx="15" cy="15" r="4.2" opacity=".72"/><path d="M9 6.8v4.4M7.7 8.2h2.6M14.6 12.8v4.4M13.4 14.2h2.4" fill="none" stroke="#3b2a15" stroke-width="1.1" stroke-linecap="round"/>',
+    crown: '<path d="M3 18.2 4.6 7.8l4.2 3.2L12 5.1l3.2 5.9 4.2-3.2L21 18.2H3Z"/>',
+    trophy: '<path d="M7 4h10v4.2a5 5 0 0 1-10 0V4Zm-2.3 1.2h2.5v3.1H4.7V5.2Zm12.1 0h2.5v3.1h-2.5V5.2ZM10.4 13.3h3.2v3.1h-3.2v-3.1ZM7.6 19.5h8.8V21H7.6v-1.5Z"/>',
+    boot: '<path d="M6 3.8h5.2v8.1c1.8.7 3.2 2.2 3.2 4.4V19H5.5v-5.6H6V3.8Zm9.6 11.6c1.8.9 2.9 2.1 2.9 3.6H15v-3.6h.6Z"/>',
+    flame: '<path d="M12.2 2.6c1 3.3-.6 4.8-2.2 6.7-1.4 1.7-2.7 3.2-2.7 5.3a4.7 4.7 0 0 0 9.4 0c0-2.6-1.5-4.4-3.1-6.5-.6 1.2-1.2 1.8-2 2.3.4-2.7.9-5.2.6-7.8Z"/>',
+    comet: '<circle cx="8.2" cy="15.8" r="4.2"/><path d="M13.2 10.8 21 3M15 13l4.4-1M11 6l1-4.4M17 15l-1 4.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    dice: '<rect x="4.5" y="4.5" width="15" height="15" rx="2.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="9" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/>',
+    heart: '<path d="M12 21S3.4 15.4 3.4 9.2A4.9 4.9 0 0 1 12 5.5a4.9 4.9 0 0 1 8.6 3.7C20.6 15.4 12 21 12 21Z"/>',
+    skull: '<path d="M12 3a7.3 7.3 0 0 0-7.3 7.3c0 2.5 1.2 4.5 3.3 5.7V19h8v-3c2.1-1.2 3.3-3.2 3.3-5.7A7.3 7.3 0 0 0 12 3Zm-3 8.3a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6Zm6 0a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM10.7 20.5v1.8h2.6v-1.8h-2.6Z"/>',
+    brokenHeart: '<path d="M12 21S3.4 15.4 3.4 9.2A4.9 4.9 0 0 1 12 5.5a4.9 4.9 0 0 1 8.6 3.7C20.6 15.4 12 21 12 21Z"/><path d="m12 6.3-1.7 4.1 2.8 2.1-2 5.5" fill="none" stroke="#fff9e9" stroke-width="1.6" stroke-linejoin="round"/>',
+    rocket: '<path d="M14.7 3.2c2.5.3 4.4 2.2 5 4.7-2.5.3-4.5-.4-6.2-1.2L9 11.4l3.6 3.6 4.7-4.5c.8 1.7 1.5 3.7 1.2 6.2-2.5-.6-4.4-2.5-4.7-5L8.9 16l-1 4.8-2.8-2.8L9.9 17l4.8-5.9c-.6-2.5.3-5.1-1.7-7.1l1.7-.8Z"/><circle cx="15.5" cy="7.1" r="1.5" fill="#fff9e9"/>',
+    flag: '<path d="M5.5 21V3.2h2v17.8h-2Zm3 0V4.2h10.8l-2.4 4.1 2.4 4.1H8.5v8.6Z"/>',
+    medal: '<path d="m8.1 3 2.1 6.1-2.8 2.2L4.5 3h3.6Zm7.8 0h3.6l-2.9 8.3-2.8-2.2L16 3Z"/><circle cx="12" cy="15.2" r="5.2"/><path d="m12 12.2.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3.9-1.8Z" fill="#fff9e9"/>',
+    mountain: '<path d="M2.8 20 9 8.2 12.3 15l1.9-3.1L21.2 20H2.8Z"/><circle cx="17.5" cy="6.2" r="2.4"/>',
+    parachute: '<path d="M12 3a7.6 7.6 0 0 0-7.6 7.6h15.2A7.6 7.6 0 0 0 12 3Z"/><path d="M4.4 10.6c2.5.8 5 1.2 7.6 1.2s5.1-.4 7.6-1.2M7.7 10.6 10 21h4l2.3-10.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+  });
+
+  const ACHIEVEMENT_META = Object.freeze({
+    s50k: { icon: 'star', description: '单局得分达到 50,000 分。' },
+    s100k: { icon: 'coins', description: '单局得分达到 100,000 分。' },
+    s500k: { icon: 'crown', description: '单局得分达到 500,000 分。' },
+    s1m: { icon: 'trophy', description: '单局得分达到 1,000,000 分，登峰造极。' },
+    c3: { icon: 'boot', description: '连续踩中 1 只小怪。' },
+    c5: { icon: 'flame', description: '连续踩中 5 只小怪。' },
+    c10: { icon: 'comet', description: '连续踩中 10 只小怪，触发隐藏成就。' },
+    b4900: { icon: 'dice', description: '问号砖单次获得 4,900 分及以上。' },
+    heartPrize: { icon: 'heart', description: '在问号砖的奖励中获得回一颗心。' },
+    dmg3: { icon: 'skull', description: '4 秒内连续受到 3 次伤害，第三次致命也算。' },
+    secondDown: { icon: 'brokenHeart', description: '1 颗心时回到 2 颗心，随后 1 秒内又掉一颗心。' },
+    offscreen: { icon: 'rocket', description: '角色身体完全超出屏幕顶部，看看上面的风景。' },
+    offscreenPit: { icon: 'parachute', description: '先完全离屏，再直接掉入深坑死亡。' },
+    m21k: { icon: 'flag', description: '单局距离达到 21 公里。' },
+    m42k: { icon: 'medal', description: '单局距离达到 42 公里，新的全马世界纪录!。' },
+    m100k: { icon: 'mountain', description: '单局距离达到 100 公里，抵达隐藏的热门景点。' },
+  });
+
+  const CHALLENGE_ACHIEVEMENTS = new Set([
+    's1m', 'c10', 'm42k', 'm100k', 'dmg3', 'secondDown', 'offscreen', 'offscreenPit',
+  ]);
+
+  function achievementBranch(id) {
+    return ACHIEVEMENT_BRANCHES.find((branch) => branch.ids.includes(id)) || ACHIEVEMENT_BRANCHES[0];
+  }
+
+  function achievementColor(id) {
+    return achievementBranch(id).color;
+  }
+
+  function achievementIconMarkup(id) {
+    const meta = ACHIEVEMENT_META[id] || ACHIEVEMENT_META.s50k;
+    return `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${ACHIEVEMENT_ICONS[meta.icon] || ACHIEVEMENT_ICONS.star}</svg>`;
+  }
+
+  function achievementDescription(id) {
+    return (ACHIEVEMENT_META[id] && ACHIEVEMENT_META[id].description) || '';
+  }
+
+  function isChallengeAchievement(id) {
+    return CHALLENGE_ACHIEVEMENTS.has(id);
+  }
 
   const ACHIEVEMENT_MAP = Object.freeze({
     width: 900,
@@ -1798,6 +1861,29 @@
             this.tone(freq, .3, 'square', .055, null, t + i * .16);
           });
           break;
+        case 'achievement':
+          [523.25, 659.25, 783.99, 1046.5].forEach((freq, i) => {
+            this.tone(freq, .2, 'triangle', .05, null, t + i * .085);
+          });
+          this.tone(1567.98, .34, 'sine', .028, null, t + .34);
+          this.noise(.08, .015, 4200, t + .32);
+          break;
+        case 'achievementChallenge':
+          // 低音鼓点 + 号角和弦 + 上行辉煌旋律
+          this.tone(65.41, .55, 'sine', .12, 43.65, t);
+          this.noise(.22, .055, 150, t);
+          [261.63, 329.63, 392, 523.25].forEach((freq) => {
+            this.tone(freq, .95, 'sawtooth', .035, null, t + .08);
+            this.tone(freq, .95, 'triangle', .045, null, t + .08);
+          });
+          this.tone(130.81, 1.15, 'triangle', .085, null, t + .08);
+          [523.25, 659.25, 783.99, 1046.5, 1308.13, 1567.98].forEach((freq, i) => {
+            this.tone(freq, .34, 'triangle', .06, null, t + .38 + i * .13);
+            this.tone(freq / 2, .36, 'sawtooth', .022, null, t + .38 + i * .13);
+          });
+          this.tone(1046.5, 1.25, 'triangle', .05, null, t + 1.3);
+          this.noise(.34, .045, 180, t + 1.25);
+          break;
         case 'record':
           [523, 659, 784, 1046, 1318].forEach((freq, i) => {
             this.tone(freq, .35, 'triangle', .045, null, t + .3 + i * .11);
@@ -1951,7 +2037,13 @@
     achievementList: document.getElementById('achievementList'),
     achievementProgress: document.getElementById('achievementProgress'),
     achievementToast: document.getElementById('achievementToast'),
+    achievementToastIcon: document.getElementById('achievementToastIcon'),
     achievementToastTitle: document.getElementById('achievementToastTitle'),
+    achievementTooltip: document.getElementById('achievementTooltip'),
+    achievementTooltipIcon: document.getElementById('achievementTooltipIcon'),
+    achievementTooltipTitle: document.getElementById('achievementTooltipTitle'),
+    achievementTooltipText: document.getElementById('achievementTooltipText'),
+    achievementTooltipMeta: document.getElementById('achievementTooltipMeta'),
     difficultySwitch: document.getElementById('difficultySwitch'),
     pauseMode: document.getElementById('pauseMode'),
     overKicker: document.getElementById('overKicker'),
@@ -3805,7 +3897,40 @@
     }
   }
 
+  function hideAchievementTooltip() {
+    if (!dom.achievementTooltip) return;
+    dom.achievementTooltip.hidden = true;
+    delete dom.achievementTooltip.dataset.node;
+  }
+
+  function showAchievementTooltip(node, milestone, unlockedAt) {
+    const shellRect = dom.shell.getBoundingClientRect();
+    const nodeRect = node.getBoundingClientRect();
+    dom.achievementTooltipIcon.innerHTML = achievementIconMarkup(milestone.id);
+    dom.achievementTooltipTitle.textContent = milestone.title;
+    dom.achievementTooltipTitle.hidden = !unlockedAt;
+    dom.achievementTooltipText.textContent = achievementDescription(milestone.id);
+    dom.achievementTooltipMeta.textContent = unlockedAt
+      ? `已解锁 · ${formatAchievementDate(unlockedAt)}`
+      : '未解锁';
+    dom.achievementTooltip.style.setProperty('--achievement-color', achievementColor(milestone.id));
+    dom.achievementTooltip.hidden = false;
+    dom.achievementTooltip.dataset.node = milestone.id;
+    const tooltipWidth = dom.achievementTooltip.offsetWidth;
+    const tooltipHeight = dom.achievementTooltip.offsetHeight;
+    const left = clamp(
+      nodeRect.left - shellRect.left + nodeRect.width / 2 - tooltipWidth / 2,
+      8,
+      shellRect.width - tooltipWidth - 8,
+    );
+    let top = nodeRect.top - shellRect.top - tooltipHeight - 8;
+    if (top < 8) top = nodeRect.bottom - shellRect.top + 8;
+    dom.achievementTooltip.style.left = `${left}px`;
+    dom.achievementTooltip.style.top = `${top}px`;
+  }
+
   function renderAchievements() {
+    hideAchievementTooltip();
     const bucket = achievementBucket();
     const count = Object.keys(bucket).length;
     const previousLeft = dom.achievementList.scrollLeft;
@@ -3904,19 +4029,36 @@
         node.style.width = `${ACHIEVEMENT_MAP.nodeW}px`;
         node.style.height = `${ACHIEVEMENT_MAP.nodeH}px`;
         node.style.setProperty('--branch-color', branch.color);
-        node.title = `${milestone.title} · ${milestone.label}`;
+        node.style.setProperty('--achievement-color', achievementColor(id));
+        node.tabIndex = 0;
+        node.setAttribute('role', 'note');
+        node.setAttribute(
+          'aria-label',
+          unlockedAt
+            ? `${milestone.title}，已解锁。${achievementDescription(id)}`
+            : `未解锁成就。${achievementDescription(id)}`,
+        );
 
-        const medal = document.createElement('span');
-        medal.className = 'achievement-node__medal';
-        medal.textContent = unlockedAt ? '★' : '?';
-        const info = document.createElement('span');
-        info.className = 'achievement-node__info';
-        const title = document.createElement('strong');
-        title.textContent = milestone.title;
-        const meta = document.createElement('small');
-        meta.textContent = unlockedAt ? formatAchievementDate(unlockedAt) : '未解锁';
-        info.append(title, meta);
-        node.append(medal, info);
+        const icon = document.createElement('span');
+        icon.className = 'achievement-node__icon';
+        icon.innerHTML = achievementIconMarkup(id);
+        node.appendChild(icon);
+        if (unlockedAt) {
+          const info = document.createElement('span');
+          info.className = 'achievement-node__info';
+          const title = document.createElement('strong');
+          title.textContent = milestone.title;
+          const meta = document.createElement('small');
+          meta.textContent = formatAchievementDate(unlockedAt);
+          info.append(title, meta);
+          node.appendChild(info);
+        }
+        const showTooltip = () => showAchievementTooltip(node, milestone, unlockedAt);
+        node.addEventListener('mouseenter', showTooltip);
+        node.addEventListener('focus', showTooltip);
+        node.addEventListener('click', showTooltip);
+        node.addEventListener('mouseleave', hideAchievementTooltip);
+        node.addEventListener('blur', hideAchievementTooltip);
         canvas.appendChild(node);
         previousRight = left + ACHIEVEMENT_MAP.nodeW;
       });
@@ -3945,6 +4087,7 @@
   function closeAchievements() {
     if (!state.achievementOpen) return;
     state.achievementOpen = false;
+    hideAchievementTooltip();
     audio.sfx('click');
     showScreen(state.achievementReturn === 'over' ? 'over' : state.achievementReturn === 'pause' ? 'pause' : 'start');
     updateAchievementBadge();
@@ -3956,15 +4099,21 @@
   function showNextAchievement() {
     if (state.achievementTimer || !state.achievementQueue.length) return;
     const milestone = state.achievementQueue.shift();
+    const challenge = isChallengeAchievement(milestone.id);
+    const color = achievementColor(milestone.id);
+    dom.achievementToast.style.setProperty('--achievement-color', color);
+    dom.achievementToast.classList.toggle('is-challenge', challenge);
+    dom.achievementToastIcon.innerHTML = achievementIconMarkup(milestone.id);
     dom.achievementToastTitle.textContent = milestone.title;
     dom.achievementToast.classList.add('is-visible');
+    audio.sfx(challenge ? 'achievementChallenge' : 'achievement');
     state.achievementTimer = window.setTimeout(() => {
       dom.achievementToast.classList.remove('is-visible');
       state.achievementTimer = window.setTimeout(() => {
         state.achievementTimer = 0;
         showNextAchievement();
       }, 280);
-    }, 2600);
+    }, challenge ? 3200 : 2600);
   }
 
   function checkAchievements(run) {
@@ -6081,6 +6230,7 @@
     dom.achievementScreen.addEventListener('click', (event) => {
       if (event.target === dom.achievementScreen) closeAchievements();
     });
+    dom.achievementList.addEventListener('scroll', hideAchievementTooltip, { passive: true });
     dom.settingsButton.addEventListener('click', () => openSettings());
     dom.hudSettingsButton.addEventListener('click', () => openSettings());
     dom.pauseSettingsButton.addEventListener('click', () => openSettings());
