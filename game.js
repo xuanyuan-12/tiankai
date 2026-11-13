@@ -541,20 +541,20 @@
 
   const ACHIEVEMENT_MAP = Object.freeze({
     width: 900,
-    height: 450,
-    rowTop: 28,
-    rowGap: 82,
-    nodeW: 138,
-    nodeH: 56,
-    nodeX: 240,
-    nodeStep: 164,
-    categoryX: 142,
-    categoryW: 76,
-    categoryH: 44,
-    trunkX: 126,
-    rootX: 16,
-    rootW: 96,
-    rootH: 60,
+    height: 500,
+    rootX: 380,
+    rootY: 16,
+    rootW: 120,
+    rootH: 54,
+    busY: 86,
+    categoryY: 100,
+    categoryW: 110,
+    categoryH: 38,
+    nodeW: 64,
+    nodeH: 64,
+    nodeStartY: 154,
+    nodeStep: 78,
+    columns: [90, 265, 440, 615, 790],
   });
 
   function formatAchievementDate(timestamp) {
@@ -3908,7 +3908,7 @@
     const nodeRect = node.getBoundingClientRect();
     dom.achievementTooltipIcon.innerHTML = achievementIconMarkup(milestone.id);
     dom.achievementTooltipTitle.textContent = milestone.title;
-    dom.achievementTooltipTitle.hidden = !unlockedAt;
+    dom.achievementTooltipTitle.hidden = false;
     dom.achievementTooltipText.textContent = achievementDescription(milestone.id);
     dom.achievementTooltipMeta.textContent = unlockedAt
       ? `已解锁 · ${formatAchievementDate(unlockedAt)}`
@@ -3925,6 +3925,7 @@
     );
     let top = nodeRect.top - shellRect.top - tooltipHeight - 8;
     if (top < 8) top = nodeRect.bottom - shellRect.top + 8;
+    top = clamp(top, 8, Math.max(8, shellRect.height - tooltipHeight - 8));
     dom.achievementTooltip.style.left = `${left}px`;
     dom.achievementTooltip.style.top = `${top}px`;
   }
@@ -3959,25 +3960,23 @@
       svg.appendChild(path);
     };
 
-    const branchCount = ACHIEVEMENT_BRANCHES.length;
-    const rowCenter = (index) => ACHIEVEMENT_MAP.rowTop + index * ACHIEVEMENT_MAP.rowGap + ACHIEVEMENT_MAP.nodeH / 2;
-    const firstCenter = rowCenter(0);
-    const lastCenter = rowCenter(branchCount - 1);
-    const rootCenter = (firstCenter + lastCenter) / 2;
+    const rootCenterX = ACHIEVEMENT_MAP.rootX + ACHIEVEMENT_MAP.rootW / 2;
+    const firstColumn = ACHIEVEMENT_MAP.columns[0];
+    const lastColumn = ACHIEVEMENT_MAP.columns[ACHIEVEMENT_MAP.columns.length - 1];
 
     addPath(
-      `M ${ACHIEVEMENT_MAP.rootX + ACHIEVEMENT_MAP.rootW} ${rootCenter} H ${ACHIEVEMENT_MAP.trunkX}`,
+      `M ${rootCenterX} ${ACHIEVEMENT_MAP.rootY + ACHIEVEMENT_MAP.rootH} V ${ACHIEVEMENT_MAP.busY}`,
       'rgba(23,36,59,.55)',
     );
     addPath(
-      `M ${ACHIEVEMENT_MAP.trunkX} ${firstCenter} V ${lastCenter}`,
+      `M ${firstColumn} ${ACHIEVEMENT_MAP.busY} H ${lastColumn}`,
       'rgba(23,36,59,.45)',
     );
 
     const root = document.createElement('div');
     root.className = 'achievement-root';
     root.style.left = `${ACHIEVEMENT_MAP.rootX}px`;
-    root.style.top = `${rootCenter - ACHIEVEMENT_MAP.rootH / 2}px`;
+    root.style.top = `${ACHIEVEMENT_MAP.rootY}px`;
     root.style.width = `${ACHIEVEMENT_MAP.rootW}px`;
     root.style.height = `${ACHIEVEMENT_MAP.rootH}px`;
     const rootIcon = document.createElement('span');
@@ -3992,17 +3991,17 @@
 
     const milestoneById = new Map(MILESTONES.map((item) => [item.id, item]));
 
-    ACHIEVEMENT_BRANCHES.forEach((branch, row) => {
-      const center = rowCenter(row);
+    ACHIEVEMENT_BRANCHES.forEach((branch, columnIndex) => {
+      const columnX = ACHIEVEMENT_MAP.columns[columnIndex];
       addPath(
-        `M ${ACHIEVEMENT_MAP.trunkX} ${center} H ${ACHIEVEMENT_MAP.categoryX}`,
+        `M ${columnX} ${ACHIEVEMENT_MAP.busY} V ${ACHIEVEMENT_MAP.categoryY}`,
         branch.color,
       );
 
       const category = document.createElement('div');
       category.className = 'achievement-branch';
-      category.style.left = `${ACHIEVEMENT_MAP.categoryX}px`;
-      category.style.top = `${center - ACHIEVEMENT_MAP.categoryH / 2}px`;
+      category.style.left = `${columnX - ACHIEVEMENT_MAP.categoryW / 2}px`;
+      category.style.top = `${ACHIEVEMENT_MAP.categoryY}px`;
       category.style.width = `${ACHIEVEMENT_MAP.categoryW}px`;
       category.style.height = `${ACHIEVEMENT_MAP.categoryH}px`;
       category.style.setProperty('--branch-color', branch.color);
@@ -4014,18 +4013,18 @@
       canvas.appendChild(category);
 
       const visibleIds = branch.ids.filter((id) => !HIDDEN_ACHIEVEMENTS.has(id) || bucket[id]);
-      let previousRight = ACHIEVEMENT_MAP.categoryX + ACHIEVEMENT_MAP.categoryW;
+      let previousBottom = ACHIEVEMENT_MAP.categoryY + ACHIEVEMENT_MAP.categoryH;
       visibleIds.forEach((id, index) => {
         const milestone = milestoneById.get(id);
         if (!milestone) return;
         const unlockedAt = bucket[id];
-        const left = ACHIEVEMENT_MAP.nodeX + index * ACHIEVEMENT_MAP.nodeStep;
-        addPath(`M ${previousRight} ${center} H ${left}`, branch.color, !unlockedAt);
+        const top = ACHIEVEMENT_MAP.nodeStartY + index * ACHIEVEMENT_MAP.nodeStep;
+        addPath(`M ${columnX} ${previousBottom} V ${top}`, branch.color, !unlockedAt);
 
         const node = document.createElement('div');
         node.className = `achievement-node ${unlockedAt ? 'is-unlocked' : 'is-locked'}`;
-        node.style.left = `${left}px`;
-        node.style.top = `${center - ACHIEVEMENT_MAP.nodeH / 2}px`;
+        node.style.left = `${columnX - ACHIEVEMENT_MAP.nodeW / 2}px`;
+        node.style.top = `${top}px`;
         node.style.width = `${ACHIEVEMENT_MAP.nodeW}px`;
         node.style.height = `${ACHIEVEMENT_MAP.nodeH}px`;
         node.style.setProperty('--branch-color', branch.color);
@@ -4036,23 +4035,13 @@
           'aria-label',
           unlockedAt
             ? `${milestone.title}，已解锁。${achievementDescription(id)}`
-            : `未解锁成就。${achievementDescription(id)}`,
+            : `未解锁成就：${milestone.title}。${achievementDescription(id)}`,
         );
 
         const icon = document.createElement('span');
         icon.className = 'achievement-node__icon';
         icon.innerHTML = achievementIconMarkup(id);
         node.appendChild(icon);
-        if (unlockedAt) {
-          const info = document.createElement('span');
-          info.className = 'achievement-node__info';
-          const title = document.createElement('strong');
-          title.textContent = milestone.title;
-          const meta = document.createElement('small');
-          meta.textContent = formatAchievementDate(unlockedAt);
-          info.append(title, meta);
-          node.appendChild(info);
-        }
         const showTooltip = () => showAchievementTooltip(node, milestone, unlockedAt);
         node.addEventListener('mouseenter', showTooltip);
         node.addEventListener('focus', showTooltip);
@@ -4060,7 +4049,7 @@
         node.addEventListener('mouseleave', hideAchievementTooltip);
         node.addEventListener('blur', hideAchievementTooltip);
         canvas.appendChild(node);
-        previousRight = left + ACHIEVEMENT_MAP.nodeW;
+        previousBottom = top + ACHIEVEMENT_MAP.nodeH;
       });
     });
 

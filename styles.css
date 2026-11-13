@@ -4649,7 +4649,7 @@ kbd {
 .achievement-map {
   position: relative;
   z-index: 1;
-  max-height: 31em;
+  max-height: 34em;
   overflow: auto;
   padding: .35em;
   border: 1px solid rgba(23, 36, 59, .14);
@@ -4740,17 +4740,16 @@ kbd {
 }
 
 .achievement-node {
-  display: flex;
-  align-items: center;
-  gap: .45em;
-  min-width: 0;
-  padding: .35em .45em;
+  display: grid;
+  place-items: center;
+  padding: 0;
   border: 1.5px solid color-mix(in srgb, var(--branch-color) 48%, transparent);
-  border-radius: .65em;
+  border-radius: .6em;
   background: rgba(255, 253, 245, .94);
   color: var(--ink);
   box-shadow: .12em .16em 0 rgba(23, 36, 59, .18);
   overflow: hidden;
+  cursor: help;
 }
 
 .achievement-node.is-unlocked {
@@ -4834,8 +4833,8 @@ kbd {
   display: grid;
   place-items: center;
   flex: none;
-  width: 2.25em;
-  height: 2.25em;
+  width: 3.2em;
+  height: 3.2em;
   border: .08em solid rgba(255, 249, 233, .45);
   border-radius: .28em;
   background: var(--achievement-color);
@@ -4906,9 +4905,9 @@ kbd {
   display: block;
   margin-bottom: .18em;
   color: #fff5c8;
-  font-size: .72em;
+  font-size: 1.05em;
   font-weight: 950;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .achievement-tooltip__body span {
