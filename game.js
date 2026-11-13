@@ -466,6 +466,34 @@
     { id: 'm100k', type: 'distance', meters: 100000, title: '百公里神话', label: '100 公里' },
   ]);
 
+  const ACHIEVEMENT_BRANCHES = Object.freeze([
+    { id: 'score', label: '分数', color: '#d79b26', ids: ['s50k', 's100k', 's500k', 's1m'] },
+    { id: 'distance', label: '距离', color: '#2f9e72', ids: ['m21k', 'm42k', 'm100k'] },
+    { id: 'combo', label: '连击', color: '#4b87e5', ids: ['c3', 'c5', 'c10'] },
+    { id: 'luck', label: '幸运', color: '#c56aa3', ids: ['b4900', 'heartPrize'] },
+    { id: 'survival', label: '生存', color: '#d95745', ids: ['dmg3', 'secondDown', 'offscreen', 'offscreenPit'] },
+  ]);
+
+  const HIDDEN_ACHIEVEMENTS = new Set(['c10', 'offscreenPit']);
+
+  const ACHIEVEMENT_MAP = Object.freeze({
+    width: 900,
+    height: 450,
+    rowTop: 28,
+    rowGap: 82,
+    nodeW: 138,
+    nodeH: 56,
+    nodeX: 240,
+    nodeStep: 164,
+    categoryX: 142,
+    categoryW: 76,
+    categoryH: 44,
+    trunkX: 126,
+    rootX: 16,
+    rootW: 96,
+    rootH: 60,
+  });
+
   function formatAchievementDate(timestamp) {
     const date = new Date(timestamp);
     const pad = (value) => String(value).padStart(2, '0');
@@ -3779,35 +3807,126 @@
 
   function renderAchievements() {
     const bucket = achievementBucket();
-    dom.achievementList.innerHTML = '';
-    const fragment = document.createDocumentFragment();
-    for (const milestone of MILESTONES) {
-      const unlockedAt = bucket[milestone.id];
-      const item = document.createElement('div');
-      item.className = 'achievement-item' + (unlockedAt ? ' is-unlocked' : ' is-locked');
-
-      const medal = document.createElement('span');
-      medal.className = 'achievement-medal';
-      medal.innerHTML = '<svg class="icon"><use href="#i-star"></use></svg>';
-
-      const info = document.createElement('div');
-      info.className = 'achievement-info';
-      const title = document.createElement('strong');
-      title.textContent = milestone.title;
-      const label = document.createElement('small');
-      label.textContent = milestone.label;
-      info.append(title, label);
-
-      const date = document.createElement('span');
-      date.className = 'achievement-unlock-date' + (unlockedAt ? '' : ' is-locked');
-      date.textContent = unlockedAt ? formatAchievementDate(unlockedAt) : '未解锁';
-
-      item.append(medal, info, date);
-      fragment.appendChild(item);
-    }
-    dom.achievementList.appendChild(fragment);
     const count = Object.keys(bucket).length;
+    const previousLeft = dom.achievementList.scrollLeft;
+    const previousTop = dom.achievementList.scrollTop;
+    dom.achievementList.innerHTML = '';
+    dom.achievementList.setAttribute('aria-label', `成就思维导图，已解锁 ${count} / ${MILESTONES.length}`);
+
+    const canvas = document.createElement('div');
+    canvas.className = 'achievement-map__canvas';
+    canvas.style.width = `${ACHIEVEMENT_MAP.width}px`;
+    canvas.style.height = `${ACHIEVEMENT_MAP.height}px`;
+
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.classList.add('achievement-map__links');
+    svg.setAttribute('viewBox', `0 0 ${ACHIEVEMENT_MAP.width} ${ACHIEVEMENT_MAP.height}`);
+    svg.setAttribute('aria-hidden', 'true');
+    const addPath = (d, color, dashed = false) => {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('d', d);
+      path.setAttribute('fill', 'none');
+      path.setAttribute('stroke', color);
+      path.setAttribute('stroke-width', dashed ? '1.6' : '2');
+      path.setAttribute('stroke-linecap', 'round');
+      path.setAttribute('opacity', dashed ? '.45' : '.82');
+      if (dashed) path.setAttribute('stroke-dasharray', '4 5');
+      svg.appendChild(path);
+    };
+
+    const branchCount = ACHIEVEMENT_BRANCHES.length;
+    const rowCenter = (index) => ACHIEVEMENT_MAP.rowTop + index * ACHIEVEMENT_MAP.rowGap + ACHIEVEMENT_MAP.nodeH / 2;
+    const firstCenter = rowCenter(0);
+    const lastCenter = rowCenter(branchCount - 1);
+    const rootCenter = (firstCenter + lastCenter) / 2;
+
+    addPath(
+      `M ${ACHIEVEMENT_MAP.rootX + ACHIEVEMENT_MAP.rootW} ${rootCenter} H ${ACHIEVEMENT_MAP.trunkX}`,
+      'rgba(23,36,59,.55)',
+    );
+    addPath(
+      `M ${ACHIEVEMENT_MAP.trunkX} ${firstCenter} V ${lastCenter}`,
+      'rgba(23,36,59,.45)',
+    );
+
+    const root = document.createElement('div');
+    root.className = 'achievement-root';
+    root.style.left = `${ACHIEVEMENT_MAP.rootX}px`;
+    root.style.top = `${rootCenter - ACHIEVEMENT_MAP.rootH / 2}px`;
+    root.style.width = `${ACHIEVEMENT_MAP.rootW}px`;
+    root.style.height = `${ACHIEVEMENT_MAP.rootH}px`;
+    const rootIcon = document.createElement('span');
+    rootIcon.className = 'achievement-root__icon';
+    rootIcon.textContent = '✦';
+    const rootTitle = document.createElement('strong');
+    rootTitle.textContent = '成就';
+    const rootCount = document.createElement('small');
+    rootCount.textContent = `${count} / ${MILESTONES.length}`;
+    root.append(rootIcon, rootTitle, rootCount);
+    canvas.appendChild(root);
+
+    const milestoneById = new Map(MILESTONES.map((item) => [item.id, item]));
+
+    ACHIEVEMENT_BRANCHES.forEach((branch, row) => {
+      const center = rowCenter(row);
+      addPath(
+        `M ${ACHIEVEMENT_MAP.trunkX} ${center} H ${ACHIEVEMENT_MAP.categoryX}`,
+        branch.color,
+      );
+
+      const category = document.createElement('div');
+      category.className = 'achievement-branch';
+      category.style.left = `${ACHIEVEMENT_MAP.categoryX}px`;
+      category.style.top = `${center - ACHIEVEMENT_MAP.categoryH / 2}px`;
+      category.style.width = `${ACHIEVEMENT_MAP.categoryW}px`;
+      category.style.height = `${ACHIEVEMENT_MAP.categoryH}px`;
+      category.style.setProperty('--branch-color', branch.color);
+      const categoryDot = document.createElement('span');
+      categoryDot.setAttribute('aria-hidden', 'true');
+      const categoryLabel = document.createElement('strong');
+      categoryLabel.textContent = branch.label;
+      category.append(categoryDot, categoryLabel);
+      canvas.appendChild(category);
+
+      const visibleIds = branch.ids.filter((id) => !HIDDEN_ACHIEVEMENTS.has(id) || bucket[id]);
+      let previousRight = ACHIEVEMENT_MAP.categoryX + ACHIEVEMENT_MAP.categoryW;
+      visibleIds.forEach((id, index) => {
+        const milestone = milestoneById.get(id);
+        if (!milestone) return;
+        const unlockedAt = bucket[id];
+        const left = ACHIEVEMENT_MAP.nodeX + index * ACHIEVEMENT_MAP.nodeStep;
+        addPath(`M ${previousRight} ${center} H ${left}`, branch.color, !unlockedAt);
+
+        const node = document.createElement('div');
+        node.className = `achievement-node ${unlockedAt ? 'is-unlocked' : 'is-locked'}`;
+        node.style.left = `${left}px`;
+        node.style.top = `${center - ACHIEVEMENT_MAP.nodeH / 2}px`;
+        node.style.width = `${ACHIEVEMENT_MAP.nodeW}px`;
+        node.style.height = `${ACHIEVEMENT_MAP.nodeH}px`;
+        node.style.setProperty('--branch-color', branch.color);
+        node.title = `${milestone.title} · ${milestone.label}`;
+
+        const medal = document.createElement('span');
+        medal.className = 'achievement-node__medal';
+        medal.textContent = unlockedAt ? '★' : '?';
+        const info = document.createElement('span');
+        info.className = 'achievement-node__info';
+        const title = document.createElement('strong');
+        title.textContent = milestone.title;
+        const meta = document.createElement('small');
+        meta.textContent = unlockedAt ? formatAchievementDate(unlockedAt) : '未解锁';
+        info.append(title, meta);
+        node.append(medal, info);
+        canvas.appendChild(node);
+        previousRight = left + ACHIEVEMENT_MAP.nodeW;
+      });
+    });
+
+    canvas.insertBefore(svg, canvas.firstChild);
+    dom.achievementList.appendChild(canvas);
     dom.achievementProgress.textContent = `已解锁 ${count} / ${MILESTONES.length}`;
+    dom.achievementList.scrollLeft = previousLeft;
+    dom.achievementList.scrollTop = previousTop;
     updateAchievementBadge();
   }
 
@@ -3837,7 +3956,7 @@
   function showNextAchievement() {
     if (state.achievementTimer || !state.achievementQueue.length) return;
     const milestone = state.achievementQueue.shift();
-    dom.achievementToastTitle.textContent = `${milestone.title} · ${milestone.label}`;
+    dom.achievementToastTitle.textContent = milestone.title;
     dom.achievementToast.classList.add('is-visible');
     state.achievementTimer = window.setTimeout(() => {
       dom.achievementToast.classList.remove('is-visible');

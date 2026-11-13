@@ -512,7 +512,8 @@
           <h2 id="achievementTitle">成就</h2>
           <p>四档模式通用，达到指定分数、距离或条件即可解锁，记录达成时间</p>
         </div>
-        <div class="achievement-list" id="achievementList"></div>
+        <div class="achievement-map" id="achievementList" role="img" aria-label="成就思维导图"></div>
+        <p class="achievement-map__hint">隐藏成就会在解锁后出现在对应分支</p>
         <div class="modal-footer">
           <span class="board-count" id="achievementProgress">0 / 16</span>
           <span class="achievement-note">仅保存在本机浏览器</span>
@@ -523,11 +524,7 @@
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
     <div class="achievement-toast" id="achievementToast" role="status" aria-live="polite">
-      <span class="achievement-toast__medal"><svg class="icon"><use href="#i-star"></use></svg></span>
-      <span class="achievement-toast__body">
-        <small>成就解锁</small>
-        <strong id="achievementToastTitle">500 米</strong>
-      </span>
+      <strong id="achievementToastTitle">成就</strong>
     </div>
 
     <div class="screen-flash" id="screenFlash" aria-hidden="true"></div>
