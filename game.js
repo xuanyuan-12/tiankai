@@ -452,9 +452,10 @@
     { id: 's100k', type: 'score', score: 100000, title: '十万分', label: '100,000 分' },
     { id: 's500k', type: 'score', score: 500000, title: '一骑绝尘', label: '500,000 分' },
     { id: 's1m', type: 'score', score: 1000000, title: '登峰造极', label: '1,000,000 分' },
-    { id: 'c3', type: 'combo', combo: 1, title: '见鬼去吧', label: '连续踩中 1 只小怪' },
+    { id: 'c3', type: 'combo', combo: 1, title: '见鬼去吧', label: '踩中 1 只小怪' },
     { id: 'c5', type: 'combo', combo: 5, title: '五连绝世', label: '连续踩中 5 只小怪' },
-    { id: 'c10', type: 'combo', combo: 10, title: '天赐良机', label: '连续踩中 10 只小怪' },
+    { id: 'doubleStomp', type: 'doubleStomp', title: '一箭双雕', label: '同一帧同时踩中 2 只小怪' },
+    { id: 'c10', type: 'stompScore', stompScore: 50000, title: '天赐良机', label: '单次踩怪获得 50,000+ 分' },
     { id: 'b4900', type: 'blockScore', blockScore: 4900, title: '幸运暴击', label: '问号砖单次获得 4,900+ 分' },
     { id: 'heartPrize', type: 'heartPrize', title: '物超所值', label: '在问号砖里获得回一颗心的奖励' },
     { id: 'dmg3', type: 'tripleDamage', title: '天煞孤星', label: '4 秒内连续受到 3 次伤害' },
@@ -469,7 +470,7 @@
   const ACHIEVEMENT_BRANCHES = Object.freeze([
     { id: 'score', label: '分数', color: '#d79b26', ids: ['s50k', 's100k', 's500k', 's1m'] },
     { id: 'distance', label: '距离', color: '#2f9e72', ids: ['m21k', 'm42k', 'm100k'] },
-    { id: 'combo', label: '连击', color: '#4b87e5', ids: ['c3', 'c5', 'c10'] },
+    { id: 'combo', label: '连击', color: '#4b87e5', ids: ['c3', 'c5', 'doubleStomp', 'c10'] },
     { id: 'luck', label: '幸运', color: '#c56aa3', ids: ['b4900', 'heartPrize'] },
     { id: 'survival', label: '生存', color: '#d95745', ids: ['dmg3', 'secondDown', 'offscreen', 'offscreenPit'] },
   ]);
@@ -489,6 +490,8 @@
     skull: '<path d="M12 3a7.3 7.3 0 0 0-7.3 7.3c0 2.5 1.2 4.5 3.3 5.7V19h8v-3c2.1-1.2 3.3-3.2 3.3-5.7A7.3 7.3 0 0 0 12 3Zm-3 8.3a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6Zm6 0a1.8 1.8 0 1 1 0-3.6 1.8 1.8 0 0 1 0 3.6ZM10.7 20.5v1.8h2.6v-1.8h-2.6Z"/>',
     brokenHeart: '<path d="M12 21S3.4 15.4 3.4 9.2A4.9 4.9 0 0 1 12 5.5a4.9 4.9 0 0 1 8.6 3.7C20.6 15.4 12 21 12 21Z"/><path d="m12 6.3-1.7 4.1 2.8 2.1-2 5.5" fill="none" stroke="#fff9e9" stroke-width="1.6" stroke-linejoin="round"/>',
     rocket: '<path d="M14.7 3.2c2.5.3 4.4 2.2 5 4.7-2.5.3-4.5-.4-6.2-1.2L9 11.4l3.6 3.6 4.7-4.5c.8 1.7 1.5 3.7 1.2 6.2-2.5-.6-4.4-2.5-4.7-5L8.9 16l-1 4.8-2.8-2.8L9.9 17l4.8-5.9c-.6-2.5.3-5.1-1.7-7.1l1.7-.8Z"/><circle cx="15.5" cy="7.1" r="1.5" fill="#fff9e9"/>',
+    cloud: '<path d="M6.1 18.4h11.7a3.5 3.5 0 0 0 .4-7 5.9 5.9 0 0 0-11.2-1.3 4.3 4.3 0 0 0-.9 8.3Z"/>',
+    doubleBoot: '<path d="M3.9 3.6h4.3v7.2c1.5.6 2.6 1.9 2.6 3.7V19H3.2v-4.5h.7V3.6Zm7.9 0h4.3v7.2c1.5.6 2.6 1.9 2.6 3.7V19h-7.6v-4.5h.7V3.6Z"/>',
     flag: '<path d="M5.5 21V3.2h2v17.8h-2Zm3 0V4.2h10.8l-2.4 4.1 2.4 4.1H8.5v8.6Z"/>',
     medal: '<path d="m8.1 3 2.1 6.1-2.8 2.2L4.5 3h3.6Zm7.8 0h3.6l-2.9 8.3-2.8-2.2L16 3Z"/><circle cx="12" cy="15.2" r="5.2"/><path d="m12 12.2.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3.9-1.8Z" fill="#fff9e9"/>',
     mountain: '<path d="M2.8 20 9 8.2 12.3 15l1.9-3.1L21.2 20H2.8Z"/><circle cx="17.5" cy="6.2" r="2.4"/>',
@@ -500,14 +503,15 @@
     s100k: { icon: 'coins', description: '单局得分达到 100,000 分。' },
     s500k: { icon: 'crown', description: '单局得分达到 500,000 分。' },
     s1m: { icon: 'trophy', description: '单局得分达到 1,000,000 分，登峰造极。' },
-    c3: { icon: 'boot', description: '连续踩中 1 只小怪。' },
+    c3: { icon: 'boot', description: '踩中 1 只小怪。' },
     c5: { icon: 'flame', description: '连续踩中 5 只小怪。' },
-    c10: { icon: 'comet', description: '连续踩中 10 只小怪，触发隐藏成就。' },
+    doubleStomp: { icon: 'doubleBoot', description: '同一帧同时踩中两只小怪。' },
+    c10: { icon: 'comet', description: '单次踩中一只小怪获得 50,000 分及以上，触发隐藏成就。' },
     b4900: { icon: 'dice', description: '问号砖单次获得 4,900 分及以上。' },
     heartPrize: { icon: 'heart', description: '在问号砖的奖励中获得回一颗心。' },
     dmg3: { icon: 'skull', description: '4 秒内连续受到 3 次伤害，第三次致命也算。' },
     secondDown: { icon: 'brokenHeart', description: '1 颗心时回到 2 颗心，随后 1 秒内又掉一颗心。' },
-    offscreen: { icon: 'rocket', description: '角色身体完全超出屏幕顶部，看看上面的风景。' },
+    offscreen: { icon: 'cloud', description: '角色身体完全超出屏幕顶部，看看上面的风景。' },
     offscreenPit: { icon: 'parachute', description: '先完全离屏，再直接掉入深坑死亡。' },
     m21k: { icon: 'flag', description: '单局距离达到 21 公里。' },
     m42k: { icon: 'medal', description: '单局距离达到 42 公里，新的全马世界纪录!。' },
@@ -540,21 +544,22 @@
   }
 
   const ACHIEVEMENT_MAP = Object.freeze({
-    width: 900,
-    height: 500,
-    rootX: 380,
-    rootY: 16,
+    width: 700,
+    height: 472,
+    rootX: 24,
+    rootY: 209,
     rootW: 120,
     rootH: 54,
-    busY: 86,
-    categoryY: 100,
-    categoryW: 110,
-    categoryH: 38,
+    busX: 172,
+    branchX: 198,
+    branchW: 104,
+    branchH: 38,
+    nodeX: 330,
     nodeW: 64,
     nodeH: 64,
-    nodeStartY: 154,
-    nodeStep: 78,
-    columns: [90, 265, 440, 615, 790],
+    nodeStepX: 86,
+    rowStartY: 24,
+    rowStepY: 88,
   });
 
   function formatAchievementDate(timestamp) {
@@ -2555,8 +2560,11 @@
     distance: 0,
     combo: 0,
     maxCombo: 0,
+    maxStompScore: 0,
     maxBlockScore: 0,
     gotHeartPrize: false,
+    gotDoubleStomp: false,
+    gotStompScore50000: false,
     damageTimes: [],
     gotTripleDamage: false,
     secondHeartAt: 0,
@@ -3960,16 +3968,19 @@
       svg.appendChild(path);
     };
 
-    const rootCenterX = ACHIEVEMENT_MAP.rootX + ACHIEVEMENT_MAP.rootW / 2;
-    const firstColumn = ACHIEVEMENT_MAP.columns[0];
-    const lastColumn = ACHIEVEMENT_MAP.columns[ACHIEVEMENT_MAP.columns.length - 1];
+    const branchCount = ACHIEVEMENT_BRANCHES.length;
+    const rootCenterY = ACHIEVEMENT_MAP.rootY + ACHIEVEMENT_MAP.rootH / 2;
+    const busTop = ACHIEVEMENT_MAP.rowStartY + ACHIEVEMENT_MAP.branchH / 2;
+    const busBottom = ACHIEVEMENT_MAP.rowStartY
+      + (branchCount - 1) * ACHIEVEMENT_MAP.rowStepY
+      + ACHIEVEMENT_MAP.branchH / 2;
 
     addPath(
-      `M ${rootCenterX} ${ACHIEVEMENT_MAP.rootY + ACHIEVEMENT_MAP.rootH} V ${ACHIEVEMENT_MAP.busY}`,
+      `M ${ACHIEVEMENT_MAP.rootX + ACHIEVEMENT_MAP.rootW} ${rootCenterY} H ${ACHIEVEMENT_MAP.busX}`,
       'rgba(23,36,59,.55)',
     );
     addPath(
-      `M ${firstColumn} ${ACHIEVEMENT_MAP.busY} H ${lastColumn}`,
+      `M ${ACHIEVEMENT_MAP.busX} ${busTop} V ${busBottom}`,
       'rgba(23,36,59,.45)',
     );
 
@@ -3991,19 +4002,20 @@
 
     const milestoneById = new Map(MILESTONES.map((item) => [item.id, item]));
 
-    ACHIEVEMENT_BRANCHES.forEach((branch, columnIndex) => {
-      const columnX = ACHIEVEMENT_MAP.columns[columnIndex];
+    ACHIEVEMENT_BRANCHES.forEach((branch, rowIndex) => {
+      const rowTop = ACHIEVEMENT_MAP.rowStartY + rowIndex * ACHIEVEMENT_MAP.rowStepY;
+      const rowCenterY = rowTop + ACHIEVEMENT_MAP.branchH / 2;
       addPath(
-        `M ${columnX} ${ACHIEVEMENT_MAP.busY} V ${ACHIEVEMENT_MAP.categoryY}`,
+        `M ${ACHIEVEMENT_MAP.busX} ${rowCenterY} H ${ACHIEVEMENT_MAP.branchX}`,
         branch.color,
       );
 
       const category = document.createElement('div');
       category.className = 'achievement-branch';
-      category.style.left = `${columnX - ACHIEVEMENT_MAP.categoryW / 2}px`;
-      category.style.top = `${ACHIEVEMENT_MAP.categoryY}px`;
-      category.style.width = `${ACHIEVEMENT_MAP.categoryW}px`;
-      category.style.height = `${ACHIEVEMENT_MAP.categoryH}px`;
+      category.style.left = `${ACHIEVEMENT_MAP.branchX}px`;
+      category.style.top = `${rowTop}px`;
+      category.style.width = `${ACHIEVEMENT_MAP.branchW}px`;
+      category.style.height = `${ACHIEVEMENT_MAP.branchH}px`;
       category.style.setProperty('--branch-color', branch.color);
       const categoryDot = document.createElement('span');
       categoryDot.setAttribute('aria-hidden', 'true');
@@ -4013,18 +4025,19 @@
       canvas.appendChild(category);
 
       const visibleIds = branch.ids.filter((id) => !HIDDEN_ACHIEVEMENTS.has(id) || bucket[id]);
-      let previousBottom = ACHIEVEMENT_MAP.categoryY + ACHIEVEMENT_MAP.categoryH;
+      let previousRight = ACHIEVEMENT_MAP.branchX + ACHIEVEMENT_MAP.branchW;
+      const nodeTop = rowTop + (ACHIEVEMENT_MAP.branchH - ACHIEVEMENT_MAP.nodeH) / 2;
       visibleIds.forEach((id, index) => {
         const milestone = milestoneById.get(id);
         if (!milestone) return;
         const unlockedAt = bucket[id];
-        const top = ACHIEVEMENT_MAP.nodeStartY + index * ACHIEVEMENT_MAP.nodeStep;
-        addPath(`M ${columnX} ${previousBottom} V ${top}`, branch.color, !unlockedAt);
+        const nodeX = ACHIEVEMENT_MAP.nodeX + index * ACHIEVEMENT_MAP.nodeStepX;
+        addPath(`M ${previousRight} ${rowCenterY} H ${nodeX}`, branch.color, !unlockedAt);
 
         const node = document.createElement('div');
         node.className = `achievement-node ${unlockedAt ? 'is-unlocked' : 'is-locked'}`;
-        node.style.left = `${columnX - ACHIEVEMENT_MAP.nodeW / 2}px`;
-        node.style.top = `${top}px`;
+        node.style.left = `${nodeX}px`;
+        node.style.top = `${nodeTop}px`;
         node.style.width = `${ACHIEVEMENT_MAP.nodeW}px`;
         node.style.height = `${ACHIEVEMENT_MAP.nodeH}px`;
         node.style.setProperty('--branch-color', branch.color);
@@ -4049,7 +4062,7 @@
         node.addEventListener('mouseleave', hideAchievementTooltip);
         node.addEventListener('blur', hideAchievementTooltip);
         canvas.appendChild(node);
-        previousBottom = top + ACHIEVEMENT_MAP.nodeH;
+        previousRight = nodeX + ACHIEVEMENT_MAP.nodeW;
       });
     });
 
@@ -4116,6 +4129,8 @@
       else if (milestone.type === 'combo') reached = (run.maxCombo || 0) >= milestone.combo;
       else if (milestone.type === 'blockScore') reached = (run.maxBlockScore || 0) >= milestone.blockScore;
       else if (milestone.type === 'heartPrize') reached = Boolean(run.gotHeartPrize);
+      else if (milestone.type === 'doubleStomp') reached = Boolean(run.gotDoubleStomp);
+      else if (milestone.type === 'stompScore') reached = (run.maxStompScore || 0) >= milestone.stompScore;
       else if (milestone.type === 'tripleDamage') reached = Boolean(run.gotTripleDamage);
       else if (milestone.type === 'secondHeartDown') reached = Boolean(run.gotSecondHeartDown);
       else if (milestone.type === 'offscreen') reached = Boolean(run.wentOffscreen);
@@ -4435,7 +4450,7 @@
     run.runDistance += run.speed * dt;
     run.distance = Math.floor(run.runDistance / 20);
     checkAchievements(run);
-    run.scoreFloat += run.speed * dt * .55;
+    run.scoreFloat += run.speed * dt * .75;
     run.runPhase += dt * (7.8 + run.speed / 90);
 
     p.prevX = p.x;
@@ -4586,6 +4601,7 @@
     // enemies
     const canStompByVelocity = p.vy >= STOMP_MIN_VY;
     let stompedThisFrame = false;
+    let stompCount = 0;
     for (const enemy of run.enemies) {
       if (enemy.dead) {
         enemy.squash += dt;
@@ -4614,6 +4630,7 @@
       const stomped = canStompByVelocity && (stompedThisFrame || p.prevY + p.h <= enemy.y + 17);
       if (stomped) {
         stompedThisFrame = true;
+        stompCount += 1;
         enemy.dead = true;
         enemy.squash = 0;
         p.vy = -520;
@@ -4629,6 +4646,7 @@
           ? stompBase * Math.max(1, run.combo)
           : 160 + 90 * Math.max(1, run.combo);
         run.scoreFloat += points;
+        run.maxStompScore = Math.max(run.maxStompScore || 0, points);
         updateComboBadge();
         audio.sfx('stomp');
         spawnBurst(run, enemy.x, enemy.y + 17, '#ffd66b', 12, 190);
@@ -4640,6 +4658,13 @@
         p.onGround = false;
         p.y = Math.min(p.y, enemy.y - p.h + 4);
       }
+    }
+
+    if (stompCount >= 2) {
+      run.gotDoubleStomp = true;
+    }
+    if (stompCount > 0) {
+      checkAchievements(run);
     }
 
     // spikes

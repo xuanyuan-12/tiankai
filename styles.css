@@ -4301,6 +4301,17 @@ kbd {
   order: 0;
 }
 
+/* Small landscape windows: keep the compact side-card icons centered. */
+@media (max-width: 900px) {
+  .start-grid .home-side--left .side-card {
+    justify-content: center;
+  }
+
+  .start-grid .home-side--left .side-card__body {
+    display: none;
+  }
+}
+
 
 /* Out-of-top-100 run rank shown below the global leaderboard */
 .board-outside-rank {
