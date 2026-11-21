@@ -7,10 +7,20 @@
   --bg-sky-top: #5ccdf1;
   --bg-sky-mid: #a8ebf8;
   --bg-sky-bottom: #eff7cf;
-  --bg-cloud-color: rgba(255, 255, 255, .66);
-  --bg-cloud-soft: rgba(255, 255, 255, .32);
+  --bg-cloud-color: rgba(255, 255, 255, .9);
+  --bg-cloud-soft: rgba(255, 255, 255, .44);
   --bg-mountain-color: #82abb0;
   --bg-mountain-deep: #527f86;
+  --bg-mountain-far: #a4c4c5;
+  --bg-mountain-mid: #6f9da0;
+  --bg-mountain-near: #47777a;
+  --bg-mountain-shadow: #356164;
+  --bg-mountain-light: #b7d5d0;
+  --bg-mountain-snow: #f4f0dc;
+  --bg-mountain-haze: #d8eadb;
+  --bg-cloud-highlight: #ffffff;
+  --bg-cloud-shadow: #a9c6cf;
+  --bg-cloud-wisp: rgba(255, 255, 255, .5);
   --bg-foreground-color: #245f43;
   --bg-foreground-soft: #3e8a58;
   --bg-grass: #55bf5e;
@@ -26,10 +36,20 @@ html.theme-day {
   --bg-sky-top: #5ccdf1;
   --bg-sky-mid: #a8ebf8;
   --bg-sky-bottom: #eff7cf;
-  --bg-cloud-color: rgba(255, 255, 255, .7);
-  --bg-cloud-soft: rgba(255, 255, 255, .35);
+  --bg-cloud-color: rgba(255, 255, 255, .92);
+  --bg-cloud-soft: rgba(255, 255, 255, .46);
   --bg-mountain-color: #82abb0;
   --bg-mountain-deep: #527f86;
+  --bg-mountain-far: #a4c4c5;
+  --bg-mountain-mid: #6f9da0;
+  --bg-mountain-near: #47777a;
+  --bg-mountain-shadow: #356164;
+  --bg-mountain-light: #b7d5d0;
+  --bg-mountain-snow: #f4f0dc;
+  --bg-mountain-haze: #d8eadb;
+  --bg-cloud-highlight: #ffffff;
+  --bg-cloud-shadow: #a9c6cf;
+  --bg-cloud-wisp: rgba(255, 255, 255, .5);
   --bg-foreground-color: #245f43;
   --bg-foreground-soft: #3e8a58;
   --bg-grass: #55bf5e;
@@ -49,6 +69,16 @@ html.theme-dusk {
   --bg-cloud-soft: rgba(255, 190, 178, .24);
   --bg-mountain-color: #5b456d;
   --bg-mountain-deep: #3d2b50;
+  --bg-mountain-far: #9b7486;
+  --bg-mountain-mid: #6d506f;
+  --bg-mountain-near: #45334f;
+  --bg-mountain-shadow: #31233b;
+  --bg-mountain-light: #c78e85;
+  --bg-mountain-snow: #ffd3bf;
+  --bg-mountain-haze: #d59a8a;
+  --bg-cloud-highlight: #ffe4d2;
+  --bg-cloud-shadow: #9b6d80;
+  --bg-cloud-wisp: rgba(255, 214, 195, .42);
   --bg-foreground-color: #38242e;
   --bg-foreground-soft: #533341;
   --bg-grass: #6f4c5a;
@@ -68,6 +98,16 @@ html.theme-night {
   --bg-cloud-soft: rgba(105, 131, 165, .14);
   --bg-mountain-color: #252137;
   --bg-mountain-deep: #141322;
+  --bg-mountain-far: #2b334d;
+  --bg-mountain-mid: #1d2438;
+  --bg-mountain-near: #121827;
+  --bg-mountain-shadow: #0b101b;
+  --bg-mountain-light: #46506a;
+  --bg-mountain-snow: #c8d1dc;
+  --bg-mountain-haze: #34405a;
+  --bg-cloud-highlight: #a9bbd4;
+  --bg-cloud-shadow: #39465f;
+  --bg-cloud-wisp: rgba(164, 187, 215, .22);
   --bg-foreground-color: #07161c;
   --bg-foreground-soft: #0e2428;
   --bg-grass: #102e31;
@@ -178,6 +218,11 @@ html.theme-night {
   bottom: 0;
   height: 22%;
   opacity: .9;
+}
+
+.bg-lite .cloud-detail,
+.bg-lite .mountain-detail {
+  display: none;
 }
 
 .bg-track {
