@@ -134,16 +134,16 @@
 
     <section class="screen screen--start is-visible" id="startScreen" aria-labelledby="gameTitle">
       <div class="start-topline">
-        <button class="nickname-chip" id="nicknameButton" type="button" aria-label="修改昵称">
-          <span class="nickname-chip__label">昵称</span>
-          <strong id="nicknameText">未设置</strong>
-          <span class="nickname-chip__edit" aria-hidden="true">✎</span>
+        <button class="nickname-chip" id="nicknameButton" type="button" aria-label="修改昵称" style="font-size: 20px">
+          <span class="nickname-chip__label" style="font-size: 16px; font-weight: 600">昵称</span>
+          <strong id="nicknameText" style="font-size: 16px; font-weight: 700; padding-top: 3px; padding-bottom: 3px">未设置</strong>
+          <span class="nickname-chip__edit" aria-hidden="true" style="font-size: var(--text-lg)">✎</span>
         </button>
         <div class="start-topline__right">
-          <button class="round-button round-button--glass" id="helpButton" type="button" aria-label="查看游戏介绍和游玩方式">
+          <button class="round-button round-button--glass" id="helpButton" type="button" aria-label="查看游戏介绍和游玩方式" style="font-size: var(--text-lg)">
             <svg class="icon"><use href="#i-help"></use></svg>
           </button>
-          <button class="round-button round-button--glass" id="settingsButton" type="button" aria-label="打开设置">
+          <button class="round-button round-button--glass" id="settingsButton" type="button" aria-label="打开设置" style="font-size: var(--text-lg)">
             <svg class="icon"><use href="#i-gear"></use></svg>
           </button>
         </div>
@@ -152,11 +152,11 @@
       <div class="start-grid">
         <div class="hero-panel">
           <div class="logo-lockup" aria-label="Super Mario Run">
-            <span class="logo-super">SUPER</span>
+            <span class="logo-super" style="font-size: var(--text-xl)">SUPER</span>
             <h1 class="logo-mario" id="gameTitle">MARIO</h1>
             <span class="logo-run">RUN<span>!</span></span>
           </div>
-          <h2 class="hero-title">马里奥 · 极速跑酷</h2>
+          <h2 class="hero-title" style="font-size: var(--text-xl)">马里奥 · 极速跑酷</h2>
 
           <div class="home-controls">
             <aside class="home-side home-side--left" aria-label="游戏记录">
@@ -182,32 +182,32 @@
             </aside>
 
             <div class="home-center">
-              <div class="mode-dock" id="modeDock">
+              <div class="mode-dock" id="modeDock" style="font-size: var(--text-xl); padding-top: 0px; padding-bottom: 0px; border-radius: 14px; font-weight: 400; gap: 0px; padding-left: 2px; padding-right: 2px">
                 <div class="difficulty-switch" id="difficultySwitch" role="group" aria-label="选择模式">
-                  <button class="difficulty-option" type="button" data-mode="easy" aria-pressed="false">简单</button>
-                  <button class="difficulty-option is-active" type="button" data-mode="normal" aria-pressed="true">普通</button>
-                  <button class="difficulty-option" type="button" data-mode="hard" aria-pressed="false">困难</button>
-                  <button class="difficulty-option" type="button" data-mode="extreme" aria-pressed="false">极限</button>
+                  <button class="difficulty-option" type="button" data-mode="easy" aria-pressed="false" style="font-size: var(--text-lg)">简单</button>
+                  <button class="difficulty-option is-active" type="button" data-mode="normal" aria-pressed="true" style="font-size: var(--text-lg)">普通</button>
+                  <button class="difficulty-option" type="button" data-mode="hard" aria-pressed="false" style="font-size: var(--text-lg)">困难</button>
+                  <button class="difficulty-option" type="button" data-mode="extreme" aria-pressed="false" style="font-size: var(--text-lg)">极限</button>
                 </div>
               </div>
 
               <div class="hero-actions">
-                <button class="button button--primary" id="startButton" type="button" data-mode="normal">
+                <button class="button button--primary" id="startButton" type="button" data-mode="normal" style="font-size: var(--text-xl)">
                   <span class="button__play"><svg class="icon"><use href="#i-play"></use></svg></span>
                   <span>开始跑酷</span>
                   <span class="button__key">SPACE</span>
                 </button>
                 <div class="best-pill">
                   <svg class="icon"><use href="#i-trophy"></use></svg>
-                  <span id="menuBestLabel">最高分</span>
-                  <strong id="menuBest">000000</strong>
+                  <span id="menuBestLabel" style="font-size: var(--text-md); padding-top: 3px; padding-bottom: 3px">最高分</span>
+                  <strong id="menuBest" style="font-size: var(--text-lg)">000000</strong>
                 </div>
               </div>
             </div>
 
             <aside class="selector-panel" aria-labelledby="selectorTitle">
               <div class="selector-panel__tape" aria-hidden="true"></div>
-              <h3 class="selector-title" id="selectorTitle">头像</h3>
+              <h3 class="selector-title" id="selectorTitle" style="font-size: var(--text-lg)">头像</h3>
               <button class="avatar-preview" id="openAvatarButton" type="button" aria-label="打开头像选择页">
                 <canvas id="menuAvatarCanvas" width="200" height="200"></canvas>
                 <span class="avatar-preview__edit">更换头像</span>
