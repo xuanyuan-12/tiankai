@@ -1,0 +1,360 @@
+/* ============================================================
+   Layered background — sky, clouds, mountains, foreground
+   All artwork is CSS + inline SVG. No external images.
+   ============================================================ */
+
+:root {
+  --bg-sky-top: #5ccdf1;
+  --bg-sky-mid: #a8ebf8;
+  --bg-sky-bottom: #eff7cf;
+  --bg-cloud-color: rgba(255, 255, 255, .66);
+  --bg-cloud-soft: rgba(255, 255, 255, .32);
+  --bg-mountain-color: #82abb0;
+  --bg-mountain-deep: #527f86;
+  --bg-foreground-color: #245f43;
+  --bg-foreground-soft: #3e8a58;
+  --bg-grass: #55bf5e;
+  --bg-track: #b9824c;
+  --bg-star-color: #fff4c0;
+  --bg-panel-color: rgba(7, 21, 31, .68);
+  --bg-vignette: rgba(7, 20, 35, .28);
+  --bg-horizon: rgba(255, 239, 169, .36);
+  --bg-screen-tint: rgba(8, 27, 32, .22);
+}
+
+html.theme-day {
+  --bg-sky-top: #5ccdf1;
+  --bg-sky-mid: #a8ebf8;
+  --bg-sky-bottom: #eff7cf;
+  --bg-cloud-color: rgba(255, 255, 255, .7);
+  --bg-cloud-soft: rgba(255, 255, 255, .35);
+  --bg-mountain-color: #82abb0;
+  --bg-mountain-deep: #527f86;
+  --bg-foreground-color: #245f43;
+  --bg-foreground-soft: #3e8a58;
+  --bg-grass: #55bf5e;
+  --bg-track: #b9824c;
+  --bg-star-color: #fff4c0;
+  --bg-panel-color: rgba(7, 21, 31, .65);
+  --bg-vignette: rgba(7, 20, 35, .25);
+  --bg-horizon: rgba(255, 239, 169, .42);
+  --bg-screen-tint: rgba(8, 27, 32, .2);
+}
+
+html.theme-dusk {
+  --bg-sky-top: #f2a25d;
+  --bg-sky-mid: #e68171;
+  --bg-sky-bottom: #6b4b87;
+  --bg-cloud-color: rgba(255, 217, 187, .56);
+  --bg-cloud-soft: rgba(255, 190, 178, .24);
+  --bg-mountain-color: #5b456d;
+  --bg-mountain-deep: #3d2b50;
+  --bg-foreground-color: #38242e;
+  --bg-foreground-soft: #533341;
+  --bg-grass: #6f4c5a;
+  --bg-track: #6d414f;
+  --bg-star-color: #ffe8ba;
+  --bg-panel-color: rgba(27, 15, 35, .72);
+  --bg-vignette: rgba(24, 12, 34, .38);
+  --bg-horizon: rgba(255, 177, 99, .45);
+  --bg-screen-tint: rgba(42, 20, 39, .28);
+}
+
+html.theme-night {
+  --bg-sky-top: #071323;
+  --bg-sky-mid: #10213a;
+  --bg-sky-bottom: #1d3150;
+  --bg-cloud-color: rgba(120, 146, 175, .26);
+  --bg-cloud-soft: rgba(105, 131, 165, .14);
+  --bg-mountain-color: #252137;
+  --bg-mountain-deep: #141322;
+  --bg-foreground-color: #07161c;
+  --bg-foreground-soft: #0e2428;
+  --bg-grass: #102e31;
+  --bg-track: #202b31;
+  --bg-star-color: #fff3c4;
+  --bg-panel-color: rgba(4, 10, 20, .8);
+  --bg-vignette: rgba(1, 6, 15, .48);
+  --bg-horizon: rgba(211, 172, 98, .2);
+  --bg-screen-tint: rgba(4, 12, 23, .38);
+}
+
+/* The shell is also the fallback if the background script fails. */
+.game-shell {
+  background: linear-gradient(180deg, var(--bg-sky-top), var(--bg-sky-bottom));
+}
+
+#gameCanvas {
+  z-index: 1;
+  background: transparent;
+}
+
+.world-background {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+  background: linear-gradient(180deg, var(--bg-sky-top), var(--bg-sky-mid) 56%, var(--bg-sky-bottom));
+  transition: background .35s ease;
+}
+
+.world-background .bg-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bg-sky {
+  background:
+    radial-gradient(circle at 76% 18%, var(--bg-horizon), transparent 26%),
+    linear-gradient(180deg, transparent 40%, var(--bg-screen-tint));
+  mix-blend-mode: normal;
+}
+
+.bg-sky::after {
+  content: "";
+  position: absolute;
+  top: 11%;
+  right: 11%;
+  width: clamp(4.5em, 9%, 8em);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, #fffdf0 0 38%, #ffeaa0 62%, rgba(255, 226, 128, .15) 70%);
+  box-shadow: 0 0 2.8em 1.2em rgba(255, 235, 154, .34);
+  opacity: .9;
+  pointer-events: none;
+}
+
+.theme-dusk .bg-sky::after {
+  background: radial-gradient(circle at 42% 38%, #fff0c2 0 36%, #ffb05e 62%, rgba(255, 160, 93, .1) 70%);
+  box-shadow: 0 0 3em 1.4em rgba(255, 151, 87, .25);
+  opacity: .92;
+}
+
+.theme-night .bg-sky::after {
+  width: clamp(3.4em, 6%, 5.2em);
+  background: radial-gradient(circle at 38% 34%, #fffbe2 0 42%, #dce4d2 64%, rgba(187, 205, 203, .1) 70%);
+  box-shadow: 0 0 2.2em .8em rgba(255, 246, 191, .2);
+  opacity: .88;
+}
+
+.bg-stars {
+  opacity: 0;
+  transition: opacity .4s ease;
+  background-image:
+    radial-gradient(circle at 18% 16%, var(--bg-star-color) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 41% 9%, var(--bg-star-color) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 66% 21%, var(--bg-star-color) 0 .9px, transparent 1.5px),
+    radial-gradient(circle at 86% 12%, var(--bg-star-color) 0 1.1px, transparent 1.7px),
+    radial-gradient(circle at 29% 32%, var(--bg-star-color) 0 .8px, transparent 1.4px),
+    radial-gradient(circle at 74% 35%, var(--bg-star-color) 0 1px, transparent 1.6px);
+  background-size: 240px 180px, 310px 210px, 190px 160px, 270px 190px, 350px 230px, 220px 200px;
+  opacity: 0;
+}
+
+.theme-night .bg-stars {
+  opacity: .9;
+}
+
+.world-background .bg-clouds {
+  top: 0;
+  bottom: auto;
+  height: 58%;
+  opacity: .85;
+  transition: opacity .4s ease;
+}
+
+.world-background .bg-mountains {
+  top: auto;
+  bottom: 0;
+  height: 63%;
+  opacity: .95;
+}
+
+.world-background .bg-foreground {
+  top: auto;
+  bottom: 0;
+  height: 22%;
+  opacity: .9;
+}
+
+.bg-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  width: 300%;
+  height: 100%;
+  will-change: transform;
+}
+
+.bg-track svg {
+  display: block;
+  flex: 0 0 33.3333%;
+  width: 33.3333%;
+  height: 100%;
+}
+
+.bg-clouds .bg-track {
+  transform: translate3d(calc(var(--bg-cloud-shift, 0) * -1%), 0, 0);
+  transition: opacity .4s ease;
+}
+
+.bg-mountains .bg-track {
+  transform: translate3d(calc(var(--bg-mountain-shift, 0) * -1%), 0, 0);
+}
+
+.bg-foreground .bg-track {
+  transform: translate3d(calc(var(--bg-foreground-shift, 0) * -1%), 0, 0);
+}
+
+/* Subtle movement is limited to the tracks; the page itself never animates. */
+html.reduce-motion .bg-track,
+html.reduce-motion .world-background {
+  transition: none !important;
+}
+
+html.reduce-motion .bg-clouds,
+html.reduce-motion .bg-stars {
+  transition: none !important;
+}
+
+/* A translucent tint keeps the menu title and controls readable over any theme. */
+.screen--start {
+  background-image:
+    radial-gradient(ellipse at 50% 38%, transparent 22%, var(--bg-vignette) 92%),
+    linear-gradient(180deg, rgba(6, 24, 33, .1), rgba(6, 24, 33, .32));
+}
+
+.screen--board,
+.screen--achievements,
+.screen--settings,
+.screen--help,
+.screen--account-choice {
+  background-color: var(--bg-panel-color);
+}
+
+.screen--over[data-result="success"] {
+  background-color: rgba(63, 42, 12, .72);
+}
+
+.screen--over[data-result="fail"] {
+  background-color: rgba(18, 27, 39, .72);
+}
+
+/* The DOM background sits behind the canvas; the canvas remains interactive. */
+.game-shell .canvas-grain,
+.game-shell .canvas-vignette {
+  pointer-events: none;
+}
+
+/* Settings additions */
+.settings-theme {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  margin-top: .7em;
+  padding: .55em .75em;
+  border: 1px solid rgba(23, 36, 59, .14);
+  border-radius: .7em;
+  background: rgba(255, 253, 245, .7);
+}
+
+.settings-theme__label {
+  color: var(--ink);
+  font-size: var(--text-sm);
+  font-weight: 900;
+}
+
+.settings-theme select {
+  min-width: 8.5em;
+  max-width: 60%;
+  min-height: 2.25em;
+  padding: .2em .5em;
+  border: 1px solid rgba(23, 36, 59, .24);
+  border-radius: .5em;
+  background: rgba(255, 253, 245, .92);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.settings-motion {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: .55em;
+  margin-top: .55em;
+  color: rgba(23, 36, 59, .74);
+  font-size: var(--text-xs);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.settings-motion input {
+  width: 1.15em;
+  height: 1.15em;
+  accent-color: var(--yellow-deep);
+  cursor: pointer;
+}
+
+/* A question-mark icon for hidden achievements that are still locked. */
+.achievement-node.is-secret .achievement-node__icon {
+  color: rgba(41, 55, 75, .72);
+}
+
+.achievement-node.is-secret {
+  border-style: dashed;
+  filter: saturate(.35);
+}
+
+@media (max-width: 700px), (pointer: coarse) {
+  .bg-clouds {
+    opacity: .62;
+  }
+
+  .bg-foreground {
+    opacity: .5;
+  }
+
+  .bg-stars {
+    opacity: .45;
+    background-size: 300px 240px, 380px 280px, 260px 220px, 340px 260px, 420px 300px, 280px 250px;
+  }
+}
+
+html.bg-lite .bg-stars {
+  display: none;
+}
+
+html.bg-lite .bg-clouds {
+  opacity: .45;
+}
+
+html.bg-lite .bg-mountains {
+  opacity: .7;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .screen--board,
+  .screen--achievements,
+  .screen--settings,
+  .screen--help,
+  .screen--account-choice {
+    background-color: rgba(5, 18, 28, .92);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bg-track {
+    transition: none !important;
+  }
+}

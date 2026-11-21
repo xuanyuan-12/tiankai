@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    SUPER MARIO RUN — game logic
    Everything is drawn by hand on a canvas; no external assets.
    ============================================================ */
@@ -46,6 +46,8 @@
     playerId: 'mario-run-player-id-v1',
     pendingScores: 'mario-run-pending-scores-v1',
     stats: 'mario-run-stats-v1',
+    theme: 'mario-run-theme-v1',
+    reduceMotion: 'mario-run-reduce-motion-v1',
     wechatSession: 'mario-run-wechat-session-v1',
     wechatLinked: 'mario-run-wechat-linked-v1',
     wechatDirty: 'mario-run-wechat-dirty-v1',
@@ -56,13 +58,14 @@
     key: 'sb_publishable_cGTEJNDDMo5rN9wha6EJ2w_Iao0DV1y',
     table: 'scores',
     timeout: 15000,
-    limit: 100,
+    limit: 200,
     epoch: '2026-11-07T02:45:30Z',
     wechatAuth: 'https://jwhfpixplrltncxeoydb.supabase.co/functions/v1/wechat-auth',
     wechatProfile: 'https://jwhfpixplrltncxeoydb.supabase.co/functions/v1/wechat-profile',
   });
 
   const BOARD_LIMIT = 300;
+  const BOARD_DISPLAY_LIMIT = 200;
   const MIN_LEADERBOARD_DISTANCE = 100;
   const STOMP_MIN_VY = 180;
 
@@ -2186,6 +2189,8 @@
     musicVolumeValue: document.getElementById('musicVolumeValue'),
     sfxVolume: document.getElementById('sfxVolume'),
     sfxVolumeValue: document.getElementById('sfxVolumeValue'),
+    themeSelect: document.getElementById('themeSelect'),
+    reduceMotionToggle: document.getElementById('reduceMotionToggle'),
     clearLocalBoardButton: document.getElementById('clearLocalBoardButton'),
     clearAchievementsButton: document.getElementById('clearAchievementsButton'),
     clearBestsButton: document.getElementById('clearBestsButton'),
@@ -2469,6 +2474,9 @@
     customData: null,
     pendingCustomSelection: false,
     difficulty: isModeKey(readStore(STORAGE.mode, '')) ? readStore(STORAGE.mode, 'normal') : 'normal',
+    themePreference: ['auto', 'day', 'dusk', 'night'].includes(readStore(STORAGE.theme, 'auto')) ? readStore(STORAGE.theme, 'auto') : 'auto',
+    backgroundTheme: 'day',
+    reduceMotion: readStore(STORAGE.reduceMotion, null) === '1',
     nickname: (readStore(STORAGE.nickname, '') || '').trim().slice(0, 12),
     nicknameChanges: loadNicknameChanges(),
     nicknamePromptOpen: false,
@@ -3171,6 +3179,8 @@
       node.setAttribute('aria-hidden', active ? 'false' : 'true');
       node.inert = !active;
     }
+    if (dom.shell) dom.shell.dataset.screen = name || 'game';
+    if (window.RunnerBackground) window.RunnerBackground.setMode(name || 'game');
   }
 
   const SETTINGS_CLEAR_LABELS = {
@@ -3190,6 +3200,8 @@
     dom.sfxVolume.value = String(sfx);
     dom.musicVolumeValue.textContent = `${music}%`;
     dom.sfxVolumeValue.textContent = `${sfx}%`;
+    if (dom.themeSelect) dom.themeSelect.value = state.themePreference;
+    if (dom.reduceMotionToggle) dom.reduceMotionToggle.checked = state.reduceMotion;
   }
 
   function resetSettingsClearButtons() {
@@ -3894,6 +3906,33 @@
     return (RULES_BY_KEY[key] || MODE_RULES.normal).label;
   }
 
+  const THEME_BY_MODE = Object.freeze({
+    easy: 'day',
+    normal: 'day',
+    hard: 'dusk',
+    extreme: 'night',
+  });
+
+  function themeContextMode() {
+    if (state.run && ['playing', 'paused', 'gameover', 'dying'].includes(state.mode)) {
+      return state.run.rules && state.run.rules.key ? state.run.rules.key : state.difficulty;
+    }
+    return state.difficulty;
+  }
+
+  function applyBackgroundTheme() {
+    const contextMode = themeContextMode();
+    const preference = state.themePreference;
+    const theme = preference === 'auto'
+      ? (THEME_BY_MODE[contextMode] || 'day')
+      : preference;
+    state.backgroundTheme = theme;
+    if (window.RunnerBackground) {
+      window.RunnerBackground.setTheme(theme);
+      window.RunnerBackground.setReducedMotion(state.reduceMotion);
+    }
+  }
+
   function refreshModeUI() {
     const rules = currentRules();
     dom.difficultySwitch.querySelectorAll('[data-mode]').forEach((button) => {
@@ -3905,6 +3944,7 @@
     dom.startButton.dataset.mode = state.difficulty;
     updateAchievementBadge();
     updateMenuBest();
+    applyBackgroundTheme();
   }
 
   function setMode(mode) {
@@ -3936,6 +3976,7 @@
     dom.shell.classList.remove('is-paused');
     dom.startButton.blur();
     try { dom.jumpButton.blur(); } catch (error) { /* no-op */ }
+    applyBackgroundTheme();
     audio.startMusic();
     run.goTimer = .85;
     // ensure a crisp first frame
@@ -3950,6 +3991,7 @@
     dom.shell.classList.remove('is-playing');
     dom.shell.classList.remove('is-paused');
     showScreen('start');
+    applyBackgroundTheme();
     updateMenuBest();
     if (state.run) updateHearts(false);
     if (options.highlightAvatar) {
@@ -4054,6 +4096,8 @@
     dom.finalMeters.textContent = `跑了 ${run.distance} 米 · 用时 ${formatDuration(run.playTime)}`;
     dom.finalBest.textContent = formatNumber(state.bests[rules.key] || 0);
     dom.recordBadge.hidden = !isRecord || score === 0;
+    dom.gameOverScreen.dataset.result = isRecord ? 'success' : 'fail';
+    applyBackgroundTheme();
     if (!qualified) {
       dom.finalRank.textContent = `不足 ${MIN_LEADERBOARD_DISTANCE} 米 · 本局未计入排行榜`;
       dom.finalRank.hidden = false;
@@ -4238,17 +4282,17 @@
   function currentRunNote(info) {
     const modeLabel = RULES_BY_KEY[info.mode] ? RULES_BY_KEY[info.mode].label : '本模式';
     if (!info.rank) return info.loading ? `正在同步本局${modeLabel}榜排名…` : `本局${modeLabel}榜排名暂不可用`;
-    if (info.rank > ONLINE.limit) {
-      return `仅显示前 ${ONLINE.limit} 名 · 本局${modeLabel}榜第 ${info.rank} 名`;
+    if (info.rank > BOARD_DISPLAY_LIMIT) {
+      return `仅显示前 ${BOARD_DISPLAY_LIMIT} 名 · 本局${modeLabel}榜第 ${info.rank} 名`;
     }
     return `本局${modeLabel}榜排名`;
   }
 
   function renderBoard() {
     const online = state.boardSource === 'global';
-    const entries = online
+    const entries = (online
       ? sortedOnlineEntries(state.boardFilter)
-      : sortedBoardEntries(state.boardFilter);
+      : sortedBoardEntries(state.boardFilter)).slice(0, BOARD_DISPLAY_LIMIT);
     const currentInfo = currentBoardRunInfo(online);
     dom.boardBody.innerHTML = '';
     const fragment = document.createDocumentFragment();
@@ -4285,24 +4329,20 @@
         dom.boardStatus.className = 'board-status is-ok';
       } else {
         dom.boardEmptyText.textContent = '这个筛选下还没有记录。';
-        dom.boardStatus.textContent = `全球排行榜 · 每档显示前 ${ONLINE.limit} 名`;
+        dom.boardStatus.textContent = `全球排行榜 · 每档显示前 ${BOARD_DISPLAY_LIMIT} 名`;
         dom.boardStatus.className = 'board-status is-ok';
       }
     } else {
       dom.boardEmptyText.textContent = state.board.length === 0
         ? '本机还没有记录，跑一局就会出现在这里。'
         : '这个筛选下还没有记录。';
-      dom.boardStatus.textContent = '本机排行榜 · 只保存在这台设备';
+      dom.boardStatus.textContent = `本机排行榜 · 每档显示前 ${BOARD_DISPLAY_LIMIT} 名`;
       dom.boardStatus.className = 'board-status';
     }
 
-    dom.boardCount.textContent = online
-      ? (entries.length
-        ? `${RULES_BY_KEY[state.boardFilter]?.label || ''}难度前 ${ONLINE.limit} 名 · 最高 ${formatNumber(entries[0].score)}`
-        : '暂无记录')
-      : (entries.length
-        ? `共 ${entries.length} 条记录 · 最高 ${formatNumber(entries[0].score)}`
-        : '共 0 条记录');
+    dom.boardCount.textContent = entries.length
+      ? `${RULES_BY_KEY[state.boardFilter]?.label || ''}难度前 ${BOARD_DISPLAY_LIMIT} 名 · 最高 ${formatNumber(entries[0].score)}`
+      : '暂无记录';
     dom.boardFilters.querySelectorAll('[data-filter]').forEach((button) => {
       const active = button.dataset.filter === state.boardFilter;
       button.classList.toggle('is-active', active);
@@ -4691,14 +4731,25 @@
   function showAchievementTooltip(node, milestone, unlockedAt) {
     const shellRect = dom.shell.getBoundingClientRect();
     const nodeRect = node.getBoundingClientRect();
-    dom.achievementTooltipIcon.innerHTML = achievementIconMarkup(milestone.id);
+    const hiddenLocked = HIDDEN_ACHIEVEMENTS.has(milestone.id) && !unlockedAt;
+    dom.achievementTooltipIcon.classList.toggle('is-secret', hiddenLocked);
+    if (hiddenLocked) {
+      dom.achievementTooltipIcon.innerHTML = '<span class="achievement-node__secret">?</span>';
+    } else {
+      dom.achievementTooltipIcon.innerHTML = achievementIconMarkup(milestone.id);
+    }
     dom.achievementTooltipTitle.textContent = unlockedAt ? milestone.title : '？？？';
     dom.achievementTooltipTitle.hidden = false;
-    dom.achievementTooltipText.textContent = achievementDescription(milestone.id);
+    dom.achievementTooltipText.textContent = hiddenLocked
+      ? '？？？'
+      : achievementDescription(milestone.id);
     dom.achievementTooltipMeta.textContent = unlockedAt
       ? `已解锁 · ${formatAchievementDate(unlockedAt)}`
       : '未解锁';
-    dom.achievementTooltip.style.setProperty('--achievement-color', achievementColor(milestone.id));
+    dom.achievementTooltip.style.setProperty(
+      '--achievement-color',
+      hiddenLocked ? '#6b7280' : achievementColor(milestone.id),
+    );
     dom.achievementTooltip.hidden = false;
     dom.achievementTooltip.dataset.node = milestone.id;
     const tooltipWidth = dom.achievementTooltip.offsetWidth;
@@ -4828,30 +4879,33 @@
         const milestone = milestoneById.get(id);
         if (!milestone) return;
         const unlockedAt = bucket[id];
-        if (HIDDEN_ACHIEVEMENTS.has(id) && !unlockedAt) return;
+        const hiddenLocked = HIDDEN_ACHIEVEMENTS.has(id) && !unlockedAt;
         const nodeX = ACHIEVEMENT_MAP.nodeX + index * ACHIEVEMENT_MAP.nodeStepX;
         addPath(`M ${previousRight} ${rowCenterY} H ${nodeX}`, branch.color, !unlockedAt);
 
         const node = document.createElement('div');
-        node.className = `achievement-node ${unlockedAt ? 'is-unlocked' : 'is-locked'}`;
+        node.className = `achievement-node ${unlockedAt ? 'is-unlocked' : 'is-locked'}${hiddenLocked ? ' is-secret' : ''}`;
         node.style.left = `${nodeX}px`;
         node.style.top = `${nodeTop}px`;
         node.style.width = `${ACHIEVEMENT_MAP.nodeW}px`;
         node.style.height = `${ACHIEVEMENT_MAP.nodeH}px`;
         node.style.setProperty('--branch-color', branch.color);
-        node.style.setProperty('--achievement-color', achievementColor(id));
+        node.style.setProperty('--achievement-color', hiddenLocked ? '#6b7280' : achievementColor(id));
         node.tabIndex = 0;
         node.setAttribute('role', 'note');
         node.setAttribute(
           'aria-label',
           unlockedAt
             ? `${milestone.title}，已解锁。${achievementDescription(id)}`
-            : `未解锁成就：？？？。${achievementDescription(id)}`,
+            : hiddenLocked
+              ? '未解锁隐藏成就：？？？'
+              : `未解锁成就：？？？。${achievementDescription(id)}`,
         );
 
         const icon = document.createElement('span');
         icon.className = 'achievement-node__icon';
-        icon.innerHTML = achievementIconMarkup(id);
+        if (hiddenLocked) icon.innerHTML = '<span class="achievement-node__secret">?</span>';
+        else icon.innerHTML = achievementIconMarkup(id);
         node.appendChild(icon);
         const showTooltip = () => showAchievementTooltip(node, milestone, unlockedAt);
         node.addEventListener('mouseenter', showTooltip);
@@ -5696,377 +5750,6 @@
   }
 
   /* ==========================================================
-     Rendering — background
-     ========================================================== */
-
-  function drawSky() {
-    const sky = ctx.createLinearGradient(0, 0, 0, DESIGN_H);
-    sky.addColorStop(0, '#64d2f4');
-    sky.addColorStop(.46, '#a8ebf8');
-    sky.addColorStop(.72, '#dff8ee');
-    sky.addColorStop(1, '#f5f3c9');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, DESIGN_W, DESIGN_H);
-
-    // soft sun glow
-    const sunX = 790;
-    const sunY = 92;
-    const glow = ctx.createRadialGradient(sunX, sunY, 18, sunX, sunY, 160);
-    glow.addColorStop(0, 'rgba(255,250,197,.95)');
-    glow.addColorStop(.36, 'rgba(255,242,160,.28)');
-    glow.addColorStop(1, 'rgba(255,239,158,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(sunX - 170, sunY - 170, 340, 340);
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 38, 0, TAU);
-    ctx.fillStyle = '#fff3a6';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(236,183,57,.22)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-
-    // decorative rings around the sun
-    ctx.strokeStyle = 'rgba(255,248,192,.2)';
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 57, 0, TAU);
-    ctx.stroke();
-    ctx.setLineDash([5, 10]);
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 70, 0, TAU);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
-  function drawCloud(x, y, scale, opacity = .92, variant = 0) {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-    ctx.globalAlpha = opacity;
-    ctx.fillStyle = '#fffdf1';
-    ctx.beginPath();
-    ctx.ellipse(-26, 4, 30, 16, -.08, 0, TAU);
-    ctx.ellipse(3, -4, 28, 20, .04, 0, TAU);
-    ctx.ellipse(34, 5, 32, 15, .05, 0, TAU);
-    ctx.ellipse(6, 10, 52, 13, 0, 0, TAU);
-    if (variant % 2 === 0) ctx.ellipse(54, -1, 18, 11, 0, 0, TAU);
-    ctx.fill();
-    ctx.globalAlpha = opacity * .36;
-    ctx.fillStyle = '#a7e6f1';
-    ctx.beginPath();
-    ctx.ellipse(-3, 17, 44, 4, 0, 0, TAU);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawClouds(camera, time) {
-    const tile = 390;
-    const offset = mod(camera * .085, tile);
-    for (let i = -1; i < 5; i++) {
-      const x = i * tile - offset + 90;
-      const y = 110 + (i % 3) * 52 + Math.sin(time * .12 + i * 1.5) * 5;
-      drawCloud(x, y, .72 + (i % 3) * .13, .8 - (i % 2) * .08, i);
-      if (i < 3) {
-        const x2 = i * tile - offset + 290;
-        const y2 = 200 + (i % 2) * 25 + Math.sin(time * .1 + i) * 4;
-        drawCloud(x2, y2, .4 + (i % 2) * .08, .46, i + 1);
-      }
-    }
-  }
-
-  function drawBirds(camera, time) {
-    const offset = mod(camera * .12 + 500, 1300);
-    for (let i = 0; i < 3; i++) {
-      const x = 150 + i * 235 - offset * .35;
-      const y = 145 + i * 42 + Math.sin(time * .6 + i) * 4;
-      if (x < -30 || x > DESIGN_W + 30) continue;
-      const flap = Math.sin(time * 4 + i * 1.9) * .3;
-      ctx.strokeStyle = 'rgba(48,119,132,.48)';
-      ctx.lineWidth = 1.6;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(x - 9, y + flap * 4);
-      ctx.quadraticCurveTo(x - 4, y - 4, x, y);
-      ctx.quadraticCurveTo(x + 4, y - 4, x + 9, y + flap * 4);
-      ctx.stroke();
-    }
-  }
-
-  function drawMountainRange(camera) {
-    const drawRidge = (parallax, baseY, tile, fill, stroke, snow, snowAlpha) => {
-      const offset = mod(camera * parallax, tile);
-      ctx.save();
-      for (let i = -1; i < 4; i++) {
-        const x = i * tile - offset + 100;
-        ctx.beginPath();
-        ctx.moveTo(x - 480, baseY);
-        ctx.lineTo(x - 350, baseY - 150);
-        ctx.lineTo(x - 260, baseY - 70);
-        ctx.lineTo(x - 110, baseY - 235);
-        ctx.lineTo(x + 30, baseY - 92);
-        ctx.lineTo(x + 170, baseY - 175);
-        ctx.lineTo(x + 340, baseY - 55);
-        ctx.lineTo(x + 480, baseY);
-        ctx.closePath();
-        ctx.fillStyle = fill;
-        ctx.fill();
-        ctx.strokeStyle = stroke;
-        ctx.lineWidth = 1.4;
-        ctx.stroke();
-
-        // soft snow caps on the three peaks
-        ctx.fillStyle = snow;
-        ctx.globalAlpha = snowAlpha;
-        for (const [peakX, peakY, width, height] of [
-          [x - 350, baseY - 150, 38, 48],
-          [x - 110, baseY - 235, 52, 68],
-          [x + 170, baseY - 175, 42, 54],
-        ]) {
-          ctx.beginPath();
-          ctx.moveTo(peakX, peakY);
-          ctx.lineTo(peakX - width, peakY + height);
-          ctx.lineTo(peakX - width * .28, peakY + height * .58);
-          ctx.lineTo(peakX + width * .18, peakY + height * .82);
-          ctx.lineTo(peakX + width, peakY + height);
-          ctx.closePath();
-          ctx.fill();
-        }
-        ctx.globalAlpha = 1;
-      }
-      ctx.restore();
-    };
-
-    // two very distant, misty ridges
-    drawRidge(.045, 412, 760, 'rgba(156, 207, 202, .55)', 'rgba(114, 174, 169, .22)', '#f5fffb', .42);
-    drawRidge(.075, 425, 820, 'rgba(118, 184, 177, .36)', 'rgba(84, 150, 143, .18)', '#effcf7', .3);
-  }
-
-  function drawBalloon(camera, time) {
-    const span = DESIGN_W + 220;
-    const x = DESIGN_W + 110 - mod(camera * .055 + time * 7 + 800, span);
-    if (x < -110 || x > DESIGN_W + 110) return;
-    const fade = clamp(Math.min((x + 110) / 70, (DESIGN_W + 110 - x) / 70), 0, 1);
-    const y = 112 + Math.sin(time * .45) * 5;
-    ctx.save();
-    ctx.globalAlpha = fade;
-    ctx.translate(x, y);
-    ctx.scale(.52, .52);
-    ctx.rotate(Math.sin(time * .3) * .035);
-
-    // ropes
-    ctx.strokeStyle = 'rgba(91, 62, 44, .55)';
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    ctx.moveTo(-16, 28);
-    ctx.lineTo(-8, 48);
-    ctx.moveTo(16, 28);
-    ctx.lineTo(8, 48);
-    ctx.stroke();
-
-    // envelope
-    const balloon = ctx.createLinearGradient(-28, -35, 24, 32);
-    balloon.addColorStop(0, '#ff9b83');
-    balloon.addColorStop(.48, '#f25557');
-    balloon.addColorStop(1, '#c9323d');
-    ctx.fillStyle = balloon;
-    ctx.beginPath();
-    ctx.ellipse(0, -2, 29, 36, 0, 0, TAU);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(112, 45, 43, .35)';
-    ctx.lineWidth = 1.4;
-    ctx.stroke();
-
-    // cream stripe
-    ctx.save();
-    ctx.beginPath();
-    ctx.ellipse(0, -2, 28, 35, 0, 0, TAU);
-    ctx.clip();
-    ctx.fillStyle = 'rgba(255, 239, 193, .78)';
-    ctx.beginPath();
-    ctx.moveTo(-8, -38);
-    ctx.quadraticCurveTo(2, -4, -4, 34);
-    ctx.lineTo(9, 34);
-    ctx.quadraticCurveTo(15, -4, 5, -38);
-    ctx.closePath();
-    ctx.fill();
-    ctx.restore();
-
-    // basket
-    ctx.fillStyle = '#9a6133';
-    roundedRectPath(ctx, -9, 43, 18, 13, 3);
-    ctx.fill();
-    ctx.fillStyle = 'rgba(255, 226, 165, .42)';
-    ctx.fillRect(-9, 43, 18, 3);
-    ctx.restore();
-  }
-
-  function drawHillLayer(camera, time) {
-    // far pale hills
-    const farOffset = mod(camera * .15, 520);
-    ctx.fillStyle = 'rgba(133,209,160,.55)';
-    ctx.beginPath();
-    for (let i = -1; i < 4; i++) {
-      const x = i * 520 - farOffset + 20;
-      ctx.moveTo(x - 210, GROUND_Y + 15);
-      ctx.bezierCurveTo(x - 150, GROUND_Y - 125, x - 40, GROUND_Y - 130, x + 20, GROUND_Y - 22);
-      ctx.bezierCurveTo(x + 80, GROUND_Y - 115, x + 190, GROUND_Y - 90, x + 260, GROUND_Y + 15);
-      ctx.closePath();
-    }
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(77,156,107,.16)';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-
-    // medium green hills
-    const midOffset = mod(camera * .3 + 200, 420);
-    for (let i = -1; i < 4; i++) {
-      const x = i * 420 - midOffset + 80;
-      const y = GROUND_Y + 20;
-      ctx.beginPath();
-      ctx.moveTo(x - 240, y);
-      ctx.bezierCurveTo(x - 190, y - 130, x - 60, y - 175, x + 10, y - 60);
-      ctx.bezierCurveTo(x + 80, y - 160, x + 190, y - 112, x + 250, y);
-      ctx.closePath();
-      ctx.fillStyle = i % 2 === 0 ? '#6ec57c' : '#77cf85';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(57,139,79,.22)';
-      ctx.lineWidth = 2;
-      ctx.stroke();
-      // broad, soft sunlit face
-      ctx.beginPath();
-      ctx.moveTo(x - 150, y - 38);
-      ctx.bezierCurveTo(x - 120, y - 112, x - 60, y - 132, x - 12, y - 75);
-      ctx.bezierCurveTo(x - 57, y - 105, x - 104, y - 80, x - 150, y - 38);
-      ctx.fillStyle = 'rgba(218,248,183,.15)';
-      ctx.fill();
-    }
-
-    // distant castle
-    const castleOffset = mod(camera * .22, 2400);
-    for (let i = 0; i < 2; i++) {
-      const x = i * 2400 - castleOffset + 1560;
-      if (x > -180 && x < DESIGN_W + 180) {
-        // A small hill under the castle stops it from looking suspended in the air.
-        ctx.fillStyle = 'rgba(112, 183, 126, .62)';
-        ctx.beginPath();
-        ctx.ellipse(x, GROUND_Y + 15, 94, 55, 0, Math.PI, TAU);
-        ctx.fill();
-        ctx.fillStyle = 'rgba(72, 148, 91, .18)';
-        ctx.beginPath();
-        ctx.ellipse(x, GROUND_Y + 2, 72, 16, 0, 0, TAU);
-        ctx.fill();
-        drawCastle(x, GROUND_Y - 6, .72);
-      }
-    }
-
-    // lower valley haze
-    const valley = ctx.createLinearGradient(0, GROUND_Y - 12, 0, DESIGN_H);
-    valley.addColorStop(0, 'rgba(195,236,174,0)');
-    valley.addColorStop(.2, 'rgba(166,222,169,.86)');
-    valley.addColorStop(1, '#77bd8e');
-    ctx.fillStyle = valley;
-    ctx.fillRect(0, GROUND_Y - 10, DESIGN_W, DESIGN_H - GROUND_Y + 10);
-  }
-
-  function drawCastle(x, baseY, scale) {
-    ctx.save();
-    ctx.translate(x, baseY);
-    ctx.scale(scale, scale);
-    ctx.fillStyle = '#f3e6cf';
-    ctx.strokeStyle = 'rgba(96,91,76,.42)';
-    ctx.lineWidth = 2;
-    // body
-    roundedRectPath(ctx, -54, -78, 108, 78, 3);
-    ctx.fill();
-    ctx.stroke();
-    // towers
-    for (const tx of [-63, 37]) {
-      roundedRectPath(ctx, tx, -104, 26, 104, 2);
-      ctx.fill();
-      ctx.stroke();
-      // roof
-      ctx.beginPath();
-      ctx.moveTo(tx - 5, -104);
-      ctx.lineTo(tx + 13, -132);
-      ctx.lineTo(tx + 31, -104);
-      ctx.closePath();
-      ctx.fillStyle = '#d1615c';
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(96,70,60,.48)';
-      ctx.stroke();
-    }
-    // main roof
-    ctx.beginPath();
-    ctx.moveTo(-40, -78);
-    ctx.lineTo(0, -111);
-    ctx.lineTo(40, -78);
-    ctx.closePath();
-    ctx.fillStyle = '#dd7269';
-    ctx.fill();
-    ctx.stroke();
-    // windows
-    ctx.fillStyle = 'rgba(81,91,88,.55)';
-    for (const wx of [-42, -18, 8, 34]) {
-      roundedRectPath(ctx, wx, -54, 8, 15, 4);
-      ctx.fill();
-    }
-    // door
-    roundedRectPath(ctx, -11, -30, 22, 30, 10);
-    ctx.fillStyle = 'rgba(81,91,88,.55)';
-    ctx.fill();
-    // flag
-    ctx.strokeStyle = 'rgba(96,91,76,.6)';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(0, -111);
-    ctx.lineTo(0, -152);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, -151);
-    ctx.lineTo(23, -143);
-    ctx.lineTo(0, -135);
-    ctx.closePath();
-    ctx.fillStyle = '#f0d65a';
-    ctx.fill();
-    ctx.restore();
-  }
-
-  function drawBushes(camera) {
-    const offset = mod(camera * .54 + 150, 330);
-    for (let i = -1; i < 5; i++) {
-      const x = i * 330 - offset;
-      const y = GROUND_Y + 2;
-      if (x < -110 || x > DESIGN_W + 110) continue;
-      const scale = .72 + (i % 3) * .11;
-      ctx.save();
-      ctx.translate(x, y);
-      ctx.scale(scale, scale);
-      ctx.fillStyle = '#3e9655';
-      ctx.beginPath();
-      ctx.ellipse(-27, 0, 25, 16, 0, 0, TAU);
-      ctx.ellipse(0, -10, 31, 27, 0, 0, TAU);
-      ctx.ellipse(28, 0, 26, 17, 0, 0, TAU);
-      ctx.ellipse(0, 7, 43, 13, 0, 0, TAU);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(134,216,112,.34)';
-      ctx.beginPath();
-      ctx.ellipse(-2, -18, 15, 8, -.2, 0, TAU);
-      ctx.fill();
-      ctx.restore();
-    }
-  }
-
-  function drawBackground(camera, time) {
-    drawSky();
-    drawClouds(camera, time);
-    drawBirds(camera, time);
-    drawBalloon(camera, time);
-    drawMountainRange(camera);
-    drawHillLayer(camera, time);
-    drawBushes(camera);
-  }
-
-  /* ==========================================================
      Rendering — world
      ========================================================== */
 
@@ -6817,64 +6500,8 @@
      ========================================================== */
 
   function drawMenuScene(time) {
-    drawBackground(state.menuCamera, time);
-    // A few temporary scenic props, composed directly in screen space.
-    const bob = Math.sin(time * 1.8) * 3;
-    // foreground meadow
-    ctx.fillStyle = '#6fc95a';
-    ctx.beginPath();
-    ctx.moveTo(-20, 457);
-    ctx.quadraticCurveTo(130, 423, 300, 436);
-    ctx.quadraticCurveTo(600, 458, 980, 425);
-    ctx.lineTo(980, DESIGN_H + 20);
-    ctx.lineTo(-20, DESIGN_H + 20);
-    ctx.closePath();
-    ctx.fill();
-    ctx.strokeStyle = '#3d9b48';
-    ctx.lineWidth = 3;
-    ctx.stroke();
-    ctx.fillStyle = '#4eaa47';
-    ctx.beginPath();
-    ctx.moveTo(-20, 472);
-    ctx.quadraticCurveTo(250, 445, 490, 463);
-    ctx.quadraticCurveTo(740, 480, 980, 451);
-    ctx.lineTo(980, DESIGN_H + 20);
-    ctx.lineTo(-20, DESIGN_H + 20);
-    ctx.closePath();
-    ctx.fill();
-
-    // rows of tiny flowers
-    for (let i = 0; i < 26; i++) {
-      const x = mod(i * 83 + state.menuCamera * .2, 1040) - 40;
-      const y = 470 + (i % 4) * 13;
-      ctx.fillStyle = i % 3 === 0 ? '#ffe080' : i % 3 === 1 ? '#fff6d9' : '#fa9f83';
-      ctx.beginPath();
-      ctx.arc(x, y, 2.1, 0, TAU);
-      ctx.fill();
-      ctx.strokeStyle = 'rgba(47,130,65,.45)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(x, y + 2);
-      ctx.lineTo(x + 1, y + 6);
-      ctx.stroke();
-    }
-
-    // floating coin cluster
-    const coinBaseX = 870 - mod(state.menuCamera * .35, 300) * .25;
-    drawCoin(coinBaseX, 300 + bob, time, .3, .9);
-    drawCoin(coinBaseX + 42, 280 + Math.sin(time * 1.6 + 1) * 4, time, 2.4, .72);
-    drawCoin(coinBaseX - 35, 267 + Math.sin(time * 1.4 + 2) * 4, time, 4.1, .6);
-
-    // ground silhouette along the bottom, dark enough to frame the title
-    const floor = ctx.createLinearGradient(0, 490, 0, DESIGN_H);
-    floor.addColorStop(0, '#1f7640');
-    floor.addColorStop(1, '#0e4c2c');
-    ctx.fillStyle = floor;
-    ctx.fillRect(0, 500, DESIGN_W, DESIGN_H - 500);
-    ctx.fillStyle = '#42a34e';
-    ctx.fillRect(0, 496, DESIGN_W, 10);
-    ctx.fillStyle = '#7ed865';
-    ctx.fillRect(0, 496, DESIGN_W, 3);
+    // The menu scenery is now a DOM/CSS/SVG background behind the transparent
+    // canvas. Nothing is painted here; the title and controls stay in HTML.
   }
 
   function drawGameScene(time) {
@@ -6889,14 +6516,31 @@
     }
     ctx.save();
     ctx.translate(shakeX, shakeY);
-    drawBackground(run.cameraX, run.time);
     drawGrounds(run);
-    drawPipes(run);
-    drawSpikes(run);
-    drawBlocks(run);
+    if (state.backgroundTheme === 'night') {
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 247, 214, .62)';
+      ctx.shadowBlur = 5;
+      drawPipes(run);
+      drawSpikes(run);
+      drawBlocks(run);
+      ctx.restore();
+    } else {
+      drawPipes(run);
+      drawSpikes(run);
+      drawBlocks(run);
+    }
     drawCoins(run);
     drawBlockCoins(run);
-    drawEnemies(run);
+    if (state.backgroundTheme === 'night') {
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 247, 214, .56)';
+      ctx.shadowBlur = 5;
+      drawEnemies(run);
+      ctx.restore();
+    } else {
+      drawEnemies(run);
+    }
     drawParticles(run, 'particles');
     if (!run.dead || run.deathTimer < 1.4) drawPlayer(run);
     drawParticles(run, 'popups');
@@ -6916,19 +6560,35 @@
   function drawDyingScene(time) {
     const run = state.run;
     if (!run) return;
-    drawBackground(run.cameraX, run.time);
     drawGrounds(run);
-    drawPipes(run);
-    drawSpikes(run);
-    drawBlocks(run);
+    if (state.backgroundTheme === 'night') {
+      ctx.save();
+      ctx.shadowColor = 'rgba(255, 247, 214, .56)';
+      ctx.shadowBlur = 5;
+      drawPipes(run);
+      drawSpikes(run);
+      drawBlocks(run);
+      drawEnemies(run);
+      ctx.restore();
+    } else {
+      drawPipes(run);
+      drawSpikes(run);
+      drawBlocks(run);
+      drawEnemies(run);
+    }
     drawCoins(run);
-    drawEnemies(run);
     drawParticles(run, 'particles');
     if (run.deathTimer < 1.5) drawPlayer(run);
     drawParticles(run, 'popups');
   }
 
   function renderScene(time) {
+    const camera = state.mode === 'menu'
+      ? state.menuCamera
+      : (state.run ? state.run.cameraX : 0);
+    if (window.RunnerBackground) {
+      window.RunnerBackground.update({ time, camera, mode: state.mode });
+    }
     clearCanvas();
     if (state.mode === 'menu') {
       drawMenuScene(state.menuTime);
@@ -7172,6 +6832,25 @@
       audio.unlock();
       if (audio.sfxVolume > 0) audio.sfx('click');
     });
+    if (dom.themeSelect) {
+      dom.themeSelect.addEventListener('change', () => {
+        const value = ['auto', 'day', 'dusk', 'night'].includes(dom.themeSelect.value)
+          ? dom.themeSelect.value
+          : 'auto';
+        state.themePreference = value;
+        writeStore(STORAGE.theme, value);
+        applyBackgroundTheme();
+        audio.unlock();
+        audio.sfx('click');
+      });
+    }
+    if (dom.reduceMotionToggle) {
+      dom.reduceMotionToggle.addEventListener('change', () => {
+        state.reduceMotion = dom.reduceMotionToggle.checked;
+        writeStore(STORAGE.reduceMotion, state.reduceMotion ? '1' : '0');
+        applyBackgroundTheme();
+      });
+    }
     [
       dom.clearLocalBoardButton,
       dom.clearAchievementsButton,
@@ -7333,6 +7012,18 @@
 
 
   function init() {
+    if (readStore(STORAGE.reduceMotion, null) === null && window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      state.reduceMotion = true;
+    }
+    if (window.RunnerBackground) {
+      window.RunnerBackground.init({
+        container: document.getElementById('worldBackground'),
+        shell: dom.shell,
+        mode: 'menu',
+      });
+    }
+    applyBackgroundTheme();
     resizeCanvas();
     detectTouchDevice();
     clearLeaderboardOnce();

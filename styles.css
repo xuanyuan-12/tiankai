@@ -5078,6 +5078,19 @@ kbd {
   fill: currentColor;
 }
 
+.achievement-node.is-secret .achievement-node__icon,
+.achievement-tooltip__icon.is-secret {
+  border-color: rgba(255, 249, 233, .22);
+  background: #55606b;
+  color: #eef0f2;
+}
+
+.achievement-node__secret {
+  font-size: 2.2em;
+  font-weight: 900;
+  line-height: 1;
+}
+
 .achievement-tooltip__body {
   display: block;
   min-width: 0;
