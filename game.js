@@ -450,7 +450,7 @@
 
   const MILESTONES = Object.freeze([
     { id: 's50k', type: 'score', score: 50000, title: '小试牛刀', label: '50,000 分' },
-    { id: 's100k', type: 'score', score: 100000, title: '十万分', label: '100,000 分' },
+    { id: 's100k', type: 'score', score: 100000, title: '千里之行,始于足下', label: '100,000 分' },
     { id: 's500k', type: 'score', score: 500000, title: '一骑绝尘', label: '500,000 分' },
     { id: 's1m', type: 'score', score: 1000000, title: '登峰造极', label: '1,000,000 分' },
     { id: 'c3', type: 'combo', combo: 1, title: '见鬼去吧', label: '踩中 1 只小怪' },
@@ -493,7 +493,7 @@
     { id: 'speedCap30', type: 'speedHold', seconds: 30, title: '追风逐电', label: '困难/极限达到速度上限并保持 30 秒' },
     { id: 'modes1000m', type: 'modesDistance', meters: 1000, title: '四通八达', label: '四个难度均达到 1,000 米' },
     { id: 'globalFirst', type: 'globalFirst', title: '天下无双', label: '登上任一难度全球排行榜第 1' },
-    { id: 'allModesTop10', type: 'modesTop10', title: '四角俱全', label: '四个难度均进入本机排行榜前 10' },
+    { id: 'allModesTop10', type: 'modesGlobalTop10', title: '四角俱全', label: '四个难度均进入全球排行榜前 10' },
     { id: 'runs1000', type: 'completedRuns', value: 1000, title: '千载难逢', label: '累计完成 1,000 局' },
     { id: 'total100k', type: 'totalDistance', value: 100000, title: '十万八千里', label: '所有对局累计跑出 100,000 米' },
     { id: 'nickname2', type: 'nicknameChanges', value: 2, title: '朝令夕改', label: '用完 30 天内 2 次昵称修改机会' },
@@ -505,9 +505,24 @@
     { id: 'completionist', type: 'completionist', title: '功德圆满', label: '解锁其他全部 53 个成就' },
   ]);
 
+  const ACHIEVEMENT_GROUPS = Object.freeze([
+    { id: 'journey', label: '征程', color: '#c98a2e', branchIds: ['score', 'distance', 'journey'] },
+    { id: 'adventure', label: '冒险', color: '#c4553f', branchIds: ['combat', 'air', 'survival'] },
+    { id: 'fortune', label: '机缘', color: '#7f5bb5', branchIds: ['coins', 'odd', 'hall'] },
+  ]);
+
   const ACHIEVEMENT_BRANCHES = Object.freeze([
     { id: 'score', label: '分数', color: '#d79b26', ids: ['s50k', 's100k', 's500k', 's1m'] },
     { id: 'distance', label: '距离', color: '#2f9e72', ids: ['m21k', 'm42k', 'm100k'] },
+    {
+      id: 'journey',
+      label: '旅程',
+      color: '#8a63c8',
+      ids: [
+        'allModes10', 'localTop10', 'runs100', 'coins10000', 'stomps500', 'doubleJumps1000',
+        'speedCap30', 'modes1000m', 'globalFirst', 'allModesTop10', 'runs1000', 'total100k',
+      ],
+    },
     {
       id: 'combat',
       label: '战斗',
@@ -521,25 +536,16 @@
       ids: ['airDancer', 'airTime', 'jump200', 'airFirstFlyer', 'airChain3', 'airDouble50', 'airDouble5NoGround'],
     },
     {
-      id: 'coins',
-      label: '金币',
-      color: '#b9891f',
-      ids: ['b4900', 'heartPrize', 'coins500', 'coinHeal1', 'coinHealAlmost', 'coinHeal10', 'coinAvoid'],
-    },
-    {
       id: 'survival',
       label: '生存',
       color: '#d95745',
       ids: ['dmg3', 'secondDown', 'offscreen', 'offscreenPit', 'noDamage10k'],
     },
     {
-      id: 'journey',
-      label: '旅程',
-      color: '#8a63c8',
-      ids: [
-        'allModes10', 'localTop10', 'runs100', 'coins10000', 'stomps500', 'doubleJumps1000',
-        'speedCap30', 'modes1000m', 'globalFirst', 'allModesTop10', 'runs1000', 'total100k',
-      ],
+      id: 'coins',
+      label: '金币',
+      color: '#b9891f',
+      ids: ['b4900', 'heartPrize', 'coins500', 'coinHeal1', 'coinHealAlmost', 'coinHeal10', 'coinAvoid'],
     },
     {
       id: 'odd',
@@ -642,7 +648,7 @@
     speedCap30: { icon: 'speed', description: '在困难或极限难度达到当前上限速度，并保持 30 秒。' },
     modes1000m: { icon: 'road', description: '四个难度均达到 1,000 米。' },
     globalFirst: { icon: 'globe', description: '登上任一难度全球排行榜第 1 名。' },
-    allModesTop10: { icon: 'tag', description: '四个难度均进入本机排行榜前 10 名。' },
+    allModesTop10: { icon: 'tag', description: '四个难度均进入全球排行榜前 10 名。' },
     runs1000: { icon: 'trophy', description: '累计完成 1,000 局。' },
     total100k: { icon: 'infinity', description: '所有对局累计跑出 100,000 米。' },
     nickname2: { icon: 'tag', description: '用完 30 天内的 2 次昵称修改机会。' },
@@ -655,10 +661,11 @@
   });
 
   const CHALLENGE_ACHIEVEMENTS = new Set([
-    's1m', 'c10', 'm42k', 'm100k', 'dmg3', 'secondDown', 'offscreen', 'offscreenPit',
+    's1m', 'c10', 'm42k', 'm100k', 'secondDown', 'offscreenPit',
     'airDouble5NoGround', 'noStomp1000m', 'flyerOnly5', 'coinHeal10', 'coinAvoid',
-    'noDamage10k', 'allModes10', 'runs1000', 'total100k', 'speedCap30', 'modes1000m',
+    'noDamage10k', 'runs1000', 'total100k', 'speedCap30', 'modes1000m',
     'globalFirst', 'allModesTop10', 'completionist',
+    's500k', 'coins10000', 'coins500', 'airTime', 'airDouble50', 'bothStomps10',
   ]);
 
   function achievementBranch(id) {
@@ -685,26 +692,27 @@
   const ACHIEVEMENT_MAP = (() => {
     const rowStartY = 24;
     const rowStepY = 88;
+    const groupW = 104;
+    const groupH = 56;
+    const branchX = 170;
+    const branchW = 104;
     const branchH = 38;
     const nodeW = 64;
     const nodeH = 64;
-    const nodeX = 330;
+    const nodeX = 302;
     const nodeStepX = 86;
-    const rootW = 120;
-    const rootH = 54;
     const maxNodes = Math.max(...ACHIEVEMENT_BRANCHES.map((branch) => branch.ids.length));
     const width = Math.max(700, nodeX + (maxNodes - 1) * nodeStepX + nodeW + 40);
     const height = rowStartY + (ACHIEVEMENT_BRANCHES.length - 1) * rowStepY + nodeH + 40;
     return Object.freeze({
       width,
       height,
-      rootX: 24,
-      rootY: Math.round((height - rootH) / 2),
-      rootW,
-      rootH,
-      busX: 172,
-      branchX: 198,
-      branchW: 104,
+      groupX: 24,
+      groupW,
+      groupH,
+      groupBusX: 148,
+      branchX,
+      branchW,
       branchH,
       nodeX,
       nodeW,
@@ -2359,7 +2367,7 @@
   function emptyStats() {
     const modes = {};
     for (const key of Object.keys(MODE_RULES)) {
-      modes[key] = { runs: 0, bestDistance: 0, top10: false };
+      modes[key] = { runs: 0, bestDistance: 0, top10: false, globalTop10: false };
     }
     return {
       completedRuns: 0,
@@ -2387,6 +2395,7 @@
         if (Number.isFinite(runs) && runs >= 0) stats.modes[key].runs = runs;
         if (Number.isFinite(bestDistance) && bestDistance >= 0) stats.modes[key].bestDistance = bestDistance;
         stats.modes[key].top10 = Boolean(source.top10);
+        stats.modes[key].globalTop10 = Boolean(source.globalTop10);
       }
     } catch (error) {
       // corrupted stats: use defaults
@@ -4013,7 +4022,7 @@
         rank,
         mode: entry.mode,
       };
-      if (rank === 1) checkGlobalFirst(entry);
+      void checkGlobalAchievements(entry, rank);
     } catch (error) {
       state.onlineRunRank = null;
     } finally {
@@ -4022,17 +4031,37 @@
     }
   }
 
-  async function checkGlobalFirst(entry) {
-    if (!entry || !isUuid(entry.id) || state.achievements.globalFirst) return;
-    try {
-      const rank = await computeOnlineRunRank(entry);
-      if (rank === 1) {
-        unlockAchievement('globalFirst');
-        maybeUnlockCompletionist();
+  function markGlobalTop10(entry, rank) {
+    if (!entry || !isModeKey(entry.mode) || !Number.isFinite(rank) || rank < 1 || rank > 10) return false;
+    const stats = state.stats || (state.stats = emptyStats());
+    const modeStats = stats.modes[entry.mode];
+    if (!modeStats || modeStats.globalTop10) return false;
+    modeStats.globalTop10 = true;
+    saveStats();
+    return true;
+  }
+
+  async function checkGlobalAchievements(entry, knownRank) {
+    if (!entry || !isUuid(entry.id)) return false;
+    let rank = Number(knownRank);
+    if (!Number.isFinite(rank)) {
+      try {
+        rank = await computeOnlineRunRank(entry);
+      } catch (error) {
+        // ranking unavailable: keep the global achievements locked
+        return false;
       }
-    } catch (error) {
-      // ranking unavailable: keep the achievement locked
     }
+    let unlocked = false;
+    if (rank <= 10) markGlobalTop10(entry, rank);
+    if (rank === 1 && unlockAchievement('globalFirst')) unlocked = true;
+    const stats = state.stats || (state.stats = emptyStats());
+    if (Object.keys(MODE_RULES).every((key) => stats.modes[key].globalTop10)
+      && unlockAchievement('allModesTop10')) {
+      unlocked = true;
+    }
+    if (maybeUnlockCompletionist()) unlocked = true;
+    return unlocked;
   }
 
   async function fetchOnlineScores(options = {}) {
@@ -4144,7 +4173,7 @@
     uploadRemoteScore(entry).then(() => {
       state.onlineFetchedAt = 0;
       state.onlineRunRank = null;
-      checkGlobalFirst(entry);
+      void checkGlobalAchievements(entry);
       if (state.boardOpen && state.boardSource === 'global') fetchOnlineScores({ force: true });
     }).catch(() => {
       addPendingScore(entry);
@@ -4161,7 +4190,7 @@
       for (const entry of pending) {
         try {
           await uploadRemoteScore(entry);
-          checkGlobalFirst(entry);
+          void checkGlobalAchievements(entry);
         } catch (error) {
           left.push(entry);
         }
@@ -4228,7 +4257,10 @@
     const previousLeft = dom.achievementList.scrollLeft;
     const previousTop = dom.achievementList.scrollTop;
     dom.achievementList.innerHTML = '';
-    dom.achievementList.setAttribute('aria-label', `成就思维导图，已解锁 ${count} / ${MILESTONES.length}`);
+    dom.achievementList.setAttribute(
+      'aria-label',
+      `成就三级导图，3 个一级类别、9 个分类，已解锁 ${count} / ${MILESTONES.length}`,
+    );
 
     const canvas = document.createElement('div');
     canvas.className = 'achievement-map__canvas';
@@ -4251,45 +4283,63 @@
       svg.appendChild(path);
     };
 
-    const branchCount = ACHIEVEMENT_BRANCHES.length;
-    const rootCenterY = ACHIEVEMENT_MAP.rootY + ACHIEVEMENT_MAP.rootH / 2;
-    const busTop = ACHIEVEMENT_MAP.rowStartY + ACHIEVEMENT_MAP.branchH / 2;
-    const busBottom = ACHIEVEMENT_MAP.rowStartY
-      + (branchCount - 1) * ACHIEVEMENT_MAP.rowStepY
-      + ACHIEVEMENT_MAP.branchH / 2;
-
-    addPath(
-      `M ${ACHIEVEMENT_MAP.rootX + ACHIEVEMENT_MAP.rootW} ${rootCenterY} H ${ACHIEVEMENT_MAP.busX}`,
-      'rgba(23,36,59,.55)',
-    );
-    addPath(
-      `M ${ACHIEVEMENT_MAP.busX} ${busTop} V ${busBottom}`,
-      'rgba(23,36,59,.45)',
-    );
-
-    const root = document.createElement('div');
-    root.className = 'achievement-root';
-    root.style.left = `${ACHIEVEMENT_MAP.rootX}px`;
-    root.style.top = `${ACHIEVEMENT_MAP.rootY}px`;
-    root.style.width = `${ACHIEVEMENT_MAP.rootW}px`;
-    root.style.height = `${ACHIEVEMENT_MAP.rootH}px`;
-    const rootIcon = document.createElement('span');
-    rootIcon.className = 'achievement-root__icon';
-    rootIcon.textContent = '✦';
-    const rootTitle = document.createElement('strong');
-    rootTitle.textContent = '成就';
-    const rootCount = document.createElement('small');
-    rootCount.textContent = `${count} / ${MILESTONES.length}`;
-    root.append(rootIcon, rootTitle, rootCount);
-    canvas.appendChild(root);
-
+    const branchById = new Map(ACHIEVEMENT_BRANCHES.map((branch) => [branch.id, branch]));
+    const rowById = new Map(ACHIEVEMENT_BRANCHES.map((branch, index) => [branch.id, index]));
     const milestoneById = new Map(MILESTONES.map((item) => [item.id, item]));
+
+    ACHIEVEMENT_GROUPS.forEach((group) => {
+      const rows = group.branchIds.map((id) => rowById.get(id)).filter((row) => row !== undefined);
+      if (!rows.length) return;
+      const firstRow = Math.min(...rows);
+      const lastRow = Math.max(...rows);
+      const firstCenterY = ACHIEVEMENT_MAP.rowStartY
+        + firstRow * ACHIEVEMENT_MAP.rowStepY
+        + ACHIEVEMENT_MAP.branchH / 2;
+      const lastCenterY = ACHIEVEMENT_MAP.rowStartY
+        + lastRow * ACHIEVEMENT_MAP.rowStepY
+        + ACHIEVEMENT_MAP.branchH / 2;
+      const groupCenterY = (firstCenterY + lastCenterY) / 2;
+      const groupTop = groupCenterY - ACHIEVEMENT_MAP.groupH / 2;
+      const groupCount = group.branchIds.reduce((total, branchId) => {
+        const branch = branchById.get(branchId);
+        return total + (branch ? branch.ids.length : 0);
+      }, 0);
+
+      addPath(
+        `M ${ACHIEVEMENT_MAP.groupX + ACHIEVEMENT_MAP.groupW} ${groupCenterY} H ${ACHIEVEMENT_MAP.groupBusX}`,
+        group.color,
+      );
+      addPath(
+        `M ${ACHIEVEMENT_MAP.groupBusX} ${firstCenterY} V ${lastCenterY}`,
+        group.color,
+      );
+
+      const groupNode = document.createElement('div');
+      groupNode.className = 'achievement-group';
+      groupNode.style.left = `${ACHIEVEMENT_MAP.groupX}px`;
+      groupNode.style.top = `${groupTop}px`;
+      groupNode.style.width = `${ACHIEVEMENT_MAP.groupW}px`;
+      groupNode.style.height = `${ACHIEVEMENT_MAP.groupH}px`;
+      groupNode.style.setProperty('--group-color', group.color);
+      groupNode.setAttribute('role', 'note');
+      groupNode.setAttribute('aria-label', `${group.label}，${groupCount} 个成就`);
+      const groupIcon = document.createElement('span');
+      groupIcon.className = 'achievement-group__icon';
+      groupIcon.textContent = '✦';
+      groupIcon.setAttribute('aria-hidden', 'true');
+      const groupTitle = document.createElement('strong');
+      groupTitle.textContent = group.label;
+      const groupTotal = document.createElement('small');
+      groupTotal.textContent = `${groupCount} 个`;
+      groupNode.append(groupIcon, groupTitle, groupTotal);
+      canvas.appendChild(groupNode);
+    });
 
     ACHIEVEMENT_BRANCHES.forEach((branch, rowIndex) => {
       const rowTop = ACHIEVEMENT_MAP.rowStartY + rowIndex * ACHIEVEMENT_MAP.rowStepY;
       const rowCenterY = rowTop + ACHIEVEMENT_MAP.branchH / 2;
       addPath(
-        `M ${ACHIEVEMENT_MAP.busX} ${rowCenterY} H ${ACHIEVEMENT_MAP.branchX}`,
+        `M ${ACHIEVEMENT_MAP.groupBusX} ${rowCenterY} H ${ACHIEVEMENT_MAP.branchX}`,
         branch.color,
       );
 
@@ -4442,6 +4492,9 @@
     }
     if (milestone.type === 'modesTop10') {
       return Object.keys(MODE_RULES).every((key) => stats.modes[key].top10);
+    }
+    if (milestone.type === 'modesGlobalTop10') {
+      return Object.keys(MODE_RULES).every((key) => stats.modes[key].globalTop10);
     }
     if (milestone.type === 'localTop10') return Boolean(run.localTop10);
     if (milestone.type === 'completedRuns') return stats.completedRuns >= milestone.value;

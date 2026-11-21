@@ -4730,37 +4730,37 @@ kbd {
   pointer-events: none;
 }
 
-.achievement-root,
+.achievement-group,
 .achievement-branch,
 .achievement-node {
   position: absolute;
 }
 
-.achievement-root {
+.achievement-group {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: .05em;
-  border: .14em solid var(--ink);
+  border: .14em solid color-mix(in srgb, var(--group-color) 72%, var(--ink));
   border-radius: .8em;
   background: linear-gradient(180deg, #fff8de, #f5dfae);
   color: var(--ink);
   box-shadow: .16em .2em 0 rgba(23, 36, 59, .28);
 }
 
-.achievement-root__icon {
-  color: var(--yellow-deep);
+.achievement-group__icon {
+  color: var(--group-color);
   font-size: 1.1em;
   line-height: 1;
 }
 
-.achievement-root strong {
+.achievement-group strong {
   font-size: .68em;
   font-weight: 950;
 }
 
-.achievement-root small {
+.achievement-group small {
   color: rgba(23, 36, 59, .56);
   font-size: .46em;
   font-weight: 800;
