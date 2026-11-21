@@ -45,6 +45,7 @@
     avatarImports: 'mario-run-avatar-imports-v1',
     playerId: 'mario-run-player-id-v1',
     pendingScores: 'mario-run-pending-scores-v1',
+    stats: 'mario-run-stats-v1',
   };
 
   const ONLINE = Object.freeze({
@@ -465,14 +466,88 @@
     { id: 'm21k', type: 'distance', meters: 21000, title: '半马选手', label: '半程马拉松 · 21 公里' },
     { id: 'm42k', type: 'distance', meters: 42000, title: '新的全马世界纪录!', label: '全程马拉松 · 42 公里' },
     { id: 'm100k', type: 'distance', meters: 100000, title: '热门景点', label: '100 公里' },
+    { id: 'airDancer', type: 'doubleJumpsRun', value: 30, title: '空中舞者', label: '单局完成 30 次二段跳' },
+    { id: 'airTime', type: 'airTime', seconds: 120, title: '天马行空', label: '单局累计滞空 120 秒' },
+    { id: 'jump200', type: 'jumpsRun', value: 200, title: '跃跃欲试', label: '单局跳跃 200 次' },
+    { id: 'airFirstFlyer', type: 'flyingStompsRun', value: 1, title: '空中楼阁', label: '首次踩中飞行小怪' },
+    { id: 'airChain3', type: 'airStompChain', value: 3, title: '轻功怪上飘', label: '连续踩中 3 个敌人且不落地' },
+    { id: 'airDouble50', type: 'doubleJumpsRun', value: 50, title: '扶摇直上', label: '单局完成 50 次二段跳' },
+    { id: 'airDouble5NoGround', type: 'airDoubleJumpChain', value: 5, title: '凌波微步', label: '连续完成 5 次二段跳且不踩地面' },
+    { id: 'groundStomp20', type: 'groundStompsRun', value: 20, title: '降妖伏魔', label: '单局踩中 20 个地面小怪' },
+    { id: 'flyerStomp5', type: 'flyingStompsRun', value: 5, title: '一网打尽', label: '单局踩中 5 个飞行小怪' },
+    { id: 'bothStomps10', type: 'bothStompsRun', value: 10, title: '我全都要', label: '单局地面、飞行小怪各踩中 10 个' },
+    { id: 'noStomp1000m', type: 'noStompDistance', meters: 1000, title: '独善其身', label: '单局跑出 1,000 米且不踩任何敌人' },
+    { id: 'flyerOnly5', type: 'flyerOnlyStomps', value: 5, title: '高瞻远瞩', label: '单局踩中 5 个飞行小怪且不踩地面小怪' },
+    { id: 'coins500', type: 'coinsRun', value: 500, title: '积少成多', label: '单局收集 500 枚金币' },
+    { id: 'coinHeal1', type: 'coinHealsRun', value: 1, title: '回心转意', label: '第一次触发金币回心' },
+    { id: 'coinHealAlmost', type: 'nearHealDeath', title: '功亏一篑', label: '距离回心只差 1 枚金币时被击败' },
+    { id: 'coinHeal10', type: 'coinHealsRun', value: 10, title: '三回九转', label: '单局触发金币回心 10 次' },
+    { id: 'coinAvoid', type: 'lowCoinsRun', meters: 500, maxCoins: 3, title: '金币绝缘体', label: '单局 500 米且金币不超过 3 枚' },
+    { id: 'noDamage10k', type: 'noDamageDistance', meters: 10000, title: '毫发无伤', label: '非极限难度，单局 10,000 米无受伤' },
+    { id: 'allModes10', type: 'modesRuns', value: 10, title: '难度收藏家', label: '四个难度各完成 10 局' },
+    { id: 'localTop10', type: 'localTop10', title: '名列前茅', label: '首次进入任一难度本机排行榜前 10' },
+    { id: 'runs100', type: 'completedRuns', value: 100, title: '百炼成钢', label: '累计完成 100 局' },
+    { id: 'coins10000', type: 'totalCoins', value: 10000, title: '积羽沉舟', label: '累计收集 10,000 枚金币' },
+    { id: 'stomps500', type: 'totalStomps', value: 500, title: '百步穿杨', label: '累计踩中 500 个敌人' },
+    { id: 'doubleJumps1000', type: 'totalDoubleJumps', value: 1000, title: '千锤百炼', label: '累计完成 1,000 次二段跳' },
+    { id: 'speedCap30', type: 'speedHold', seconds: 30, title: '追风逐电', label: '困难/极限达到速度上限并保持 30 秒' },
+    { id: 'modes1000m', type: 'modesDistance', meters: 1000, title: '四通八达', label: '四个难度均达到 1,000 米' },
+    { id: 'globalFirst', type: 'globalFirst', title: '天下无双', label: '登上任一难度全球排行榜第 1' },
+    { id: 'allModesTop10', type: 'modesTop10', title: '四角俱全', label: '四个难度均进入本机排行榜前 10' },
+    { id: 'runs1000', type: 'completedRuns', value: 1000, title: '千载难逢', label: '累计完成 1,000 局' },
+    { id: 'total100k', type: 'totalDistance', value: 100000, title: '十万八千里', label: '所有对局累计跑出 100,000 米' },
+    { id: 'nickname2', type: 'nicknameChanges', value: 2, title: '朝令夕改', label: '用完 30 天内 2 次昵称修改机会' },
+    { id: 'retry5s', type: 'quickRetry', title: '卷土重来', label: '失败后 5 秒内重新开始' },
+    { id: 'pause5', type: 'pauseCount', value: 5, title: '三思而行', label: '单局暂停 5 次' },
+    { id: 'nightRun', type: 'finishHour', startHour: 0, endHour: 5, title: '披星戴月', label: '0:00—5:00 之间完成一局' },
+    { id: 'morningRun', type: 'finishHour', startHour: 5, endHour: 7, title: '闻鸡起舞', label: '5:00—7:00 之间完成一局' },
+    { id: 'wipeData', type: 'wipedData', title: '一扫而空', label: '使用一次本机数据清理功能' },
+    { id: 'completionist', type: 'completionist', title: '功德圆满', label: '解锁其他全部 53 个成就' },
   ]);
 
   const ACHIEVEMENT_BRANCHES = Object.freeze([
     { id: 'score', label: '分数', color: '#d79b26', ids: ['s50k', 's100k', 's500k', 's1m'] },
     { id: 'distance', label: '距离', color: '#2f9e72', ids: ['m21k', 'm42k', 'm100k'] },
-    { id: 'combo', label: '连击', color: '#4b87e5', ids: ['c3', 'c5', 'doubleStomp', 'c10'] },
-    { id: 'luck', label: '幸运', color: '#c56aa3', ids: ['b4900', 'heartPrize'] },
-    { id: 'survival', label: '生存', color: '#d95745', ids: ['dmg3', 'secondDown', 'offscreen', 'offscreenPit'] },
+    {
+      id: 'combat',
+      label: '战斗',
+      color: '#4b87e5',
+      ids: ['c3', 'c5', 'doubleStomp', 'c10', 'groundStomp20', 'flyerStomp5', 'bothStomps10', 'noStomp1000m', 'flyerOnly5'],
+    },
+    {
+      id: 'air',
+      label: '空中',
+      color: '#16a6b6',
+      ids: ['airDancer', 'airTime', 'jump200', 'airFirstFlyer', 'airChain3', 'airDouble50', 'airDouble5NoGround'],
+    },
+    {
+      id: 'coins',
+      label: '金币',
+      color: '#b9891f',
+      ids: ['b4900', 'heartPrize', 'coins500', 'coinHeal1', 'coinHealAlmost', 'coinHeal10', 'coinAvoid'],
+    },
+    {
+      id: 'survival',
+      label: '生存',
+      color: '#d95745',
+      ids: ['dmg3', 'secondDown', 'offscreen', 'offscreenPit', 'noDamage10k'],
+    },
+    {
+      id: 'journey',
+      label: '旅程',
+      color: '#8a63c8',
+      ids: [
+        'allModes10', 'localTop10', 'runs100', 'coins10000', 'stomps500', 'doubleJumps1000',
+        'speedCap30', 'modes1000m', 'globalFirst', 'allModesTop10', 'runs1000', 'total100k',
+      ],
+    },
+    {
+      id: 'odd',
+      label: '奇趣',
+      color: '#d67b35',
+      ids: ['nickname2', 'retry5s', 'pause5', 'nightRun', 'morningRun', 'wipeData'],
+    },
+    { id: 'hall', label: '殿堂', color: '#b58a35', ids: ['completionist'] },
   ]);
 
   const HIDDEN_ACHIEVEMENTS = new Set(['c10', 'm100k', 'offscreenPit']);
@@ -496,6 +571,30 @@
     medal: '<path d="m8.1 3 2.1 6.1-2.8 2.2L4.5 3h3.6Zm7.8 0h3.6l-2.9 8.3-2.8-2.2L16 3Z"/><circle cx="12" cy="15.2" r="5.2"/><path d="m12 12.2.9 1.8 2 .3-1.4 1.4.3 2-1.8-1-1.8 1 .3-2-1.4-1.4 2-.3.9-1.8Z" fill="#fff9e9"/>',
     mountain: '<path d="M2.8 20 9 8.2 12.3 15l1.9-3.1L21.2 20H2.8Z"/><circle cx="17.5" cy="6.2" r="2.4"/>',
     parachute: '<path d="M12 3a7.6 7.6 0 0 0-7.6 7.6h15.2A7.6 7.6 0 0 0 12 3Z"/><path d="M4.4 10.6c2.5.8 5 1.2 7.6 1.2s5.1-.4 7.6-1.2M7.7 10.6 10 21h4l2.3-10.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>',
+    wing: '<path d="M12 12c-4.4-5.3-8.1-5.7-9.2-2.4-1 3.2 3.2 5.6 9.2 6.4 6-.8 10.2-3.2 9.2-6.4C20.1 6.3 16.4 6.7 12 12Z"/><path d="M4 8.6c3.6 1.1 6.2 3 8 5.2 1.8-2.2 4.4-4.1 8-5.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
+    hourglass: '<path d="M6.4 3h11.2v3.1c0 2.7-3.6 4.5-5.6 5.9 2 1.4 5.6 3.2 5.6 5.9V21H6.4v-3.1c0-2.7 3.6-4.5 5.6-5.9-2-1.4-5.6-3.2-5.6-5.9V3Z"/><path d="M7.4 6.2h9.2M7.4 17.8h9.2" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>',
+    up: '<path d="M12 3 19 15h-4.2v6H9.2v-6H5l7-12Z"/><path d="M2.6 5.8 5 4.1M21.4 5.8 19 4.1" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+    flyer: '<path d="M12 6.4c-4.3-2.6-8.7-1.7-9.3 2-.4 2.5 3.2 4.6 8 5.1-.4 2.8.3 5.1 2 6.5 1.4-2.1 2.2-4.4 2.2-6.6 4.9-.5 8.5-2.6 8.1-5.1-.6-3.7-5-4.6-9.3-2Z"/><path d="M12 7v12M8.2 10.4 12 13l3.8-2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
+    chain: '<path d="M4.2 8.2h7.1a3.6 3.6 0 0 1 0 7.2H8.6"/><path d="M19.8 15.8h-7.1a3.6 3.6 0 0 1 0-7.2h2.7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><circle cx="6" cy="19" r="1.5"/><circle cx="18" cy="5" r="1.5"/>',
+    doubleJump: '<path d="M6 20V9l5-5v6.5M18 4v11l-5 5v-6.5" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 6.5 11 8.5M15 17.5l-2-2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+    ground: '<path d="M3 17.5c2.5-2.4 5.7-3.6 9-3.6s6.5 1.2 9 3.6"/><path d="M5 20.2h14M12 13V4M9.4 6.6 12 4l2.6 2.6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="13" r="2.2"/>',
+    flyerBoot: '<path d="M4.4 3h4.4v7.2c1.6.6 2.7 2 2.7 3.9V19H3.7v-4.9h.7V3Z"/><path d="M15 4.2c3.2 1.4 5 4.3 5 7.8-2.3.1-4.1-.7-5.4-2.1V4.2Z"/><path d="M14.4 9.2 12.8 7M19 6.2 17.4 4.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>',
+    pair: '<path d="M3.4 4h4v6.8c1.4.6 2.4 1.8 2.4 3.5V19H2.7v-4.7h.7V4Zm7.2 0h4v6.8c1.4.6 2.4 1.8 2.4 3.5V19h-7.1v-4.7h.7V4Z"/><path d="m15.2 4.2 2.2-1.4 2.2 1.4-2.2 1.4-2.2-1.4Z"/>',
+    ghost: '<path d="M5 20V9a7 7 0 0 1 14 0v11l-2.4-2-2.3 2-2.3-2-2.3 2L7.4 18 5 20Z"/><circle cx="9.6" cy="9.5" r="1.2"/><circle cx="14.4" cy="9.5" r="1.2"/>',
+    scope: '<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+    coinsLow: '<circle cx="9" cy="10" r="4.3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M7 10h4M9 8v4" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="m5 20 4-4M9 20l-4-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    modes: '<rect x="3.2" y="3.2" width="7.2" height="7.2" rx="1.4"/><rect x="13.6" y="3.2" width="7.2" height="7.2" rx="1.4"/><rect x="3.2" y="13.6" width="7.2" height="7.2" rx="1.4"/><rect x="13.6" y="13.6" width="7.2" height="7.2" rx="1.4"/>',
+    ribbon: '<path d="M7.2 3h9.6v6.8c0 2.8-2.1 5-4.8 5s-4.8-2.2-4.8-5V3Z"/><path d="m12 14.8-3.6 3.2L10 21l2-1.8 2 1.8 1.6-3-3.6-3.2Z"/><path d="M9.4 6h5.2M9.4 8.6h5.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>',
+    speed: '<path d="M4 17.5a8 8 0 1 1 16 0"/><path d="m12 13 4.8-4.8M6 17.5h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="13" r="1.8"/>',
+    globe: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.4 9.5h17.2M3.4 14.5h17.2M12 3c2.6 2.6 3.9 5.6 3.9 9s-1.3 6.4-3.9 9c-2.6-2.6-3.9-5.6-3.9-9S9.4 5.6 12 3Z" fill="none" stroke="currentColor" stroke-width="1.3"/>',
+    road: '<path d="M5 21 8 3h8l3 18H5Z"/><path d="M12 4v3M12 10v3M12 16v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    tag: '<path d="M3 12V4.5A1.5 1.5 0 0 1 4.5 3H12l9 9-8 8-10-10Z"/><circle cx="7.4" cy="7.4" r="1.7"/>',
+    restart: '<path d="M5 8.5A8 8 0 1 1 4 14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M5 3.5v5h5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>',
+    pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+    moon: '<path d="M20.5 14.8A8.6 8.6 0 0 1 9.2 3.5a8.6 8.6 0 1 0 11.3 11.3Z"/><path d="m17 4 .6 1.5L19 6l-1.4.6L17 8l-.6-1.4L15 6l1.4-.5L17 4Z"/>',
+    sunrise: '<path d="M3 18h18M6.5 18a5.5 5.5 0 0 1 11 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 4v4M4.6 8.6l2.8 2.8M19.4 8.6l-2.8 2.8M1.8 21h20.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    broom: '<path d="m5 20 9-9 2 2-9 9-2-2Z"/><path d="M15 9.5c1.8-2.7 4.3-4 7-3.6-.3 2.8-1.7 5.1-4.2 6.6L15 9.5Z"/><path d="m13.8 12.8 2.4 2.4" fill="none" stroke="currentColor" stroke-width="1.4"/>',
+    infinity: '<path d="M7.2 8.2c-3.1 0-4.7 1.7-4.7 3.8s1.6 3.8 4.7 3.8c3.8 0 5.8-7.6 9.6-7.6 3.1 0 4.7 1.7 4.7 3.8s-1.6 3.8-4.7 3.8c-3.8 0-5.8-7.6-9.6-7.6Z" fill="none" stroke="currentColor" stroke-width="2.2"/>',
   });
 
   const ACHIEVEMENT_META = Object.freeze({
@@ -506,7 +605,7 @@
     c3: { icon: 'boot', description: '踩中 1 只小怪。' },
     c5: { icon: 'flame', description: '连续踩中 5 只小怪。' },
     doubleStomp: { icon: 'doubleBoot', description: '同一帧同时踩中两只小怪。' },
-    c10: { icon: 'comet', description: '单次踩中一只小怪获得 50,000 分及以上，触发隐藏成就。' },
+    c10: { icon: 'comet', description: '单次踩中一只小怪获得 50,000 分及以上。' },
     b4900: { icon: 'dice', description: '问号砖单次获得 4,900 分及以上。' },
     heartPrize: { icon: 'heart', description: '在问号砖的奖励中获得回一颗心。' },
     dmg3: { icon: 'skull', description: '4 秒内连续受到 3 次伤害，第三次致命也算。' },
@@ -516,10 +615,50 @@
     m21k: { icon: 'flag', description: '单局距离达到 21 公里。' },
     m42k: { icon: 'medal', description: '单局距离达到 42 公里，新的全马世界纪录!。' },
     m100k: { icon: 'mountain', description: '单局距离达到 100 公里，抵达隐藏的热门景点。' },
+    airDancer: { icon: 'wing', description: '单局完成 30 次二段跳。' },
+    airTime: { icon: 'hourglass', description: '单局累计滞空 120 秒。' },
+    jump200: { icon: 'up', description: '单局跳跃 200 次。' },
+    airFirstFlyer: { icon: 'flyer', description: '第一次踩中飞行小怪。' },
+    airChain3: { icon: 'chain', description: '连续踩中 3 个敌人且中途不落地。' },
+    airDouble50: { icon: 'doubleJump', description: '单局完成 50 次二段跳，扶摇直上。' },
+    airDouble5NoGround: { icon: 'doubleJump', description: '连续完成 5 次二段跳且不踩地面。' },
+    groundStomp20: { icon: 'ground', description: '单局踩中 20 个地面小怪。' },
+    flyerStomp5: { icon: 'flyerBoot', description: '单局踩中 5 个飞行小怪。' },
+    bothStomps10: { icon: 'pair', description: '单局踩中 10 个地面小怪和 10 个飞行小怪。' },
+    noStomp1000m: { icon: 'ghost', description: '单局跑出 1,000 米且不踩任何敌人。' },
+    flyerOnly5: { icon: 'scope', description: '单局踩中 5 个飞行小怪，且不踩地面小怪。' },
+    coins500: { icon: 'coinsLow', description: '单局收集 500 枚金币。' },
+    coinHeal1: { icon: 'heart', description: '第一次触发金币回心。' },
+    coinHealAlmost: { icon: 'brokenHeart', description: '距离下一次金币回心只差 1 枚时被击败。' },
+    coinHeal10: { icon: 'modes', description: '单局触发金币回心 10 次。' },
+    coinAvoid: { icon: 'ghost', description: '单局跑出 500 米，收集金币不超过 3 枚。' },
+    noDamage10k: { icon: 'ribbon', description: '非极限难度下单局跑出 10,000 米且一次未受伤。' },
+    allModes10: { icon: 'modes', description: '四个难度各完成 10 局。' },
+    localTop10: { icon: 'medal', description: '首次进入任一难度的本机排行榜前 10 名。' },
+    runs100: { icon: 'star', description: '累计完成 100 局。' },
+    coins10000: { icon: 'coins', description: '累计收集 10,000 枚金币。' },
+    stomps500: { icon: 'boot', description: '累计踩中 500 个敌人。' },
+    doubleJumps1000: { icon: 'doubleJump', description: '累计完成 1,000 次二段跳。' },
+    speedCap30: { icon: 'speed', description: '在困难或极限难度达到当前上限速度，并保持 30 秒。' },
+    modes1000m: { icon: 'road', description: '四个难度均达到 1,000 米。' },
+    globalFirst: { icon: 'globe', description: '登上任一难度全球排行榜第 1 名。' },
+    allModesTop10: { icon: 'tag', description: '四个难度均进入本机排行榜前 10 名。' },
+    runs1000: { icon: 'trophy', description: '累计完成 1,000 局。' },
+    total100k: { icon: 'infinity', description: '所有对局累计跑出 100,000 米。' },
+    nickname2: { icon: 'tag', description: '用完 30 天内的 2 次昵称修改机会。' },
+    retry5s: { icon: 'restart', description: '单局失败后 5 秒内重新开始。' },
+    pause5: { icon: 'pause', description: '单局中暂停 5 次。' },
+    nightRun: { icon: 'moon', description: '在 0:00—5:00 之间完成一局。' },
+    morningRun: { icon: 'sunrise', description: '在 5:00—7:00 之间完成一局。' },
+    wipeData: { icon: 'broom', description: '使用一次本机数据清理功能。' },
+    completionist: { icon: 'infinity', description: '解锁其他全部 53 个成就。' },
   });
 
   const CHALLENGE_ACHIEVEMENTS = new Set([
     's1m', 'c10', 'm42k', 'm100k', 'dmg3', 'secondDown', 'offscreen', 'offscreenPit',
+    'airDouble5NoGround', 'noStomp1000m', 'flyerOnly5', 'coinHeal10', 'coinAvoid',
+    'noDamage10k', 'allModes10', 'runs1000', 'total100k', 'speedCap30', 'modes1000m',
+    'globalFirst', 'allModesTop10', 'completionist',
   ]);
 
   function achievementBranch(id) {
@@ -543,24 +682,38 @@
     return CHALLENGE_ACHIEVEMENTS.has(id);
   }
 
-  const ACHIEVEMENT_MAP = Object.freeze({
-    width: 700,
-    height: 472,
-    rootX: 24,
-    rootY: 209,
-    rootW: 120,
-    rootH: 54,
-    busX: 172,
-    branchX: 198,
-    branchW: 104,
-    branchH: 38,
-    nodeX: 330,
-    nodeW: 64,
-    nodeH: 64,
-    nodeStepX: 86,
-    rowStartY: 24,
-    rowStepY: 88,
-  });
+  const ACHIEVEMENT_MAP = (() => {
+    const rowStartY = 24;
+    const rowStepY = 88;
+    const branchH = 38;
+    const nodeW = 64;
+    const nodeH = 64;
+    const nodeX = 330;
+    const nodeStepX = 86;
+    const rootW = 120;
+    const rootH = 54;
+    const maxNodes = Math.max(...ACHIEVEMENT_BRANCHES.map((branch) => branch.ids.length));
+    const width = Math.max(700, nodeX + (maxNodes - 1) * nodeStepX + nodeW + 40);
+    const height = rowStartY + (ACHIEVEMENT_BRANCHES.length - 1) * rowStepY + nodeH + 40;
+    return Object.freeze({
+      width,
+      height,
+      rootX: 24,
+      rootY: Math.round((height - rootH) / 2),
+      rootW,
+      rootH,
+      busX: 172,
+      branchX: 198,
+      branchW: 104,
+      branchH,
+      nodeX,
+      nodeW,
+      nodeH,
+      nodeStepX,
+      rowStartY,
+      rowStepY,
+    });
+  })();
 
   function formatAchievementDate(timestamp) {
     const date = new Date(timestamp);
@@ -2203,6 +2356,48 @@
     writeStore(STORAGE.achievementsV2, JSON.stringify(state.achievements));
   }
 
+  function emptyStats() {
+    const modes = {};
+    for (const key of Object.keys(MODE_RULES)) {
+      modes[key] = { runs: 0, bestDistance: 0, top10: false };
+    }
+    return {
+      completedRuns: 0,
+      totalCoins: 0,
+      totalStomps: 0,
+      totalDoubleJumps: 0,
+      totalDistance: 0,
+      modes,
+    };
+  }
+
+  function loadStats() {
+    const stats = emptyStats();
+    try {
+      const parsed = JSON.parse(readStore(STORAGE.stats, '{}') || '{}');
+      for (const field of ['completedRuns', 'totalCoins', 'totalStomps', 'totalDoubleJumps', 'totalDistance']) {
+        const value = Math.floor(Number(parsed && parsed[field]));
+        if (Number.isFinite(value) && value >= 0) stats[field] = value;
+      }
+      for (const key of Object.keys(MODE_RULES)) {
+        const source = parsed && parsed.modes && parsed.modes[key];
+        if (!source) continue;
+        const runs = Math.floor(Number(source.runs));
+        const bestDistance = Math.floor(Number(source.bestDistance));
+        if (Number.isFinite(runs) && runs >= 0) stats.modes[key].runs = runs;
+        if (Number.isFinite(bestDistance) && bestDistance >= 0) stats.modes[key].bestDistance = bestDistance;
+        stats.modes[key].top10 = Boolean(source.top10);
+      }
+    } catch (error) {
+      // corrupted stats: use defaults
+    }
+    return stats;
+  }
+
+  function saveStats() {
+    writeStore(STORAGE.stats, JSON.stringify(state.stats));
+  }
+
   const NICKNAME_WINDOW_MS = 30 * 24 * 60 * 60 * 1000;
   const NICKNAME_CHANGE_LIMIT = 2;
 
@@ -2240,6 +2435,7 @@
     nicknamePromptOpen: false,
     bests: loadBests(),
     achievements: loadAchievements(),
+    stats: loadStats(),
     achievementQueue: [],
     achievementTimer: 0,
     achievementOpen: false,
@@ -2262,6 +2458,7 @@
     boardReturn: 'start',
     boardOpen: false,
     lastRunId: '',
+    lastGameOverAt: 0,
     clearArmedAt: 0,
     avatarCards: [],
     menuTime: 0,
@@ -2562,6 +2759,21 @@
     maxCombo: 0,
     maxStompScore: 0,
     maxBlockScore: 0,
+    airTime: 0,
+    doubleJumps: 0,
+    jumpCount: 0,
+    airDoubleJumps: 0,
+    airStompChain: 0,
+    groundStomps: 0,
+    flyingStomps: 0,
+    coinHeals: 0,
+    damageTaken: 0,
+    pauseCount: 0,
+    speedHoldTime: 0,
+    nearHealDeath: false,
+    finishedAt: 0,
+    statsRecorded: false,
+    quickRetry: false,
     gotHeartPrize: false,
     gotDoubleStomp: false,
     gotStompScore50000: false,
@@ -2938,12 +3150,18 @@
     });
   }
 
+  function markWipeData() {
+    unlockAchievement('wipeData');
+    maybeUnlockCompletionist();
+  }
+
   function clearLocalScores() {
     state.board = [];
     state.lastRunId = '';
     state.onlineRunRank = null;
     saveBoard();
     updateMenuBest();
+    markWipeData();
     showToast('本机排行榜已清空');
   }
 
@@ -2958,6 +3176,7 @@
     saveAchievements();
     updateAchievementBadge();
     if (state.achievementOpen) renderAchievements();
+    markWipeData();
     showToast('成就已清空');
   }
 
@@ -2965,6 +3184,7 @@
     state.bests = { easy: 0, normal: 0, hard: 0, extreme: 0 };
     saveBests();
     updateMenuBest();
+    markWipeData();
     showToast('最高分已清空');
   }
 
@@ -3095,6 +3315,11 @@
     }
     state.nickname = value;
     writeStore(STORAGE.nickname, value);
+    const recentNicknameChanges = state.nicknameChanges.filter((timestamp) => Date.now() - timestamp < NICKNAME_WINDOW_MS);
+    if (recentNicknameChanges.length >= NICKNAME_CHANGE_LIMIT) {
+      unlockAchievement('nickname2');
+      maybeUnlockCompletionist();
+    }
     state.nicknamePromptOpen = false;
     dom.nicknameInput.classList.remove('is-invalid');
     updateNicknameUI();
@@ -3222,7 +3447,10 @@
     audio.unlock();
     audio.sfx('click');
     audio.stopMusic();
+    const quickRetry = state.lastGameOverAt > 0 && Date.now() - state.lastGameOverAt <= 5000;
+    state.lastGameOverAt = 0;
     const run = resetRun();
+    run.quickRetry = quickRetry;
     state.mode = 'playing';
     state.accumulator = 0;
     state.lastTime = performance.now();
@@ -3277,6 +3505,10 @@
     if (state.mode !== 'playing') return;
     state.mode = 'paused';
     state.accumulator = 0;
+    if (state.run) {
+      state.run.pauseCount = (state.run.pauseCount || 0) + 1;
+      checkAchievements(state.run);
+    }
     audio.stopMusic();
     audio.sfx('pause');
     setHudVisible(false);
@@ -3325,12 +3557,17 @@
     updateComboBadge();
     const score = Math.floor(run.scoreFloat);
     const qualified = run.distance >= MIN_LEADERBOARD_DISTANCE;
+    run.finishedAt = Date.now();
+    recordStats(run);
     const isRecord = qualified && score > (state.bests[rules.key] || 0);
     if (isRecord) {
       state.bests[rules.key] = score;
       saveBests();
     }
     const entry = qualified ? recordRun(run, score, rules.key) : null;
+    if (entry) markLocalTop10(run, entry);
+    checkAchievements(run);
+    state.lastGameOverAt = Date.now();
     if (!qualified) {
       state.lastRunId = '';
       state.onlineRunRank = null;
@@ -3419,6 +3656,36 @@
     state.onlineFetchedAt = 0;
     queueScoreUpload(entry);
     return entry;
+  }
+
+  function recordStats(run) {
+    if (!run || run.statsRecorded) return;
+    run.statsRecorded = true;
+    const modeKey = run.rules && run.rules.key;
+    if (!isModeKey(modeKey)) return;
+    const stats = state.stats || (state.stats = emptyStats());
+    const modeStats = stats.modes[modeKey];
+    stats.completedRuns += 1;
+    stats.totalCoins += Math.max(0, Math.floor(run.coins || 0));
+    stats.totalStomps += (run.groundStomps || 0) + (run.flyingStomps || 0);
+    stats.totalDoubleJumps += run.doubleJumps || 0;
+    stats.totalDistance += Math.max(0, Math.floor(run.distance || 0));
+    modeStats.runs += 1;
+    modeStats.bestDistance = Math.max(modeStats.bestDistance, Math.floor(run.distance || 0));
+    saveStats();
+  }
+
+  function markLocalTop10(run, entry) {
+    if (!entry || !run || !run.rules || !isModeKey(run.rules.key)) return;
+    const list = sortedBoardEntries(run.rules.key);
+    const rank = list.findIndex((item) => item.id === entry.id) + 1;
+    if (rank <= 0 || rank > 10) return;
+    run.localTop10 = true;
+    const modeStats = state.stats.modes[run.rules.key];
+    if (!modeStats.top10) {
+      modeStats.top10 = true;
+      saveStats();
+    }
   }
 
   function sortedBoardEntries(filter = 'all') {
@@ -3746,11 +4013,25 @@
         rank,
         mode: entry.mode,
       };
+      if (rank === 1) checkGlobalFirst(entry);
     } catch (error) {
       state.onlineRunRank = null;
     } finally {
       state.onlineRankLoading = false;
       if (state.boardOpen && state.boardSource === 'global') renderBoard();
+    }
+  }
+
+  async function checkGlobalFirst(entry) {
+    if (!entry || !isUuid(entry.id) || state.achievements.globalFirst) return;
+    try {
+      const rank = await computeOnlineRunRank(entry);
+      if (rank === 1) {
+        unlockAchievement('globalFirst');
+        maybeUnlockCompletionist();
+      }
+    } catch (error) {
+      // ranking unavailable: keep the achievement locked
     }
   }
 
@@ -3863,6 +4144,7 @@
     uploadRemoteScore(entry).then(() => {
       state.onlineFetchedAt = 0;
       state.onlineRunRank = null;
+      checkGlobalFirst(entry);
       if (state.boardOpen && state.boardSource === 'global') fetchOnlineScores({ force: true });
     }).catch(() => {
       addPendingScore(entry);
@@ -3879,6 +4161,7 @@
       for (const entry of pending) {
         try {
           await uploadRemoteScore(entry);
+          checkGlobalFirst(entry);
         } catch (error) {
           left.push(entry);
         }
@@ -3915,7 +4198,7 @@
     const shellRect = dom.shell.getBoundingClientRect();
     const nodeRect = node.getBoundingClientRect();
     dom.achievementTooltipIcon.innerHTML = achievementIconMarkup(milestone.id);
-    dom.achievementTooltipTitle.textContent = milestone.title;
+    dom.achievementTooltipTitle.textContent = unlockedAt ? milestone.title : '？？？';
     dom.achievementTooltipTitle.hidden = false;
     dom.achievementTooltipText.textContent = achievementDescription(milestone.id);
     dom.achievementTooltipMeta.textContent = unlockedAt
@@ -4024,7 +4307,7 @@
       category.append(categoryDot, categoryLabel);
       canvas.appendChild(category);
 
-      const visibleIds = branch.ids.filter((id) => !HIDDEN_ACHIEVEMENTS.has(id) || bucket[id]);
+      const visibleIds = branch.ids;
       let previousRight = ACHIEVEMENT_MAP.branchX + ACHIEVEMENT_MAP.branchW;
       const nodeTop = rowTop + (ACHIEVEMENT_MAP.branchH - ACHIEVEMENT_MAP.nodeH) / 2;
       visibleIds.forEach((id, index) => {
@@ -4048,7 +4331,7 @@
           'aria-label',
           unlockedAt
             ? `${milestone.title}，已解锁。${achievementDescription(id)}`
-            : `未解锁成就：${milestone.title}。${achievementDescription(id)}`,
+            : `未解锁成就：？？？。${achievementDescription(id)}`,
         );
 
         const icon = document.createElement('span');
@@ -4118,33 +4401,99 @@
     }, challenge ? 3200 : 2600);
   }
 
-  function checkAchievements(run) {
-    const bucket = state.achievements;
-    let unlocked = false;
-    for (const milestone of MILESTONES) {
-      if (bucket[milestone.id]) continue;
-      let reached = false;
-      if (milestone.type === 'score') reached = run.scoreFloat >= milestone.score;
-      else if (milestone.type === 'distance') reached = run.distance >= milestone.meters;
-      else if (milestone.type === 'combo') reached = (run.maxCombo || 0) >= milestone.combo;
-      else if (milestone.type === 'blockScore') reached = (run.maxBlockScore || 0) >= milestone.blockScore;
-      else if (milestone.type === 'heartPrize') reached = Boolean(run.gotHeartPrize);
-      else if (milestone.type === 'doubleStomp') reached = Boolean(run.gotDoubleStomp);
-      else if (milestone.type === 'stompScore') reached = (run.maxStompScore || 0) >= milestone.stompScore;
-      else if (milestone.type === 'tripleDamage') reached = Boolean(run.gotTripleDamage);
-      else if (milestone.type === 'secondHeartDown') reached = Boolean(run.gotSecondHeartDown);
-      else if (milestone.type === 'offscreen') reached = Boolean(run.wentOffscreen);
-      else if (milestone.type === 'offscreenPit') reached = Boolean(run.gotOffscreenPit);
-      if (!reached) continue;
-      bucket[milestone.id] = Date.now();
-      state.achievementQueue.push(milestone);
-      unlocked = true;
+  function achievementReached(milestone, run) {
+    const stats = state.stats || emptyStats();
+    const mode = run.rules && run.rules.key;
+    const ground = run.groundStomps || 0;
+    const flying = run.flyingStomps || 0;
+    if (milestone.type === 'score') return run.scoreFloat >= milestone.score;
+    if (milestone.type === 'distance') return run.distance >= milestone.meters;
+    if (milestone.type === 'combo') return (run.maxCombo || 0) >= milestone.combo;
+    if (milestone.type === 'blockScore') return (run.maxBlockScore || 0) >= milestone.blockScore;
+    if (milestone.type === 'heartPrize') return Boolean(run.gotHeartPrize);
+    if (milestone.type === 'doubleStomp') return Boolean(run.gotDoubleStomp);
+    if (milestone.type === 'stompScore') return (run.maxStompScore || 0) >= milestone.stompScore;
+    if (milestone.type === 'tripleDamage') return Boolean(run.gotTripleDamage);
+    if (milestone.type === 'secondHeartDown') return Boolean(run.gotSecondHeartDown);
+    if (milestone.type === 'offscreen') return Boolean(run.wentOffscreen);
+    if (milestone.type === 'offscreenPit') return Boolean(run.gotOffscreenPit);
+    if (milestone.type === 'doubleJumpsRun') return (run.doubleJumps || 0) >= milestone.value;
+    if (milestone.type === 'jumpsRun') return (run.jumpCount || 0) >= milestone.value;
+    if (milestone.type === 'airTime') return (run.airTime || 0) >= milestone.seconds;
+    if (milestone.type === 'airStompChain') return (run.airStompChain || 0) >= milestone.value;
+    if (milestone.type === 'airDoubleJumpChain') return (run.airDoubleJumps || 0) >= milestone.value;
+    if (milestone.type === 'groundStompsRun') return ground >= milestone.value;
+    if (milestone.type === 'flyingStompsRun') return flying >= milestone.value;
+    if (milestone.type === 'bothStompsRun') return ground >= milestone.value && flying >= milestone.value;
+    if (milestone.type === 'noStompDistance') return run.distance >= milestone.meters && ground + flying === 0;
+    if (milestone.type === 'flyerOnlyStomps') return flying >= milestone.value && ground === 0;
+    if (milestone.type === 'coinsRun') return run.coins >= milestone.value;
+    if (milestone.type === 'coinHealsRun') return (run.coinHeals || 0) >= milestone.value;
+    if (milestone.type === 'nearHealDeath') return Boolean(run.nearHealDeath);
+    if (milestone.type === 'lowCoinsRun') return run.distance >= milestone.meters && run.coins <= milestone.maxCoins;
+    if (milestone.type === 'noDamageDistance') {
+      return mode !== 'extreme' && run.distance >= milestone.meters && (run.damageTaken || 0) === 0;
     }
-    if (!unlocked) return;
+    if (milestone.type === 'modesRuns') {
+      return Object.keys(MODE_RULES).every((key) => stats.modes[key].runs >= milestone.value);
+    }
+    if (milestone.type === 'modesDistance') {
+      return Object.keys(MODE_RULES).every((key) => stats.modes[key].bestDistance >= milestone.meters);
+    }
+    if (milestone.type === 'modesTop10') {
+      return Object.keys(MODE_RULES).every((key) => stats.modes[key].top10);
+    }
+    if (milestone.type === 'localTop10') return Boolean(run.localTop10);
+    if (milestone.type === 'completedRuns') return stats.completedRuns >= milestone.value;
+    if (milestone.type === 'totalCoins') return stats.totalCoins >= milestone.value;
+    if (milestone.type === 'totalStomps') return stats.totalStomps >= milestone.value;
+    if (milestone.type === 'totalDoubleJumps') return stats.totalDoubleJumps >= milestone.value;
+    if (milestone.type === 'totalDistance') return stats.totalDistance >= milestone.value;
+    if (milestone.type === 'speedHold') return (run.speedHoldTime || 0) >= milestone.seconds;
+    if (milestone.type === 'nicknameChanges') {
+      const now = Date.now();
+      return state.nicknameChanges.filter((timestamp) => now - timestamp < NICKNAME_WINDOW_MS).length >= milestone.value;
+    }
+    if (milestone.type === 'quickRetry') return Boolean(run.quickRetry);
+    if (milestone.type === 'pauseCount') return (run.pauseCount || 0) >= milestone.value;
+    if (milestone.type === 'finishHour') {
+      if (!run.finishedAt) return false;
+      const hour = new Date(run.finishedAt).getHours();
+      return hour >= milestone.startHour && hour < milestone.endHour;
+    }
+    return false;
+  }
+
+  function unlockAchievement(id) {
+    if (!id || state.achievements[id]) return false;
+    const milestone = MILESTONES.find((item) => item.id === id);
+    if (!milestone) return false;
+    state.achievements[id] = Date.now();
+    state.achievementQueue.push(milestone);
     saveAchievements();
     updateAchievementBadge();
     if (state.achievementOpen) renderAchievements();
     showNextAchievement();
+    return true;
+  }
+
+  function maybeUnlockCompletionist() {
+    if (state.achievements.completionist) return false;
+    const remaining = MILESTONES.filter((milestone) => milestone.id !== 'completionist');
+    if (!remaining.every((milestone) => state.achievements[milestone.id])) return false;
+    return unlockAchievement('completionist');
+  }
+
+  function checkAchievements(run) {
+    if (!run) return;
+    let unlocked = false;
+    for (const milestone of MILESTONES) {
+      if (milestone.type === 'completionist' || state.achievements[milestone.id]) continue;
+      if (!achievementReached(milestone, run)) continue;
+      if (unlockAchievement(milestone.id)) unlocked = true;
+    }
+    if (maybeUnlockCompletionist()) unlocked = true;
+    return unlocked;
   }
 
   function spawnConfetti() {
@@ -4229,6 +4578,11 @@
 
     const previousHearts = run.hearts;
     run.hearts = Math.max(0, run.hearts - 1);
+    run.damageTaken = (run.damageTaken || 0) + 1;
+    const perHeart = (rules.coinsPerHeart) || 30;
+    if (previousHearts === 1 && rules.heal !== false && (run.healCoins || 0) === perHeart - 1) {
+      run.nearHealDeath = true;
+    }
     run.healCoins = 0;
     const damageTimes = (run.damageTimes || []).filter((time) => run.playTime - time <= 4);
     damageTimes.push(run.playTime);
@@ -4391,10 +4745,12 @@
       run.healCoins = (run.healCoins || 0) + 1;
       if (run.healCoins >= perHeart) {
         run.healCoins = 0;
+        run.coinHeals = (run.coinHeals || 0) + 1;
         restoreHeart(run);
         updateHearts(false);
         showToast(`收集 ${perHeart} 枚金币，<strong>恢复一颗心！</strong>`);
         audio.sfx('heart');
+        checkAchievements(run);
       }
     }
   }
@@ -4413,8 +4769,11 @@
       p.doubleJumped = false;
       p.jumpBuffer = 0;
       p.jumpHeld = true;
+      run.jumpCount = (run.jumpCount || 0) + 1;
+      run.airDoubleJumps = 0;
       audio.sfx('jump');
       spawnBurst(run, p.x + PLAYER_W / 2, p.y + PLAYER_H, 'rgba(245,226,177,.8)', 6, 90);
+      checkAchievements(run);
       return;
     }
     if (p.jumps < 2) {
@@ -4427,6 +4786,9 @@
       audio.sfx('double');
       spawnBurst(run, p.x + PLAYER_W / 2, p.y + PLAYER_H + 4, '#fff0b8', 10, 120);
       p.doubleJumpedAt = run.time;
+      run.doubleJumps = (run.doubleJumps || 0) + 1;
+      run.airDoubleJumps = (run.airDoubleJumps || 0) + 1;
+      checkAchievements(run);
     }
   }
 
@@ -4447,6 +4809,9 @@
     }
 
     run.speed = Math.min(run.rules.maxSpeed, 330 + (p.x - run.startX) * .012 + run.time * 1.2);
+    const atSpeedCap = (run.rules.key === 'hard' || run.rules.key === 'extreme')
+      && run.speed >= run.rules.maxSpeed - .5;
+    run.speedHoldTime = atSpeedCap ? (run.speedHoldTime || 0) + dt : 0;
     run.runDistance += run.speed * dt;
     run.distance = Math.floor(run.runDistance / 20);
     checkAchievements(run);
@@ -4569,8 +4934,11 @@
       p.coyote = .09;
       p.jumps = 0;
       p.airTime = 0;
+      run.airDoubleJumps = 0;
+      run.airStompChain = 0;
     }
     processJumpInput(run);
+    if (!p.onGround) run.airTime = (run.airTime || 0) + dt;
 
     // variable jump height
     if (!p.jumpHeld && p.vy < -290) {
@@ -4647,6 +5015,9 @@
           : 160 + 90 * Math.max(1, run.combo);
         run.scoreFloat += points;
         run.maxStompScore = Math.max(run.maxStompScore || 0, points);
+        if (enemy.flying) run.flyingStomps = (run.flyingStomps || 0) + 1;
+        else run.groundStomps = (run.groundStomps || 0) + 1;
+        run.airStompChain = (run.airStompChain || 0) + 1;
         updateComboBadge();
         audio.sfx('stomp');
         spawnBurst(run, enemy.x, enemy.y + 17, '#ffd66b', 12, 190);
