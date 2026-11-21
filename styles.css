@@ -4495,6 +4495,94 @@ kbd {
   cursor: pointer;
 }
 
+.settings-account {
+  position: relative;
+  z-index: 1;
+  margin-top: .9em;
+  padding: .75em;
+  border: 1px solid rgba(47, 158, 80, .26);
+  border-radius: .7em;
+  background: rgba(239, 250, 241, .72);
+}
+
+.settings-account__head {
+  display: flex;
+  align-items: center;
+  gap: .6em;
+}
+
+.settings-account__head > div {
+  min-width: 0;
+}
+
+.settings-account__badge {
+  display: grid;
+  flex: 0 0 auto;
+  width: 2.2em;
+  height: 2.2em;
+  place-items: center;
+  border-radius: 50%;
+  background: #1f7a3e;
+  color: #fff;
+  font-size: var(--text-xs);
+  font-weight: 900;
+}
+
+.settings-account__head strong,
+.settings-account__head small {
+  display: block;
+}
+
+.settings-account__head strong {
+  color: var(--ink);
+  font-size: var(--text-md);
+  font-weight: 900;
+}
+
+.settings-account__head small {
+  margin-top: .15em;
+  color: rgba(23, 36, 59, .58);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.settings-account__actions {
+  display: flex;
+  gap: .45em;
+  margin-top: .6em;
+}
+
+.settings-account__button {
+  min-height: 2.4em;
+  padding: .3em .8em;
+  border: 1px solid #1f7a3e;
+  border-radius: .55em;
+  background: #1f7a3e;
+  color: #fff;
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.settings-account__button:hover {
+  background: #185f31;
+}
+
+.settings-account__button--ghost {
+  background: transparent;
+  color: #1f7a3e;
+}
+
+.settings-account__button--ghost:hover {
+  background: rgba(31, 122, 62, .1);
+}
+
+.settings-account__button[hidden] {
+  display: none;
+}
+
 .settings-clear {
   position: relative;
   z-index: 1;
@@ -4567,12 +4655,52 @@ kbd {
 
 /* Centered settings/help overlays */
 .screen--settings,
-.screen--help {
+.screen--help,
+.screen--account-choice {
   align-items: center;
   justify-content: center;
   padding: 1.3em;
   background: rgba(5, 23, 29, .62);
   backdrop-filter: blur(12px) saturate(.86);
+}
+
+.account-choice-card {
+  width: min(92%, 28em);
+  text-align: center;
+}
+
+.account-choice-card .modal-heading {
+  margin-bottom: .8em;
+}
+
+.account-choice-card .modal-heading h2 {
+  font-size: 1.5em;
+}
+
+.account-choice-card .modal-heading p {
+  margin: .3em auto 0;
+  max-width: 24em;
+  color: rgba(23, 36, 59, .68);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.account-choice__actions {
+  display: flex;
+  flex-direction: column;
+  gap: .5em;
+  align-items: stretch;
+}
+
+.account-choice__actions .button {
+  width: 100%;
+}
+
+.account-choice__cancel {
+  margin-top: .2em;
+  color: rgba(23, 36, 59, .65);
+  font-size: var(--text-xs);
+  text-align: center;
 }
 
 .screen--help::before {

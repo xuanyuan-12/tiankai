@@ -262,6 +262,20 @@
           </label>
         </div>
 
+        <div class="settings-account">
+          <div class="settings-account__head">
+            <span class="settings-account__badge" aria-hidden="true">微</span>
+            <div>
+              <strong id="accountStatusTitle">未登录</strong>
+              <small id="accountStatusText">登录后可跨设备同步昵称、头像、成就和统计。</small>
+            </div>
+          </div>
+          <div class="settings-account__actions">
+            <button class="settings-account__button" id="wechatLoginButton" type="button">微信登录</button>
+            <button class="settings-account__button settings-account__button--ghost" id="wechatLogoutButton" type="button" hidden>退出登录</button>
+          </div>
+        </div>
+
         <div class="settings-clear">
           <h3>清理本机数据</h3>
           <div class="settings-clear__actions">
@@ -313,6 +327,7 @@
             <li>踩中地面小怪第一次 1000 分，飞行小怪第一次 5000 分，连击越高倍率越高。</li>
             <li>金币可以回心：简单 20 枚、普通 30 枚、困难 60 枚；掉血后才开始累计。</li>
             <li>四档模式共用 54 个成就，成绩可进入本机和全球排行榜。</li>
+            <li>14 个隐藏成就解锁前不显示，解锁后才会出现在成就导图中。</li>
           </ul>
 
           <h3>游玩方式</h3>
@@ -513,10 +528,25 @@
           <p>四档模式通用，达到指定分数、距离或条件即可解锁，记录达成时间</p>
         </div>
         <div class="achievement-map" id="achievementList" role="img" aria-label="成就思维导图"></div>
-        <p class="achievement-map__hint">未解锁的成就显示「？？？」，说明仍可查看</p>
+        <p class="achievement-map__hint">隐藏成就解锁前不显示，解锁后出现；其他未解锁成就显示「？？？」，说明仍可查看</p>
         <div class="modal-footer">
           <span class="board-count" id="achievementProgress">0 / 54</span>
-          <span class="achievement-note">仅保存在本机浏览器</span>
+          <span class="achievement-note">本机记录，登录后可云端同步</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen screen--account-choice" id="accountChoiceScreen" aria-labelledby="accountChoiceTitle" aria-hidden="true">
+      <div class="modal account-choice-card">
+        <div class="modal-heading modal-heading--center">
+          <span class="micro-label">WECHAT ACCOUNT</span>
+          <h2 id="accountChoiceTitle">同步账号资料</h2>
+          <p id="accountChoiceText"></p>
+        </div>
+        <div class="account-choice__actions">
+          <button class="button button--primary" id="accountChoicePrimary" type="button">继续</button>
+          <button class="button button--ghost" id="accountChoiceSecondary" type="button" hidden>使用云端资料</button>
+          <button class="text-button account-choice__cancel" id="accountChoiceCancel" type="button">取消</button>
         </div>
       </div>
     </section>

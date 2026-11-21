@@ -46,6 +46,9 @@
     playerId: 'mario-run-player-id-v1',
     pendingScores: 'mario-run-pending-scores-v1',
     stats: 'mario-run-stats-v1',
+    wechatSession: 'mario-run-wechat-session-v1',
+    wechatLinked: 'mario-run-wechat-linked-v1',
+    wechatDirty: 'mario-run-wechat-dirty-v1',
   };
 
   const ONLINE = Object.freeze({
@@ -55,6 +58,8 @@
     timeout: 15000,
     limit: 100,
     epoch: '2026-11-07T02:45:30Z',
+    wechatAuth: 'https://jwhfpixplrltncxeoydb.supabase.co/functions/v1/wechat-auth',
+    wechatProfile: 'https://jwhfpixplrltncxeoydb.supabase.co/functions/v1/wechat-profile',
   });
 
   const BOARD_LIMIT = 300;
@@ -556,7 +561,22 @@
     { id: 'hall', label: '殿堂', color: '#b58a35', ids: ['completionist'] },
   ]);
 
-  const HIDDEN_ACHIEVEMENTS = new Set(['c10', 'm100k', 'offscreenPit']);
+  const HIDDEN_ACHIEVEMENTS = new Set([
+    'c10',
+    'noStomp1000m',
+    'flyerOnly5',
+    'dmg3',
+    'secondDown',
+    'offscreen',
+    'offscreenPit',
+    'coinHealAlmost',
+    'coinAvoid',
+    'nickname2',
+    'retry5s',
+    'pause5',
+    'nightRun',
+    'morningRun',
+  ]);
 
   const ACHIEVEMENT_ICONS = Object.freeze({
     star: '<path d="m12 2.6 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9L12 2.6Z"/>',
@@ -2169,6 +2189,16 @@
     clearLocalBoardButton: document.getElementById('clearLocalBoardButton'),
     clearAchievementsButton: document.getElementById('clearAchievementsButton'),
     clearBestsButton: document.getElementById('clearBestsButton'),
+    accountStatusTitle: document.getElementById('accountStatusTitle'),
+    accountStatusText: document.getElementById('accountStatusText'),
+    wechatLoginButton: document.getElementById('wechatLoginButton'),
+    wechatLogoutButton: document.getElementById('wechatLogoutButton'),
+    accountChoiceScreen: document.getElementById('accountChoiceScreen'),
+    accountChoiceTitle: document.getElementById('accountChoiceTitle'),
+    accountChoiceText: document.getElementById('accountChoiceText'),
+    accountChoicePrimary: document.getElementById('accountChoicePrimary'),
+    accountChoiceSecondary: document.getElementById('accountChoiceSecondary'),
+    accountChoiceCancel: document.getElementById('accountChoiceCancel'),
     nicknameScreen: document.getElementById('nicknameScreen'),
     nicknameButton: document.getElementById('nicknameButton'),
     nicknameText: document.getElementById('nicknameText'),
@@ -2445,6 +2475,18 @@
     bests: loadBests(),
     achievements: loadAchievements(),
     stats: loadStats(),
+    wechatToken: readStore(STORAGE.wechatSession, ''),
+    wechatAccount: null,
+    wechatLinked: readStore(STORAGE.wechatLinked, ''),
+    wechatDirty: readStore(STORAGE.wechatDirty, '') === '1',
+    wechatAvailable: null,
+    wechatStatus: 'signed_out',
+    wechatProfileVersion: 0,
+    wechatSyncTimer: 0,
+    wechatSaving: false,
+    wechatSyncQueued: false,
+    wechatApplying: false,
+    accountChoiceOpen: false,
     achievementQueue: [],
     achievementTimer: 0,
     achievementOpen: false,
@@ -2624,6 +2666,7 @@
       const av = selectedAvatar();
       showToast(`已切换为 <strong>${av.name}</strong>${state.mode === 'paused' ? ' · 继续游戏即可看到' : ''}`);
     }
+    scheduleCloudSync();
   }
 
   function onAvatarCardClick(id) {
@@ -2703,6 +2746,7 @@
           refreshAvatarUI();
           if (!saved) showToast('头像已应用，但浏览器没有足够空间保存它');
           else showToast('照片已贴到主角脸上 <strong>★</strong>');
+          scheduleCloudSync();
           audio.sfx('coin');
         };
         finalImage.onerror = () => {
@@ -3119,6 +3163,7 @@
       nickname: dom.nicknameScreen,
       settings: dom.settingsScreen,
       help: dom.helpScreen,
+      account: dom.accountChoiceScreen,
     };
     for (const [key, node] of Object.entries(mapping)) {
       const active = key === name;
@@ -3162,6 +3207,7 @@
   function markWipeData() {
     unlockAchievement('wipeData');
     maybeUnlockCompletionist();
+    scheduleCloudSync();
   }
 
   function clearLocalScores() {
@@ -3220,6 +3266,11 @@
     audio.sfx('click');
     syncSettingsUI();
     resetSettingsClearButtons();
+    updateAccountUI();
+    void checkWechatAvailability();
+    if (state.wechatToken && state.wechatStatus === 'offline') {
+      void loadWechatSession();
+    }
     showScreen('settings');
     window.setTimeout(() => {
       dom.settingsCloseButton.focus({ preventScroll: true });
@@ -3234,6 +3285,418 @@
     showScreen(state.settingsReturn === 'pause' ? 'pause' : state.settingsReturn === 'over' ? 'over' : 'start');
     if (document.activeElement && document.activeElement !== document.body) {
       document.activeElement.blur();
+    }
+  }
+
+  /* ==========================================================
+     WeChat login and cloud profile sync
+     ========================================================== */
+
+  function setWechatToken(token) {
+    state.wechatToken = token || '';
+    writeStore(STORAGE.wechatSession, state.wechatToken);
+  }
+
+  function setWechatLinked(accountId) {
+    state.wechatLinked = accountId || '';
+    writeStore(STORAGE.wechatLinked, state.wechatLinked);
+  }
+
+  function markCloudDirty() {
+    if (state.wechatApplying) return;
+    state.wechatDirty = true;
+    writeStore(STORAGE.wechatDirty, '1');
+  }
+
+  function clearCloudDirty() {
+    state.wechatDirty = false;
+    writeStore(STORAGE.wechatDirty, '');
+  }
+
+  function clearWechatSession(status = 'signed_out') {
+    setWechatToken('');
+    setWechatLinked('');
+    state.wechatAccount = null;
+    state.wechatProfileVersion = 0;
+    state.wechatStatus = status;
+    updateAccountUI();
+  }
+
+  function updateAccountUI() {
+    if (!dom.accountStatusTitle || !dom.accountStatusText) return;
+    const signedIn = state.wechatStatus === 'signed_in' && Boolean(state.wechatAccount);
+    const loading = state.wechatStatus === 'loading';
+    const unavailable = state.wechatAvailable === false;
+    dom.wechatLoginButton.hidden = signedIn || loading;
+    dom.wechatLoginButton.disabled = state.wechatAvailable !== true;
+    dom.wechatLoginButton.textContent = unavailable ? '微信登录未配置' : '微信登录';
+    dom.wechatLogoutButton.hidden = !signedIn;
+    if (loading) {
+      dom.accountStatusTitle.textContent = '正在连接微信…';
+      dom.accountStatusText.textContent = '正在读取云端资料，请稍候。';
+      return;
+    }
+    if (signedIn) {
+      const name = state.wechatAccount.wechatNickname || '微信用户';
+      dom.accountStatusTitle.textContent = `已登录 · ${name}`;
+      dom.accountStatusText.textContent = state.wechatProfileVersion
+        ? `云端资料 v${state.wechatProfileVersion} · 昵称、头像、成就和统计会自动同步。`
+        : '已连接微信 · 本机资料会在第一次同步时上传。';
+      return;
+    }
+    if (state.wechatStatus === 'offline') {
+      dom.accountStatusTitle.textContent = '微信连接暂时不可用';
+      dom.accountStatusText.textContent = '已保留登录状态，网络恢复后会自动重试同步。';
+      return;
+    }
+    if (state.wechatStatus === 'expired') {
+      dom.accountStatusTitle.textContent = '微信登录已失效';
+      dom.accountStatusText.textContent = '请重新登录；本机资料不会被删除。';
+      return;
+    }
+    if (unavailable) {
+      dom.accountStatusTitle.textContent = '微信登录未配置';
+      dom.accountStatusText.textContent = '需要微信开放平台网站应用和 Supabase Edge Functions。本机模式不受影响。';
+      return;
+    }
+    dom.accountStatusTitle.textContent = '未登录';
+    dom.accountStatusText.textContent = '登录后可跨设备同步昵称、头像、成就和统计。';
+  }
+
+  async function checkWechatAvailability() {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 5000);
+    try {
+      const response = await fetch(`${ONLINE.wechatAuth}?action=health`, {
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      const payload = response.ok ? await response.json() : null;
+      state.wechatAvailable = Boolean(payload && payload.configured);
+    } catch (error) {
+      state.wechatAvailable = false;
+    } finally {
+      window.clearTimeout(timer);
+      updateAccountUI();
+    }
+  }
+
+  async function wechatProfileRequest(method = 'GET', body = null) {
+    if (!state.wechatToken) throw Object.assign(new Error('no session'), { status: 401 });
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 15000);
+    try {
+      const response = await fetch(ONLINE.wechatProfile, {
+        method,
+        headers: {
+          Authorization: `Bearer ${state.wechatToken}`,
+          ...(body ? { 'Content-Type': 'application/json' } : {}),
+        },
+        body: body ? JSON.stringify(body) : undefined,
+        cache: 'no-store',
+        signal: controller.signal,
+      });
+      let payload = null;
+      try {
+        payload = await response.json();
+      } catch (error) {
+        payload = null;
+      }
+      if (!response.ok) {
+        throw Object.assign(new Error(payload && payload.error ? payload.error : `HTTP ${response.status}`), {
+          status: response.status,
+          payload,
+        });
+      }
+      return payload;
+    } finally {
+      window.clearTimeout(timer);
+    }
+  }
+
+  function hasLocalCloudProfile() {
+    return Boolean(
+      state.nickname
+      || Object.keys(state.achievements || {}).length
+      || (state.stats && state.stats.completedRuns)
+      || state.customData
+    );
+  }
+
+  function buildCloudProfile() {
+    return {
+      schemaVersion: 1,
+      nickname: state.nickname || '',
+      nicknameChanges: Array.isArray(state.nicknameChanges) ? state.nicknameChanges.slice(-20) : [],
+      avatar: {
+        id: state.selected || 'default',
+        customData: state.customData || null,
+      },
+      achievements: state.achievements || {},
+      stats: state.stats || emptyStats(),
+    };
+  }
+
+  function applyCloudProfile(profile) {
+    if (!profile || typeof profile !== 'object') return;
+    state.wechatApplying = true;
+    try {
+      if (typeof profile.nickname === 'string') {
+        state.nickname = profile.nickname.trim().slice(0, 12);
+        writeStore(STORAGE.nickname, state.nickname);
+      }
+      if (Array.isArray(profile.nicknameChanges)) {
+        state.nicknameChanges = profile.nicknameChanges
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && value > 0);
+        writeStore(STORAGE.nicknameChanges, JSON.stringify(state.nicknameChanges));
+      }
+      if (profile.avatar && typeof profile.avatar === 'object') {
+        const avatarId = typeof profile.avatar.id === 'string' ? profile.avatar.id : 'default';
+        const customData = typeof profile.avatar.customData === 'string' ? profile.avatar.customData : '';
+        writeStore(STORAGE.avatar, avatarId);
+        writeStore(STORAGE.custom, customData);
+        applyAvatarFromStorage();
+      }
+      if (profile.achievements && typeof profile.achievements === 'object') {
+        writeStore(STORAGE.achievementsV2, JSON.stringify(profile.achievements));
+        state.achievements = loadAchievements();
+        state.achievementQueue = [];
+        updateAchievementBadge();
+        if (state.achievementOpen) renderAchievements();
+      }
+      if (profile.stats && typeof profile.stats === 'object') {
+        writeStore(STORAGE.stats, JSON.stringify(profile.stats));
+        state.stats = loadStats();
+      }
+      updateNicknameUI();
+      updateMenuBest();
+      refreshAvatarUI();
+      applyAvatarFromStorage();
+      if (state.wechatAccount && state.wechatAccount.id) setWechatLinked(state.wechatAccount.id);
+      clearCloudDirty();
+    } finally {
+      state.wechatApplying = false;
+    }
+  }
+
+  function showAccountChoice(config) {
+    state.accountChoiceReturn = state.settingsOpen ? 'settings' : 'start';
+    state.accountChoiceOpen = true;
+    dom.accountChoiceTitle.textContent = config.title || '微信账号';
+    dom.accountChoiceText.textContent = config.text || '';
+    dom.accountChoicePrimary.textContent = config.primaryLabel || '继续';
+    dom.accountChoicePrimary.hidden = !config.primaryLabel;
+    dom.accountChoiceSecondary.textContent = config.secondaryLabel || '';
+    dom.accountChoiceSecondary.hidden = !config.secondaryLabel;
+    dom.accountChoiceCancel.hidden = Boolean(config.hideCancel);
+
+    const close = () => {
+      state.accountChoiceOpen = false;
+      dom.accountChoicePrimary.onclick = null;
+      dom.accountChoiceSecondary.onclick = null;
+      dom.accountChoiceCancel.onclick = null;
+      showScreen(state.accountChoiceReturn === 'settings' ? 'settings' : 'start');
+    };
+
+    dom.accountChoiceCancel.onclick = () => {
+      audio.sfx('click');
+      close();
+    };
+    dom.accountChoicePrimary.onclick = () => {
+      audio.sfx('click');
+      close();
+      if (config.onPrimary) void config.onPrimary();
+    };
+    dom.accountChoiceSecondary.onclick = () => {
+      audio.sfx('click');
+      close();
+      if (config.onSecondary) void config.onSecondary();
+    };
+
+    showScreen('account');
+    window.setTimeout(() => dom.accountChoicePrimary.focus({ preventScroll: true }), 60);
+  }
+
+  function handleWechatExpired() {
+    clearWechatSession('expired');
+    showToast('微信登录已失效，请重新登录');
+  }
+
+  async function loadWechatSession() {
+    if (!state.wechatToken) {
+      state.wechatStatus = 'signed_out';
+      updateAccountUI();
+      return;
+    }
+    state.wechatStatus = 'loading';
+    updateAccountUI();
+    try {
+      const payload = await wechatProfileRequest();
+      state.wechatAccount = payload.account || null;
+      state.wechatProfileVersion = Number(payload.version) || 0;
+      state.wechatStatus = 'signed_in';
+      updateAccountUI();
+      const cloudProfile = payload.profile;
+      const linked = Boolean(state.wechatAccount && state.wechatAccount.id && state.wechatLinked === state.wechatAccount.id);
+      if (!cloudProfile) {
+        if (hasLocalCloudProfile()) {
+          const saved = await saveCloudProfile({ baseVersion: 0, silent: true });
+          if (saved) showToast('已把本机资料上传到微信账号');
+        }
+        return;
+      }
+      if (!hasLocalCloudProfile()) {
+        applyCloudProfile(cloudProfile);
+        if (state.wechatAccount) setWechatLinked(state.wechatAccount.id);
+        clearCloudDirty();
+        showToast('已恢复微信账号资料');
+        return;
+      }
+      if (linked && !state.wechatDirty) {
+        applyCloudProfile(cloudProfile);
+        showToast('已更新云端资料');
+        return;
+      }
+      showAccountChoice({
+        title: '发现云端资料',
+        text: '本机和云端都有昵称、头像、成就或统计。请选择要保留的一份；不会自动覆盖。',
+        primaryLabel: '延续本机资料',
+        secondaryLabel: '使用云端资料',
+        onPrimary: () => saveCloudProfile({ baseVersion: state.wechatProfileVersion }),
+        onSecondary: () => {
+          applyCloudProfile(cloudProfile);
+          showToast('已使用云端资料');
+        },
+      });
+    } catch (error) {
+      if (error.status === 401) {
+        handleWechatExpired();
+        return;
+      }
+      state.wechatStatus = 'offline';
+      updateAccountUI();
+      showToast('微信资料读取失败，稍后会重试');
+    }
+  }
+
+  function handleCloudConflict(payload) {
+    const cloudProfile = payload && payload.profile;
+    const cloudVersion = Number(payload && payload.version) || 0;
+    if (!cloudProfile) {
+      void saveCloudProfile({ baseVersion: cloudVersion, silent: true });
+      return;
+    }
+    showAccountChoice({
+      title: '云端已有更新',
+      text: '另一个设备刚刚更新了云端资料。请选择保留云端版本，或用本机资料覆盖云端；不会自动合并。',
+      primaryLabel: '使用云端最新',
+      secondaryLabel: '用本机资料覆盖',
+      onPrimary: () => {
+        state.wechatProfileVersion = cloudVersion;
+        applyCloudProfile(cloudProfile);
+        updateAccountUI();
+        showToast('已使用云端最新资料');
+      },
+      onSecondary: () => {
+        void saveCloudProfile({ baseVersion: cloudVersion });
+      },
+    });
+  }
+
+  async function saveCloudProfile(options = {}) {
+    if (!state.wechatToken || state.wechatStatus !== 'signed_in' || state.wechatApplying) return false;
+    if (state.wechatSaving) {
+      state.wechatSyncQueued = true;
+      return false;
+    }
+    state.wechatSaving = true;
+    try {
+      const profile = buildCloudProfile();
+      const payload = await wechatProfileRequest('POST', {
+        action: 'save',
+        baseVersion: options.baseVersion ?? state.wechatProfileVersion,
+        profile,
+      });
+      state.wechatProfileVersion = Number(payload.version) || state.wechatProfileVersion;
+      if (state.wechatAccount && state.wechatAccount.id) setWechatLinked(state.wechatAccount.id);
+      clearCloudDirty();
+      updateAccountUI();
+      if (!options.silent) showToast('云端资料已同步');
+      return true;
+    } catch (error) {
+      if (error.status === 401) {
+        handleWechatExpired();
+      } else if (error.status === 409) {
+        handleCloudConflict(error.payload);
+      } else if (error.status === 413) {
+        showToast('云端资料太大，请换一个更小的头像');
+      } else {
+        state.wechatStatus = 'offline';
+        updateAccountUI();
+        if (!options.silent) showToast('云端同步失败，保留本机资料');
+      }
+      return false;
+    } finally {
+      state.wechatSaving = false;
+      if (state.wechatSyncQueued) {
+        state.wechatSyncQueued = false;
+        scheduleCloudSync(600);
+      }
+    }
+  }
+
+  function scheduleCloudSync(delay = 1400) {
+    markCloudDirty();
+    if (!state.wechatToken || state.wechatStatus !== 'signed_in' || state.wechatApplying) return;
+    if (state.wechatSyncTimer) window.clearTimeout(state.wechatSyncTimer);
+    state.wechatSyncTimer = window.setTimeout(() => {
+      state.wechatSyncTimer = 0;
+      void saveCloudProfile({ silent: true });
+    }, delay);
+  }
+
+  function startWechatLogin() {
+    if (state.wechatStatus === 'loading') return;
+    if (state.wechatAvailable !== true) {
+      showToast('微信登录尚未配置，请先按接入步骤部署');
+      if (state.wechatAvailable === null) void checkWechatAvailability();
+      return;
+    }
+    const redirect = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+    window.location.href = `${ONLINE.wechatAuth}?action=start&redirect=${encodeURIComponent(redirect)}`;
+  }
+
+  async function logoutWechat() {
+    if (!state.wechatToken) return;
+    try {
+      await wechatProfileRequest('POST', { action: 'logout' });
+    } catch (error) {
+      // Local logout must still work when the network is unavailable.
+    }
+    clearWechatSession('signed_out');
+    showToast('已退出微信登录；本机资料仍然保留');
+  }
+
+  function consumeWechatCallback() {
+    if (!window.location.hash) return false;
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const token = hash.get('wechat_login');
+    if (!token || !/^[a-f0-9]{64}$/i.test(token)) return false;
+    const cleanUrl = `${window.location.pathname}${window.location.search}`;
+    window.history.replaceState(null, '', cleanUrl);
+    setWechatToken(token);
+    setWechatLinked('');
+    return true;
+  }
+
+  function initWechatAccount() {
+    const fromCallback = consumeWechatCallback();
+    updateAccountUI();
+    void checkWechatAvailability();
+    if (state.wechatToken) {
+      void loadWechatSession();
+      if (fromCallback) showToast('微信登录成功，正在读取账号资料');
     }
   }
 
@@ -3338,6 +3801,7 @@
     } else {
       showToast(`昵称已设为 <strong>${escapeHtml(value)}</strong>，30 天内还可修改 2 次`);
     }
+    scheduleCloudSync();
   }
 
   function cancelNickname() {
@@ -3682,6 +4146,7 @@
     modeStats.runs += 1;
     modeStats.bestDistance = Math.max(modeStats.bestDistance, Math.floor(run.distance || 0));
     saveStats();
+    scheduleCloudSync();
   }
 
   function markLocalTop10(run, entry) {
@@ -4357,13 +4822,13 @@
       category.append(categoryDot, categoryLabel);
       canvas.appendChild(category);
 
-      const visibleIds = branch.ids;
       let previousRight = ACHIEVEMENT_MAP.branchX + ACHIEVEMENT_MAP.branchW;
       const nodeTop = rowTop + (ACHIEVEMENT_MAP.branchH - ACHIEVEMENT_MAP.nodeH) / 2;
-      visibleIds.forEach((id, index) => {
+      branch.ids.forEach((id, index) => {
         const milestone = milestoneById.get(id);
         if (!milestone) return;
         const unlockedAt = bucket[id];
+        if (HIDDEN_ACHIEVEMENTS.has(id) && !unlockedAt) return;
         const nodeX = ACHIEVEMENT_MAP.nodeX + index * ACHIEVEMENT_MAP.nodeStepX;
         addPath(`M ${previousRight} ${rowCenterY} H ${nodeX}`, branch.color, !unlockedAt);
 
@@ -4527,6 +4992,7 @@
     updateAchievementBadge();
     if (state.achievementOpen) renderAchievements();
     showNextAchievement();
+    scheduleCloudSync();
     return true;
   }
 
@@ -6683,6 +7149,16 @@
     dom.settingsScreen.addEventListener('click', (event) => {
       if (event.target === dom.settingsScreen) closeSettings();
     });
+    dom.wechatLoginButton.addEventListener('click', () => {
+      audio.unlock();
+      audio.sfx('click');
+      startWechatLogin();
+    });
+    dom.wechatLogoutButton.addEventListener('click', () => {
+      audio.unlock();
+      audio.sfx('click');
+      void logoutWechat();
+    });
     dom.musicVolume.addEventListener('input', () => {
       audio.setMusicVolume(Number(dom.musicVolume.value) / 100);
       dom.musicVolumeValue.textContent = settingsVolumePercent(audio.musicVolume);
@@ -6889,6 +7365,7 @@
     updateHud(true);
     setupInput();
     updateNicknameUI();
+    initWechatAccount();
     if (!state.nickname) openNicknamePrompt();
     renderScene(performance.now() / 1000);
     window.requestAnimationFrame(frame);
