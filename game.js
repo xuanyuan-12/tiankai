@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    SUPER MARIO RUN — game logic
    Everything is drawn by hand on a canvas; no external assets.
    ============================================================ */
@@ -5388,7 +5388,7 @@
     run.runDistance += run.speed * dt;
     run.distance = Math.floor(run.runDistance / 20);
     checkAchievements(run);
-    run.scoreFloat += run.speed * dt * .75;
+    run.scoreFloat += run.speed * dt;
     run.runPhase += dt * (7.8 + run.speed / 90);
 
     p.prevX = p.x;
@@ -6040,46 +6040,92 @@
   }
 
   function drawCoin(x, y, time, phase, scale = 1) {
-    const spin = Math.cos(time * 3.4 + phase);
-    const width = .25 + Math.abs(spin) * .75;
+    const angle = time * 3.4 + phase;
+    const face = Math.cos(angle);
+    const thickness = Math.sin(angle) * 3.8;
+    const width = .18 + Math.abs(face) * .82;
+    const edge = Math.max(1.8, 12 * width);
+
     ctx.save();
     ctx.translate(x, y);
-    ctx.scale(width * scale, scale);
-    // glow
-    ctx.globalAlpha = .23;
+    ctx.scale(scale, scale);
+
+    // soft halo
+    ctx.globalAlpha = .2;
     ctx.fillStyle = '#ffe66f';
     ctx.beginPath();
     ctx.arc(0, 0, 19, 0, TAU);
     ctx.fill();
     ctx.globalAlpha = 1;
-    // coin
+
+    // The dark back face is offset to one side, leaving a visible rim
+    // while the coin is turning.
+    ctx.save();
+    ctx.translate(thickness, 0);
     ctx.beginPath();
-    ctx.arc(0, 0, 12, 0, TAU);
-    const grad = ctx.createLinearGradient(-9, -11, 9, 12);
-    grad.addColorStop(0, '#fff5ad');
-    grad.addColorStop(.42, '#ffd84b');
-    grad.addColorStop(1, '#f2a51f');
+    ctx.ellipse(0, 0, edge, 12, 0, 0, TAU);
+    ctx.fillStyle = '#b96a12';
+    ctx.fill();
+    ctx.restore();
+
+    // A thin side wall connects the back and front faces.
+    if (Math.abs(thickness) > .35) {
+      ctx.beginPath();
+      ctx.ellipse(thickness * .52, 0, edge * .92, 11.4, 0, 0, TAU);
+      ctx.fillStyle = '#d28a1c';
+      ctx.fill();
+    }
+
+    // front face
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 12 * width, 12, 0, 0, TAU);
+    const grad = ctx.createLinearGradient(-10 * width, -12, 10 * width, 12);
+    grad.addColorStop(0, '#fff8b4');
+    grad.addColorStop(.35, '#ffdc4f');
+    grad.addColorStop(.72, '#f6b72b');
+    grad.addColorStop(1, '#d88b13');
     ctx.fillStyle = grad;
     ctx.fill();
     ctx.strokeStyle = '#a35f13';
-    ctx.lineWidth = 1.7;
+    ctx.lineWidth = 1.6;
     ctx.stroke();
-    ctx.strokeStyle = 'rgba(255,250,202,.9)';
-    ctx.lineWidth = 1.4;
+
+    // inner pressed ring
     ctx.beginPath();
-    ctx.arc(0, 0, 8.3, 0, TAU);
+    ctx.ellipse(0, 0, Math.max(1.2, 8.3 * width), 8.3, 0, 0, TAU);
+    ctx.strokeStyle = 'rgba(255, 248, 177, .92)';
+    ctx.lineWidth = 1.3;
     ctx.stroke();
-    // tiny star shine
-    if (spin > .72) {
-      ctx.fillStyle = '#fffce1';
+
+    // embossed five-point star, compressed with the face
+    if (Math.abs(face) > .32) {
+      ctx.save();
+      ctx.scale(Math.max(.16, width), 1);
       ctx.beginPath();
-      ctx.arc(-2, -3, 2.1, 0, TAU);
+      for (let i = 0; i < 10; i += 1) {
+        const radius = i % 2 === 0 ? 5.1 : 2.25;
+        const a = -Math.PI / 2 + i * Math.PI / 5;
+        const px = Math.cos(a) * radius;
+        const py = Math.sin(a) * radius;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255, 247, 181, .72)';
       ctx.fill();
+      ctx.restore();
     }
+
+    // bright edge glint on the leading side
+    ctx.beginPath();
+    ctx.ellipse(-1.2 * width, -1.4, Math.max(.8, 6.8 * width), 7.4, 0, 0, TAU);
+    ctx.strokeStyle = 'rgba(255, 252, 215, .46)';
+    ctx.lineWidth = .9;
+    ctx.stroke();
     ctx.restore();
 
     // sparkle
-    if (spin > .64) {
+    if (face > .6) {
       const twinkle = (Math.sin(time * 6 + phase) + 1) / 2;
       ctx.save();
       ctx.translate(x + 14, y - 10);

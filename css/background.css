@@ -26,6 +26,7 @@
   --bg-grass: #55bf5e;
   --bg-track: #b9824c;
   --bg-star-color: #fff4c0;
+  --bg-bird-color: #35525a;
   --bg-panel-color: rgba(7, 21, 31, .68);
   --bg-vignette: rgba(7, 20, 35, .28);
   --bg-horizon: rgba(255, 239, 169, .36);
@@ -55,6 +56,7 @@ html.theme-day {
   --bg-grass: #55bf5e;
   --bg-track: #b9824c;
   --bg-star-color: #fff4c0;
+  --bg-bird-color: #35525a;
   --bg-panel-color: rgba(7, 21, 31, .65);
   --bg-vignette: rgba(7, 20, 35, .25);
   --bg-horizon: rgba(255, 239, 169, .42);
@@ -84,6 +86,7 @@ html.theme-dusk {
   --bg-grass: #6f4c5a;
   --bg-track: #6d414f;
   --bg-star-color: #ffe8ba;
+  --bg-bird-color: #62394b;
   --bg-panel-color: rgba(27, 15, 35, .72);
   --bg-vignette: rgba(24, 12, 34, .38);
   --bg-horizon: rgba(255, 177, 99, .45);
@@ -113,6 +116,7 @@ html.theme-night {
   --bg-grass: #102e31;
   --bg-track: #202b31;
   --bg-star-color: #fff3c4;
+  --bg-bird-color: #c0d2e7;
   --bg-panel-color: rgba(4, 10, 20, .8);
   --bg-vignette: rgba(1, 6, 15, .48);
   --bg-horizon: rgba(211, 172, 98, .2);
@@ -209,7 +213,7 @@ html.theme-night {
 .world-background .bg-mountains {
   top: auto;
   bottom: 0;
-  height: 63%;
+  height: 68%;
   opacity: .95;
 }
 
@@ -218,6 +222,51 @@ html.theme-night {
   bottom: 0;
   height: 22%;
   opacity: .9;
+}
+
+.world-background .bg-birds {
+  top: 0;
+  bottom: auto;
+  height: 52%;
+  opacity: .78;
+  transition: opacity .4s ease;
+}
+
+.bg-bird {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: calc(1.4em * var(--bird-scale, 1));
+  height: auto;
+  opacity: .58;
+  pointer-events: none;
+  will-change: left, top;
+}
+
+.bg-bird svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.bg-bird__wings {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: bg-bird-flap var(--bird-flap, .75s) ease-in-out infinite;
+}
+
+@keyframes bg-bird-flap {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(.52); }
+}
+
+html.bg-lite .bg-bird:nth-child(n + 5) {
+  display: none;
+}
+
+html.reduce-motion .bg-birds {
+  display: none;
 }
 
 .bg-lite .cloud-detail,

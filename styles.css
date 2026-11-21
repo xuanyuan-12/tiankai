@@ -1208,6 +1208,62 @@ label:focus-visible {
   color: var(--red-deep);
 }
 
+.logo-splash {
+  position: absolute;
+  left: calc(100% + .2em);
+  bottom: .35em;
+  z-index: 4;
+  color: #ffe34a;
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: 900;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: rotate(-8deg);
+  text-shadow:
+    .06em .06em 0 var(--ink),
+    -.04em -.04em 0 var(--ink),
+    .04em -.04em 0 var(--ink),
+    -.04em .04em 0 var(--ink),
+    0 .16em .28em rgba(4, 25, 31, .36);
+  animation: logo-splash-pulse 1.65s ease-in-out infinite;
+}
+
+@keyframes logo-splash-pulse {
+  0%, 100% {
+    opacity: .42;
+    transform: rotate(-8deg) scale(.96);
+  }
+  48%, 58% {
+    opacity: 1;
+    transform: rotate(-6deg) scale(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-splash {
+    animation: none;
+    opacity: .95;
+  }
+}
+
+@media (max-width: 1100px) {
+  .logo-splash {
+    left: auto;
+    right: 0;
+    bottom: -.95em;
+  }
+}
+
+@media (max-width: 700px) {
+  .logo-splash {
+    right: .2em;
+    bottom: -1.15em;
+    font-size: var(--text-xs);
+  }
+}
+
 .hero-title {
   margin: 1em 0 .35em;
   color: #fffdf4;
