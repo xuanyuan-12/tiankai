@@ -306,7 +306,7 @@
         <div class="settings-about">
           <div class="settings-about__row">
             <span>当前版本</span>
-            <strong>v0.4.0</strong>
+            <strong>v0.4.1</strong>
           </div>
           <div class="settings-about__row">
             <span>制作人名单</span>
@@ -360,7 +360,7 @@
           <ul>
             <li>地刺和深坑会扣心；困难/极限还会出现飞行小怪。</li>
             <li>问号砖有概率回一颗心，也有概率给出随机分数。</li>
-            <li>排行榜只记录 100 米及以上的对局，每个难度显示前 200 名。</li>
+            <li>排行榜只记录 100 米及以上的对局，每个难度显示前 200 名；全球榜默认显示每人最佳记录，可切换查看全部记录。</li>
             <li>每局结束后的本局排名会固定显示在排行榜下部。</li>
           </ul>
         </div>
@@ -491,6 +491,11 @@
         <div class="board-sources" id="boardSources" role="group" aria-label="选择排行榜范围">
           <button class="board-source" type="button" data-source="local" aria-pressed="false">本机</button>
           <button class="board-source is-active" type="button" data-source="global" aria-pressed="true">全球</button>
+        </div>
+
+        <div class="board-global-views" id="boardGlobalViews" role="group" aria-label="全球记录方式">
+          <button class="board-source board-view is-active" type="button" data-global-view="best" aria-pressed="true">每人最佳</button>
+          <button class="board-source board-view" type="button" data-global-view="all" aria-pressed="false">全部记录</button>
         </div>
 
         <div class="board-filter-row">

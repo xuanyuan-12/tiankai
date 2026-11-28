@@ -125,68 +125,139 @@
     </svg>`;
   }
 
-  function mountainSvg() {
+  function mountainFarSvg() {
     return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <path fill="var(--bg-mountain-far)" opacity=".68"
-        d="M0 540V338c82-24 142 8 222-12 80-20 140-4 208 14 68 18 128-22 208-16 80 6 150 30 220 14 40-9 70-2 102 6V540Z"/>
+      <path fill="var(--bg-mountain-far)" opacity=".5"
+        d="M0 540V330
+          C72 308 118 322 188 302
+          C258 282 316 248 388 266
+          C460 284 510 312 584 298
+          C658 284 716 246 786 264
+          C846 280 904 306 960 330
+          V540Z"/>
+      <path class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".16"
+        d="M0 396
+          C108 408 208 382 318 392
+          C428 402 536 412 648 394
+          C756 378 864 398 960 412
+          V422
+          C864 412 756 392 648 408
+          C536 426 428 416 318 406
+          C208 396 108 422 0 410Z"/>
+    </svg>`;
+  }
+
+  function mountainMidSvg() {
+    const snowId = nextArtId('bg-snow');
+    return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="${snowId}" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" style="stop-color:var(--bg-mountain-snow)"/>
+          <stop offset=".12" style="stop-color:var(--bg-mountain-snow)"/>
+          <stop offset=".26" style="stop-color:var(--bg-mountain-mid)"/>
+          <stop offset="1" style="stop-color:var(--bg-mountain-mid)"/>
+        </linearGradient>
+      </defs>
+      <path fill="url(#${snowId})" opacity=".96"
+        d="M0 540V438
+          C58 424 112 392 170 366
+          C232 338 268 224 332 214
+          C392 204 436 292 496 326
+          C554 358 604 314 662 278
+          C722 240 770 218 826 238
+          C878 256 918 320 960 438
+          V540Z"/>
       <path class="mountain-detail" fill="var(--bg-mountain-haze)" opacity=".24"
-        d="M0 430c120-20 220 10 340-2 120-12 240 14 360 4 100-8 180 8 260 10v18c-80-8-160 10-240 2-140-14-280 10-420-2-100-9-200 8-300-2Z"/>
-      <path fill="var(--bg-mountain-mid)" opacity=".94"
-        d="M0 540V440c70-26 120-50 180-100 40-35 70-108 110-118 40-10 60 78 100 120 40 42 80 18 120-12 40-30 60-100 100-112 40-12 70 82 110 134 40 52 90 62 140 74 40 10 70 12 100 14V540Z"/>
-      <g class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".2">
-        <path d="M300 222l32 54-20 2-17-38Z"/>
-        <path d="M520 250l32 54-20 2-17-38Z"/>
-        <path d="M620 218l32 54-20 2-17-38Z"/>
-        <path d="M120 330l52 30-18 6-38-20Z"/>
-      </g>
-      <g class="mountain-detail" fill="var(--bg-mountain-shadow)" opacity=".28">
-        <path d="M300 222l-24 54 17 2 15-38Z"/>
-        <path d="M520 250l-24 54 17 2 15-38Z"/>
-        <path d="M620 218l-24 54 17 2 15-38Z"/>
-        <path d="M180 340l-38 28 18 6 34-22Z"/>
-      </g>
-      <g fill="var(--bg-mountain-snow)" opacity=".82">
-        <path d="M300 212l12 22-6 2-6-12-6 11-5-2Z"/>
-        <path d="M520 240l12 22-6 2-6-12-6 11-5-2Z"/>
-        <path d="M620 208l12 22-6 2-6-12-6 11-5-2Z"/>
-      </g>
-      <path fill="var(--bg-mountain-near)" opacity=".96"
-        d="M0 540V474c120-18 220 12 340-2 120-14 220 20 340 6 120-14 220 8 280-4V540Z"/>
-      <path fill="var(--bg-mountain-shadow)" opacity=".34"
-        d="M0 540v-26c120-8 240-4 360-10 120-6 240 8 360 0 80-5 160 4 240 8v28Z"/>
+        d="M0 438
+          C104 420 208 448 312 436
+          C424 424 528 452 640 440
+          C752 428 856 448 960 456
+          V472
+          C856 456 752 448 640 462
+          C528 474 424 452 312 456
+          C208 460 104 442 0 454Z"/>
       <g class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".22">
-        <path d="M196 360c24 14 48 28 76 42l-22 10c-26-18-46-34-68-44Z"/>
-        <path d="M526 384c24-16 48-12 78 26l-24 4c-20-24-38-32-60-22Z"/>
-        <path d="M684 394c24-12 46 6 78 24l-22 6c-22-14-40-20-58-18Z"/>
+        <path d="M332 214C350 242 366 264 382 280L362 286C348 264 338 240 326 218Z"/>
+        <path d="M826 238C846 258 860 276 876 292L856 298C842 276 832 256 820 242Z"/>
+        <path d="M496 326C516 348 536 364 558 376L540 386C520 368 506 348 492 334Z"/>
+        <path d="M170 366C194 384 216 398 240 410L222 418C198 404 182 386 162 376Z"/>
+      </g>
+      <g class="mountain-detail" fill="var(--bg-mountain-shadow)" opacity=".3">
+        <path d="M332 214C314 240 300 264 288 284L308 288C320 266 330 242 340 220Z"/>
+        <path d="M826 238C808 262 794 284 782 300L802 304C814 280 824 256 834 244Z"/>
+        <path d="M496 326C476 348 458 366 438 380L456 388C476 372 490 352 504 334Z"/>
+        <path d="M170 366C148 384 130 400 110 410L128 418C148 404 162 386 180 376Z"/>
+      </g>
+    </svg>`;
+  }
+
+  function mountainNearSvg() {
+    return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path fill="var(--bg-mountain-near)" opacity=".96"
+        d="M0 540V486
+          C62 478 120 452 178 440
+          C238 428 282 382 342 370
+          C402 358 452 420 512 430
+          C572 440 622 398 682 388
+          C742 378 802 420 862 450
+          C908 472 936 480 960 486
+          V540Z"/>
+      <path fill="var(--bg-mountain-shadow)" opacity=".36"
+        d="M0 540V512
+          C104 506 208 510 312 502
+          C424 494 536 510 648 502
+          C752 494 856 502 960 510
+          V540Z"/>
+      <g class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".22">
+        <path d="M196 428C230 446 258 460 288 472L264 482C234 464 210 448 184 438Z"/>
+        <path d="M570 430C598 412 624 420 652 458L628 462C606 438 586 432 564 442Z"/>
+        <path d="M758 440C782 430 806 444 834 462L812 468C792 454 774 450 758 452Z"/>
       </g>
       <g class="mountain-detail" fill="var(--bg-mountain-shadow)" opacity=".28">
-        <path d="M292 384c-22 18-40 26-64 28l12 12c30-6 46-20 64-32Z"/>
-        <path d="M604 410c-20 16-38 22-60 24l10 10c28-4 44-16 62-28Z"/>
-        <path d="M762 418c-18 14-34 20-54 22l8 10c26-4 40-14 56-24Z"/>
+        <path d="M292 450C270 466 252 474 230 476L240 488C268 484 284 470 302 460Z"/>
+        <path d="M644 466C624 480 606 486 586 488L594 498C620 494 636 484 652 474Z"/>
+      </g>
+    </svg>`;
+  }
+
+  function treeSvg() {
+    return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path fill="var(--bg-tree-color)" opacity=".86"
+        d="M0 540V492c70-8 128 4 190-4 62-8 112-2 174 6 62 8 114-8 176-4 62 4 112 12 174 2 62-10 118 0 176 4 22 2 48 0 70-4V540Z"/>
+      <g fill="var(--bg-tree-color)">
+        <path d="M104 540v-92l-38 48h23l-32 40h25l-42 26h128l-42-26h25l-32-40h23l-38-48Z"/>
+        <path d="M324 540v-74l-30 38h18l-26 32h20l-34 22h104l-34-22h20l-26-32h18l-30-38Z" opacity=".9"/>
+        <path d="M742 540v-88l-34 44h20l-29 36h22l-38 24h118l-38-24h22l-29-36h20l-34-44Z" opacity=".92"/>
+      </g>
+      <g class="mountain-detail" fill="var(--bg-tree-light)" opacity=".24">
+        <path d="M104 448l-16 22h32Z"/>
+        <path d="M742 452l-15 22h30Z"/>
+        <path d="M324 466l-12 18h24Z"/>
       </g>
     </svg>`;
   }
 
   function foregroundSvg() {
     return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <path fill="var(--bg-foreground-soft)" opacity=".82"
-        d="M0 540V354c54-24 106-8 158 4 52 12 104-12 158-6 54 6 104 22 158 12 54-10 104-8 158 0 54 8 104 18 158 4 42-11 82-6 120 2V540Z"/>
+      <path fill="var(--bg-foreground-soft)" opacity=".8"
+        d="M0 540V430c58-20 108-4 166 8 58 12 108-12 166-6 58 6 108 22 166 10 58-12 108-8 166 4 58 12 108 18 166 2 40-10 76-6 130 0V540Z"/>
       <path fill="var(--bg-grass)"
-        d="M0 540V424c58-26 108-8 164 8 56 16 108-12 164-4 56 8 108 24 164 10 56-14 108-10 164 2 56 12 108 20 164 4 32-10 62-8 90 0V540Z"/>
-      <path fill="var(--bg-track)"
-        d="M0 540V510c52 6 92 4 144 5 66 1 110 6 176 4 66-2 110-6 176-4 66 2 110 6 176 4 50-1 88-3 128-4v25Z"/>
-      <g fill="var(--bg-foreground-soft)" opacity=".9">
-        <ellipse cx="90" cy="386" rx="82" ry="28"/>
-        <ellipse cx="140" cy="364" rx="40" ry="20"/>
-        <ellipse cx="752" cy="388" rx="92" ry="30"/>
-        <ellipse cx="814" cy="366" rx="36" ry="17"/>
-        <ellipse cx="436" cy="400" rx="56" ry="22"/>
-        <ellipse cx="486" cy="380" rx="29" ry="14"/>
+        d="M0 540V478c40-22 82-4 126 8 44 12 86-14 130-4 44 10 86 22 130 8 44-14 86-6 130 2 44 8 86 18 130 2 44-16 86-8 130 4 44 12 84 10 138-4 14-4 26-2 36 0V540Z"/>
+      <path fill="var(--bg-grass-light)" opacity=".5"
+        d="M0 478c40-22 82-4 126 8l-6 8c-40-12-80-26-120-6Zm260 4c44 10 86 22 130 8l-4 8c-42 12-84 0-126-8Zm260-6c44 8 86 18 130 2l-4 8c-42 14-84 6-126-2Zm260 4c44 12 84 10 138-4l4 8c-54 16-98 18-142 4Z"/>
+      <path fill="var(--bg-track)" d="M0 540V518c58 4 104 0 162 6 58 6 116 0 174 2 58 2 116 6 174 2 58-4 116-6 174-4 58 2 104 4 162 0 38-2 76-2 114 0v16Z"/>
+      <g fill="var(--bg-track-detail)" opacity=".34">
+        <path d="M64 528l12-4 8 4-4 5-12 1Z"/>
+        <path d="M254 536l10-3 8 4-5 5-11-1Z"/>
+        <path d="M470 526l13-4 9 5-6 5-14-1Z"/>
+        <path d="M692 534l11-4 8 4-4 5-13 0Z"/>
+        <path d="M842 526l9-3 7 4-4 4-10-1Z"/>
       </g>
-      <g fill="var(--bg-foreground-color)" opacity=".78">
-        <path d="M180 540v-54h28v-26h6v26h18v54Zm520 0v-60h22v-24h6v24h16v60Z"/>
-        <path d="M224 540v-42h24v-18h5v18h16v42Z" opacity=".55"/>
-        <path d="M604 540v-46h20v-18h5v18h15v46Z" opacity=".5"/>
+      <g class="mountain-detail" fill="var(--bg-foreground-color)" opacity=".52">
+        <path d="M26 500l10-18 8 18h-6l6 10H30l6-10Z"/>
+        <path d="M338 508l9-16 8 16h-6l6 10h-18l6-10Z"/>
+        <path d="M622 504l9-16 8 16h-6l6 10h-18l6-10Z"/>
+        <path d="M906 500l9-17 8 17h-6l6 10h-17l6-10Z"/>
       </g>
     </svg>`;
   }
@@ -225,9 +296,14 @@
     container.innerHTML = [
       '<div class="bg-layer bg-sky"></div>',
       '<div class="bg-layer bg-stars"></div>',
-      `<div class="bg-layer bg-clouds">${track(cloudSvg)}</div>`,
+      '<div class="bg-layer bg-motes"></div>',
+      `<div class="bg-layer bg-clouds bg-clouds--back">${track(cloudSvg)}</div>`,
+      `<div class="bg-layer bg-mountains bg-mountains--far">${track(mountainFarSvg)}</div>`,
+      `<div class="bg-layer bg-mountains bg-mountains--mid">${track(mountainMidSvg)}</div>`,
+      `<div class="bg-layer bg-mountains bg-mountains--near">${track(mountainNearSvg)}</div>`,
+      `<div class="bg-layer bg-clouds bg-clouds--front">${track((index) => cloudSvg(index + 1))}</div>`,
       `<div class="bg-layer bg-birds">${buildBirds()}</div>`,
-      `<div class="bg-layer bg-mountains">${track(mountainSvg)}</div>`,
+      `<div class="bg-layer bg-trees">${track(treeSvg)}</div>`,
       `<div class="bg-layer bg-foreground">${track(foregroundSvg)}</div>`,
     ].join('');
   }
@@ -251,9 +327,15 @@
     container.classList.toggle('bg-reduced', reduced);
     document.documentElement.classList.toggle('reduce-motion', reduced);
     if (reduced) {
-      container.style.setProperty('--bg-cloud-shift', '0');
-      container.style.setProperty('--bg-mountain-shift', '0');
-      container.style.setProperty('--bg-foreground-shift', '0');
+      [
+        '--bg-cloud-back-shift',
+        '--bg-cloud-front-shift',
+        '--bg-mountain-far-shift',
+        '--bg-mountain-mid-shift',
+        '--bg-mountain-near-shift',
+        '--bg-tree-shift',
+        '--bg-foreground-shift',
+      ].forEach((name) => container.style.setProperty(name, '0'));
     }
   }
 
@@ -288,24 +370,27 @@
     const camera = Number(input.camera) || 0;
     const currentMode = input.mode || mode;
     const menu = currentMode === 'menu' || currentMode === 'gameover';
+    const travel = menu ? 0 : (camera / DESIGN_W) * 28;
+    const cloudBackShift = mod(
+      menu ? time * (TRACK_SHIFT / 40) : travel * .05 + time * .0015,
+      TRACK_SHIFT,
+    );
+    const cloudFrontShift = mod(
+      menu ? time * (TRACK_SHIFT / 28) : travel * .05 + time * .003,
+      TRACK_SHIFT,
+    );
+    const farShift = mod(menu ? 0 : travel * .08, TRACK_SHIFT);
+    const midShift = mod(menu ? 0 : travel * .15, TRACK_SHIFT);
+    const nearShift = mod(menu ? 0 : travel * .3, TRACK_SHIFT);
+    const treeShift = mod(menu ? 0 : travel * .6, TRACK_SHIFT);
+    const foregroundShift = mod(menu ? 0 : travel, TRACK_SHIFT);
 
-    // One full cloud loop takes ~30 seconds on the menu. The second and
-    // third copies keep the track filled while it scrolls.
-    const cloudShift = mod(
-      menu ? time * (TRACK_SHIFT / 30) : (camera / DESIGN_W) * 3.4 + time * .035,
-      TRACK_SHIFT,
-    );
-    const mountainShift = mod(
-      menu ? time * .035 : (camera / DESIGN_W) * 9.2 + time * .012,
-      TRACK_SHIFT,
-    );
-    const foregroundShift = mod(
-      menu ? 0 : (camera / DESIGN_W) * 18,
-      TRACK_SHIFT,
-    );
-
-    container.style.setProperty('--bg-cloud-shift', cloudShift.toFixed(3));
-    container.style.setProperty('--bg-mountain-shift', mountainShift.toFixed(3));
+    container.style.setProperty('--bg-cloud-back-shift', cloudBackShift.toFixed(3));
+    container.style.setProperty('--bg-cloud-front-shift', cloudFrontShift.toFixed(3));
+    container.style.setProperty('--bg-mountain-far-shift', farShift.toFixed(3));
+    container.style.setProperty('--bg-mountain-mid-shift', midShift.toFixed(3));
+    container.style.setProperty('--bg-mountain-near-shift', nearShift.toFixed(3));
+    container.style.setProperty('--bg-tree-shift', treeShift.toFixed(3));
     container.style.setProperty('--bg-foreground-shift', foregroundShift.toFixed(3));
     container.style.setProperty(
       '--bg-star-shift',

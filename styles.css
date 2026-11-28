@@ -2696,6 +2696,25 @@ kbd {
   box-shadow: 0 .12em 0 rgba(23, 36, 59, .24);
 }
 
+.board-global-views {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  gap: .35em;
+  margin: -.1em 0 .45em;
+}
+
+.board-global-views[hidden] {
+  display: none;
+}
+
+.board-view {
+  min-width: 5.6em;
+  padding: .33em .85em;
+  font-size: .58em;
+}
+
 .board-filter-row {
   position: relative;
   z-index: 1;

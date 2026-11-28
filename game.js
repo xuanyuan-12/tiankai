@@ -59,6 +59,7 @@
     table: 'scores',
     timeout: 15000,
     limit: 200,
+    fetchLimit: 800,
     epoch: '2026-11-07T02:45:30Z',
     wechatAuth: 'https://jwhfpixplrltncxeoydb.supabase.co/functions/v1/wechat-auth',
     wechatProfile: 'https://jwhfpixplrltncxeoydb.supabase.co/functions/v1/wechat-profile',
@@ -345,7 +346,7 @@
      Game rules: easy / normal / hard / extreme
      ========================================================== */
 
-  const BLOCK_PRIZE = Object.freeze({ heartChance: .25, score: [1000, 5000] });
+  const BLOCK_PRIZE = Object.freeze({ heartChance: .25, score: [500, 1500] });
 
   const MODE_RULES = Object.freeze({
     easy: Object.freeze({
@@ -465,7 +466,7 @@
     { id: 'c5', type: 'combo', combo: 5, title: '五连绝世', label: '连续踩中 5 只小怪' },
     { id: 'doubleStomp', type: 'doubleStomp', title: '一箭双雕', label: '同一帧同时踩中 2 只小怪' },
     { id: 'c10', type: 'stompScore', stompScore: 50000, title: '天赐良机', label: '单次踩怪获得 50,000+ 分' },
-    { id: 'b4900', type: 'blockScore', blockScore: 4900, title: '幸运暴击', label: '问号砖单次获得 4,900+ 分' },
+    { id: 'b4900', type: 'blockScore', blockScore: 1451, title: '幸运暴击', label: '问号砖单次获得 1,450 分以上' },
     { id: 'heartPrize', type: 'heartPrize', title: '物超所值', label: '在问号砖里获得回一颗心的奖励' },
     { id: 'dmg3', type: 'tripleDamage', title: '天煞孤星', label: '4 秒内连续受到 3 次伤害' },
     { id: 'secondDown', type: 'secondHeartDown', title: '超越生死', label: '1 心回到 2 心后 1 秒内又掉一颗心' },
@@ -635,7 +636,7 @@
     c5: { icon: 'flame', description: '连续踩中 5 只小怪。' },
     doubleStomp: { icon: 'doubleBoot', description: '同一帧同时踩中两只小怪。' },
     c10: { icon: 'comet', description: '单次踩中一只小怪获得 50,000 分及以上。' },
-    b4900: { icon: 'dice', description: '问号砖单次获得 4,900 分及以上。' },
+    b4900: { icon: 'dice', description: '问号砖单次获得 1,450 分以上。' },
     heartPrize: { icon: 'heart', description: '在问号砖的奖励中获得回一颗心。' },
     dmg3: { icon: 'skull', description: '4 秒内连续受到 3 次伤害，第三次致命也算。' },
     secondDown: { icon: 'brokenHeart', description: '1 颗心时回到 2 颗心，随后 1 秒内又掉一颗心。' },
@@ -2219,6 +2220,7 @@
     boardCloseButton: document.getElementById('boardCloseButton'),
     boardFilters: document.getElementById('boardFilters'),
     boardSources: document.getElementById('boardSources'),
+    boardGlobalViews: document.getElementById('boardGlobalViews'),
     boardStatus: document.getElementById('boardStatus'),
     boardRefreshButton: document.getElementById('boardRefreshButton'),
     boardTable: document.getElementById('boardTable'),
@@ -2507,6 +2509,7 @@
     board: loadBoard(),
     boardFilter: 'normal',
     boardSource: 'global',
+    boardGlobalView: 'best',
     onlineBoard: [],
     onlineLoading: false,
     onlineError: '',
@@ -2819,6 +2822,7 @@
     combo: 0,
     maxCombo: 0,
     maxStompScore: 0,
+    maxStompCombo: 0,
     maxBlockScore: 0,
     airTime: 0,
     doubleJumps: 0,
@@ -4279,19 +4283,21 @@
     return { entry, mode: entry.mode, rank: index >= 0 ? index + 1 : 0, loading: false };
   }
 
-  function currentRunNote(info) {
+  function currentRunNote(info, view = 'all') {
     const modeLabel = RULES_BY_KEY[info.mode] ? RULES_BY_KEY[info.mode].label : '本模式';
+    const scope = view === 'best' ? '全部记录' : '';
     if (!info.rank) return info.loading ? `正在同步本局${modeLabel}榜排名…` : `本局${modeLabel}榜排名暂不可用`;
     if (info.rank > BOARD_DISPLAY_LIMIT) {
-      return `仅显示前 ${BOARD_DISPLAY_LIMIT} 名 · 本局${modeLabel}榜第 ${info.rank} 名`;
+      return `仅显示前 ${BOARD_DISPLAY_LIMIT} 名 · 本局${modeLabel}${scope}榜第 ${info.rank} 名`;
     }
-    return `本局${modeLabel}榜排名`;
+    return `本局${modeLabel}${scope}榜排名`;
   }
 
   function renderBoard() {
     const online = state.boardSource === 'global';
+    const globalView = online && state.boardGlobalView === 'all' ? 'all' : 'best';
     const entries = (online
-      ? sortedOnlineEntries(state.boardFilter)
+      ? sortedOnlineEntries(state.boardFilter, globalView)
       : sortedBoardEntries(state.boardFilter)).slice(0, BOARD_DISPLAY_LIMIT);
     const currentInfo = currentBoardRunInfo(online);
     dom.boardBody.innerHTML = '';
@@ -4303,7 +4309,7 @@
     dom.boardEmpty.hidden = hasRows || Boolean(currentInfo);
 
     if (currentInfo) {
-      dom.boardCurrentNote.textContent = currentRunNote(currentInfo);
+      dom.boardCurrentNote.textContent = currentRunNote(currentInfo, globalView);
       dom.boardCurrentRow.innerHTML = '';
       const currentRow = buildBoardRow(currentInfo.entry, currentInfo.rank || '—');
       currentRow.classList.add('is-current');
@@ -4329,7 +4335,9 @@
         dom.boardStatus.className = 'board-status is-ok';
       } else {
         dom.boardEmptyText.textContent = '这个筛选下还没有记录。';
-        dom.boardStatus.textContent = `全球排行榜 · 每档显示前 ${BOARD_DISPLAY_LIMIT} 名`;
+        dom.boardStatus.textContent = globalView === 'best'
+          ? `全球排行榜 · 每人最佳 · 每档前 ${BOARD_DISPLAY_LIMIT} 名`
+          : `全球排行榜 · 全部记录 · 每档前 ${BOARD_DISPLAY_LIMIT} 名`;
         dom.boardStatus.className = 'board-status is-ok';
       }
     } else {
@@ -4341,8 +4349,16 @@
     }
 
     dom.boardCount.textContent = entries.length
-      ? `${RULES_BY_KEY[state.boardFilter]?.label || ''}难度前 ${BOARD_DISPLAY_LIMIT} 名 · 最高 ${formatNumber(entries[0].score)}`
+      ? `${RULES_BY_KEY[state.boardFilter]?.label || ''}难度前 ${BOARD_DISPLAY_LIMIT} 名 · ${online ? (globalView === 'best' ? '每人最佳' : '全部记录') + ' · ' : ''}最高 ${formatNumber(entries[0].score)}`
       : '暂无记录';
+    if (dom.boardGlobalViews) {
+      dom.boardGlobalViews.hidden = !online;
+      dom.boardGlobalViews.querySelectorAll('[data-global-view]').forEach((button) => {
+        const active = button.dataset.globalView === globalView;
+        button.classList.toggle('is-active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    }
     dom.boardFilters.querySelectorAll('[data-filter]').forEach((button) => {
       const active = button.dataset.filter === state.boardFilter;
       button.classList.toggle('is-active', active);
@@ -4403,6 +4419,11 @@
     }
   }
 
+  function setBoardGlobalView(view) {
+    state.boardGlobalView = view === 'all' ? 'all' : 'best';
+    renderBoard();
+  }
+
   function clearBoard() {
     const now = performance.now();
     if (now - state.clearArmedAt > 3200) {
@@ -4443,6 +4464,7 @@
       v: 2,
       id: String(row.id || ''),
       remote: true,
+      playerId: String(row.player_id || '').trim(),
       nickname: String(row.player_name || row.nickname || '匿名').trim().slice(0, 12) || '匿名',
       score: Math.max(0, Math.floor(score)),
       coins: Math.max(0, Math.floor(Number(row.coins) || 0)),
@@ -4453,12 +4475,26 @@
     };
   }
 
-  function sortedOnlineEntries(filter = 'all') {
-    const list = (filter === 'all'
+  function sortedOnlineEntries(filter = 'all', view = 'all') {
+    let list = (filter === 'all'
       ? state.onlineBoard.slice()
       : state.onlineBoard.filter((entry) => entry.mode === filter))
       .filter((entry) => entry.distance >= MIN_LEADERBOARD_DISTANCE);
-    return list.sort((a, b) => b.score - a.score || a.seconds - b.seconds || b.date - a.date).slice(0, ONLINE.limit);
+    if (view === 'best') {
+      const bestByPlayer = new Map();
+      list.forEach((entry) => {
+        const key = entry.playerId || `name:${entry.nickname}`;
+        const previous = bestByPlayer.get(key);
+        if (!previous
+          || entry.score > previous.score
+          || (entry.score === previous.score && entry.seconds < previous.seconds)
+          || (entry.score === previous.score && entry.seconds === previous.seconds && entry.date > previous.date)) {
+          bestByPlayer.set(key, entry);
+        }
+      });
+      list = Array.from(bestByPlayer.values());
+    }
+    return list.sort((a, b) => b.score - a.score || a.seconds - b.seconds || b.date - a.date).slice(0, BOARD_DISPLAY_LIMIT);
   }
 
   function currentRunEntry() {
@@ -4577,13 +4613,13 @@
     state.onlineRunRank = null;
     if (state.boardOpen && state.boardSource === 'global') renderBoard();
     try {
-      const select = 'id,player_name,mode,score,coins,distance,seconds,created_at';
+      const select = 'id,player_id,player_name,mode,score,coins,distance,seconds,created_at';
       const modes = Object.keys(MODE_RULES);
       const responses = await Promise.all(modes.map((mode) => {
         const params = new URLSearchParams({
           select,
           order: 'score.desc,seconds.asc,created_at.asc',
-          limit: String(ONLINE.limit),
+          limit: String(ONLINE.fetchLimit),
           created_at: `gte.${ONLINE.epoch}`,
           distance: `gte.${MIN_LEADERBOARD_DISTANCE}`,
           mode: `eq.${mode}`,
@@ -4977,7 +5013,7 @@
     const flying = run.flyingStomps || 0;
     if (milestone.type === 'score') return run.scoreFloat >= milestone.score;
     if (milestone.type === 'distance') return run.distance >= milestone.meters;
-    if (milestone.type === 'combo') return (run.maxCombo || 0) >= milestone.combo;
+    if (milestone.type === 'combo') return (run.maxStompCombo || 0) >= milestone.combo;
     if (milestone.type === 'blockScore') return (run.maxBlockScore || 0) >= milestone.blockScore;
     if (milestone.type === 'heartPrize') return Boolean(run.gotHeartPrize);
     if (milestone.type === 'doubleStomp') return Boolean(run.gotDoubleStomp);
@@ -5124,6 +5160,14 @@
     run.cameraX = run.player.x - PLAYER_SCREEN_X;
   }
 
+  function registerCombo(run, count = 1) {
+    if (!run) return;
+    run.combo = run.comboTimer > 0 ? run.combo + count : count;
+    run.maxCombo = Math.max(run.maxCombo || 0, run.combo);
+    run.comboTimer = 4.05;
+    updateComboBadge();
+  }
+
   function restoreHeart(run) {
     const before = run.hearts;
     if (before >= run.maxHearts) return false;
@@ -5133,6 +5177,7 @@
     } else if (before === 2) {
       run.secondHeartAt = 0;
     }
+    registerCombo(run);
     return true;
   }
 
@@ -5210,6 +5255,7 @@
     const rules = run.rules || MODE_RULES.normal;
     if (block.type === 'question' && !block.used) {
       block.used = true;
+      registerCombo(run);
       const cx = block.x + block.w / 2;
       const prize = rules.blockPrize;
 
@@ -5222,7 +5268,7 @@
         popup(run, cx, block.y - 20, '+1 ♥', '#ff8fb8');
         spawnBurst(run, cx, block.y - 6, '#ff8fb8', 12, 170);
       } else {
-        // 二等奖：1000~5000 随机分；满血抽到一等奖也转成这个
+        // 二等奖：500~1500 随机分；满血抽到一等奖也转成这个
         let gained;
         if (prize) {
           gained = Math.floor(rand(prize.score[0], prize.score[1] + 1));
@@ -5578,9 +5624,8 @@
         p.onGround = false;
         p.jumps = 1;
         p.doubleJumped = false;
-        run.combo = run.comboTimer > 0 ? run.combo + 1 : 1;
-        run.maxCombo = Math.max(run.maxCombo || 0, run.combo);
-        run.comboTimer = 4.05;
+        registerCombo(run);
+        run.maxStompCombo = Math.max(run.maxStompCombo || 0, run.combo);
         const rules = run.rules || MODE_RULES.normal;
         const stompBase = enemy.flying ? 5000 : (rules.stompBase || 1000);
         const points = rules.comboMultiply
@@ -6923,6 +6968,13 @@
       button.addEventListener('click', () => {
         audio.sfx('click');
         setBoardSource(button.dataset.source);
+        button.blur();
+      });
+    });
+    dom.boardGlobalViews.querySelectorAll('[data-global-view]').forEach((button) => {
+      button.addEventListener('click', () => {
+        audio.sfx('click');
+        setBoardGlobalView(button.dataset.globalView);
         button.blur();
       });
     });

@@ -24,7 +24,12 @@
   --bg-foreground-color: #245f43;
   --bg-foreground-soft: #3e8a58;
   --bg-grass: #55bf5e;
+  --bg-grass-light: #a4e36a;
   --bg-track: #b9824c;
+  --bg-track-detail: #7f5234;
+  --bg-tree-color: #1f5a3a;
+  --bg-tree-light: #6bb56a;
+  --bg-mote-color: rgba(255, 250, 218, .55);
   --bg-star-color: #fff4c0;
   --bg-bird-color: #35525a;
   --bg-panel-color: rgba(7, 21, 31, .68);
@@ -54,7 +59,12 @@ html.theme-day {
   --bg-foreground-color: #245f43;
   --bg-foreground-soft: #3e8a58;
   --bg-grass: #55bf5e;
+  --bg-grass-light: #a4e36a;
   --bg-track: #b9824c;
+  --bg-track-detail: #7f5234;
+  --bg-tree-color: #1f5a3a;
+  --bg-tree-light: #6bb56a;
+  --bg-mote-color: rgba(255, 250, 218, .55);
   --bg-star-color: #fff4c0;
   --bg-bird-color: #35525a;
   --bg-panel-color: rgba(7, 21, 31, .65);
@@ -84,7 +94,12 @@ html.theme-dusk {
   --bg-foreground-color: #38242e;
   --bg-foreground-soft: #533341;
   --bg-grass: #6f4c5a;
+  --bg-grass-light: #a97468;
   --bg-track: #6d414f;
+  --bg-track-detail: #4b2938;
+  --bg-tree-color: #2d1d2a;
+  --bg-tree-light: #8b5b68;
+  --bg-mote-color: rgba(255, 212, 183, .42);
   --bg-star-color: #ffe8ba;
   --bg-bird-color: #62394b;
   --bg-panel-color: rgba(27, 15, 35, .72);
@@ -114,7 +129,12 @@ html.theme-night {
   --bg-foreground-color: #07161c;
   --bg-foreground-soft: #0e2428;
   --bg-grass: #102e31;
+  --bg-grass-light: #2d5549;
   --bg-track: #202b31;
+  --bg-track-detail: #10191e;
+  --bg-tree-color: #06141c;
+  --bg-tree-light: #2d4b58;
+  --bg-mote-color: rgba(190, 218, 235, .42);
   --bg-star-color: #fff3c4;
   --bg-bird-color: #c0d2e7;
   --bg-panel-color: rgba(4, 10, 20, .8);
@@ -202,26 +222,68 @@ html.theme-night {
   opacity: .9;
 }
 
+.bg-motes {
+  opacity: .18;
+  background-image:
+    radial-gradient(circle at 12% 36%, var(--bg-mote-color) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 33% 62%, var(--bg-mote-color) 0 .8px, transparent 1.4px),
+    radial-gradient(circle at 57% 28%, var(--bg-mote-color) 0 1.1px, transparent 1.8px),
+    radial-gradient(circle at 78% 54%, var(--bg-mote-color) 0 .7px, transparent 1.3px),
+    radial-gradient(circle at 91% 20%, var(--bg-mote-color) 0 .9px, transparent 1.5px);
+  background-size: 230px 190px, 310px 250px, 270px 210px, 350px 280px, 190px 160px;
+}
+
+.theme-night .bg-motes {
+  opacity: .32;
+}
+
 .world-background .bg-clouds {
   top: 0;
   bottom: auto;
-  height: 58%;
-  opacity: .85;
+  height: 60%;
   transition: opacity .4s ease;
+}
+
+.world-background .bg-clouds--back {
+  opacity: .4;
+}
+
+.world-background .bg-clouds--front {
+  height: 56%;
+  opacity: .9;
 }
 
 .world-background .bg-mountains {
   top: auto;
   bottom: 0;
+  opacity: .96;
+}
+
+.world-background .bg-mountains--far {
   height: 68%;
-  opacity: .95;
+  opacity: .82;
+}
+
+.world-background .bg-mountains--mid {
+  height: 68%;
+}
+
+.world-background .bg-mountains--near {
+  height: 54%;
+}
+
+.world-background .bg-trees {
+  top: auto;
+  bottom: 0;
+  height: 38%;
+  opacity: .9;
 }
 
 .world-background .bg-foreground {
   top: auto;
   bottom: 0;
   height: 22%;
-  opacity: .9;
+  opacity: .92;
 }
 
 .world-background .bg-birds {
@@ -270,8 +332,17 @@ html.reduce-motion .bg-birds {
 }
 
 .bg-lite .cloud-detail,
-.bg-lite .mountain-detail {
+.bg-lite .mountain-detail,
+.bg-lite .bg-motes {
   display: none;
+}
+
+.bg-lite .bg-clouds--back {
+  opacity: .24;
+}
+
+.bg-lite .bg-clouds--front {
+  opacity: .7;
 }
 
 .bg-track {
@@ -291,13 +362,28 @@ html.reduce-motion .bg-birds {
   height: 100%;
 }
 
-.bg-clouds .bg-track {
-  transform: translate3d(calc(var(--bg-cloud-shift, 0) * -1%), 0, 0);
-  transition: opacity .4s ease;
+.bg-clouds--back .bg-track {
+  transform: translate3d(calc(var(--bg-cloud-back-shift, 0) * -1%), 0, 0);
 }
 
-.bg-mountains .bg-track {
-  transform: translate3d(calc(var(--bg-mountain-shift, 0) * -1%), 0, 0);
+.bg-clouds--front .bg-track {
+  transform: translate3d(calc(var(--bg-cloud-front-shift, 0) * -1%), 0, 0);
+}
+
+.bg-mountains--far .bg-track {
+  transform: translate3d(calc(var(--bg-mountain-far-shift, 0) * -1%), 0, 0);
+}
+
+.bg-mountains--mid .bg-track {
+  transform: translate3d(calc(var(--bg-mountain-mid-shift, 0) * -1%), 0, 0);
+}
+
+.bg-mountains--near .bg-track {
+  transform: translate3d(calc(var(--bg-mountain-near-shift, 0) * -1%), 0, 0);
+}
+
+.bg-trees .bg-track {
+  transform: translate3d(calc(var(--bg-tree-shift, 0) * -1%), 0, 0);
 }
 
 .bg-foreground .bg-track {
