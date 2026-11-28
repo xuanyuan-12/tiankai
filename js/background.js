@@ -311,10 +311,12 @@
     if (!container) return;
     container.innerHTML = [
       '<div class="bg-layer bg-sky"></div>',
-      '<div class="bg-layer bg-mountains bg-mountains--photo"><div class="bg-photo-track"><img class="bg-photo" src="assets/snow-bg.jpg" alt="" decoding="async"></div></div>',
       '<div class="bg-layer bg-stars"></div>',
       '<div class="bg-layer bg-motes"></div>',
       `<div class="bg-layer bg-clouds bg-clouds--back">${track(cloudSvg)}</div>`,
+      `<div class="bg-layer bg-mountains bg-mountains--far">${track(mountainFarSvg)}</div>`,
+      `<div class="bg-layer bg-mountains bg-mountains--mid">${track(mountainMidSvg)}</div>`,
+      `<div class="bg-layer bg-mountains bg-mountains--near">${track(mountainNearSvg)}</div>`,
       `<div class="bg-layer bg-clouds bg-clouds--front">${track((index) => cloudSvg(index + 1))}</div>`,
       `<div class="bg-layer bg-birds">${buildBirds()}</div>`,
       `<div class="bg-layer bg-trees">${track(treeSvg)}</div>`,
@@ -347,7 +349,6 @@
         '--bg-mountain-far-shift',
         '--bg-mountain-mid-shift',
         '--bg-mountain-near-shift',
-        '--bg-photo-shift',
         '--bg-tree-shift',
         '--bg-foreground-shift',
       ].forEach((name) => container.style.setProperty(name, '0'));
@@ -397,11 +398,6 @@
     const farShift = mod(menu ? 0 : travel * .08, TRACK_SHIFT);
     const midShift = mod(menu ? 0 : travel * .15, TRACK_SHIFT);
     const nearShift = mod(menu ? 0 : travel * .3, TRACK_SHIFT);
-    const photoShift = menu ? 0 : (() => {
-      const cycle = 57.14;
-      const offset = mod(travel * .12, cycle);
-      return offset <= cycle / 2 ? offset : cycle - offset;
-    })();
     const treeShift = mod(menu ? 0 : travel * .6, TRACK_SHIFT);
     const foregroundShift = mod(menu ? 0 : travel, TRACK_SHIFT);
 
@@ -410,7 +406,6 @@
     container.style.setProperty('--bg-mountain-far-shift', farShift.toFixed(3));
     container.style.setProperty('--bg-mountain-mid-shift', midShift.toFixed(3));
     container.style.setProperty('--bg-mountain-near-shift', nearShift.toFixed(3));
-    container.style.setProperty('--bg-photo-shift', photoShift.toFixed(3));
     container.style.setProperty('--bg-tree-shift', treeShift.toFixed(3));
     container.style.setProperty('--bg-foreground-shift', foregroundShift.toFixed(3));
     container.style.setProperty(
