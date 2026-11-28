@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Layered background — sky, clouds, mountains, foreground
    All artwork is CSS + inline SVG. No external images.
    ============================================================ */
@@ -557,7 +557,7 @@ html.bg-lite .bg-mountains {
 
 
 .world-background .bg-mountains--image {
-  height: 80%;
+  height: 100%;
   opacity: 1;
   overflow: hidden;
 }
