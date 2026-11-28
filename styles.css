@@ -5534,13 +5534,14 @@ body {
     order: 2;
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: .55em;
     width: 100%;
   }
 
   .screen--start .home-side--left .side-card {
     justify-content: flex-start;
-    width: 100%;
+    width: min(100%, 224px);
     min-height: 4.6em;
     padding: .7em 1em;
     gap: .75em;
@@ -5583,8 +5584,9 @@ body {
   .screen--start .selector-panel {
     order: 3;
     display: block;
-    width: 100%;
+    width: min(100%, 224px);
     max-width: none;
+    margin-inline: auto;
     padding: .7em .8em;
   }
 
