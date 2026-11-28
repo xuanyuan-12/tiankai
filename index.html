@@ -9,7 +9,6 @@
   <title>超级马里奥 · 极速跑酷</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%23ffcf3f'/%3E%3Cpath d='M12 30C12 16 22 9 32 9s20 7 20 21c0 5-3 8-8 8H20c-5 0-8-3-8-8Z' fill='%23ef3f45'/%3E%3Ccircle cx='32' cy='30' r='8' fill='%23fff9e9'/%3E%3Ctext x='32' y='35' font-family='Arial' font-weight='900' font-size='12' text-anchor='middle' fill='%23ef3f45'%3EM%3C/text%3E%3Cpath d='M10 33h44' stroke='%237a2027' stroke-width='3'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="css/background.css">
 </head>
 <body>
   <div class="page-glow page-glow--one" aria-hidden="true"></div>
@@ -85,7 +84,6 @@
   </svg>
 
   <main class="game-shell" id="gameShell">
-    <div class="world-background" id="worldBackground" aria-hidden="true"></div>
     <canvas id="gameCanvas" aria-label="马里奥极速跑酷游戏画面"></canvas>
     <div class="canvas-grain" aria-hidden="true"></div>
     <div class="canvas-vignette" aria-hidden="true"></div>
@@ -262,20 +260,6 @@
             <input id="sfxVolume" type="range" min="0" max="100" step="1" value="100" aria-label="音效音量">
           </label>
         </div>
-
-        <div class="settings-theme">
-          <label class="settings-theme__label" for="themeSelect">背景主题</label>
-          <select id="themeSelect" aria-label="选择背景主题">
-            <option value="auto">跟随难度</option>
-            <option value="day">经典白天</option>
-            <option value="dusk">黄昏赛道</option>
-            <option value="night">极限夜空</option>
-          </select>
-        </div>
-        <label class="settings-motion">
-          <input id="reduceMotionToggle" type="checkbox">
-          <span>减少动态效果</span>
-        </label>
 
         <div class="settings-account">
           <div class="settings-account__head">
@@ -628,7 +612,6 @@
   </noscript>
 
   <script src="avatars/manifest.js"></script>
-  <script src="js/background.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
