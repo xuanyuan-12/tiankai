@@ -314,7 +314,7 @@
       '<div class="bg-layer bg-stars"></div>',
       '<div class="bg-layer bg-motes"></div>',
       `<div class="bg-layer bg-clouds bg-clouds--back">${track(cloudSvg)}</div>`,
-      '<div class="bg-layer bg-mountains bg-mountains--image"><div class="bg-mountain-photo-track"><img class="bg-mountain-photo" src="assets/mountain-reference.png" alt="" decoding="async"></div></div>',
+      '<div class="bg-layer bg-mountains bg-mountains--image"><div class="bg-mountain-photo-track"><img class="bg-mountain-photo" src="assets/mountain-reference.webp" alt="" decoding="async"></div></div>',
       `<div class="bg-layer bg-clouds bg-clouds--front">${track((index) => cloudSvg(index + 1))}</div>`,
       `<div class="bg-layer bg-birds">${buildBirds()}</div>`,
       `<div class="bg-layer bg-trees">${track(treeSvg)}</div>`,
@@ -452,4 +452,5 @@
     get theme() { return theme; },
   };
 })();
+
 
