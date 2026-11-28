@@ -166,7 +166,6 @@
               <button class="side-card side-card--board" id="boardButton" type="button" aria-haspopup="dialog" aria-label="排行榜">
                 <span class="side-card__icon"><svg class="icon"><use href="#i-trophy"></use></svg></span>
                 <span class="side-card__body">
-                  <span class="side-card__eyebrow">HALL OF FAME</span>
                   <strong>排行榜</strong>
                   <span class="side-card__hint">历史成绩与用时</span>
                 </span>
@@ -175,7 +174,6 @@
               <button class="side-card side-card--achievements" id="achievementButton" type="button" aria-haspopup="dialog" aria-label="成就">
                 <span class="side-card__icon"><svg class="icon"><use href="#i-star"></use></svg></span>
                 <span class="side-card__body">
-                  <span class="side-card__eyebrow">MILESTONES</span>
                   <strong>成就 <b id="achievementCount">0/54</b></strong>
                   <span class="side-card__meter" aria-hidden="true"><i id="achievementMeter"></i></span>
                   <span class="side-card__hint">四模式通用进度</span>
@@ -483,7 +481,6 @@
           <span aria-hidden="true">✕</span>
         </button>
         <div class="modal-heading modal-heading--center">
-          <span class="micro-label">HALL OF FAME</span>
           <h2 id="boardTitle">排行榜</h2>
           <p>本机记录与全球玩家共用同一套筛选</p>
         </div>
@@ -491,11 +488,7 @@
         <div class="board-sources" id="boardSources" role="group" aria-label="选择排行榜范围">
           <button class="board-source" type="button" data-source="local" aria-pressed="false">本机</button>
           <button class="board-source is-active" type="button" data-source="global" aria-pressed="true">全球</button>
-        </div>
-
-        <div class="board-global-views" id="boardGlobalViews" role="group" aria-label="全球记录方式">
-          <button class="board-source board-view is-active" type="button" data-global-view="best" aria-pressed="true">每人最佳</button>
-          <button class="board-source board-view" type="button" data-global-view="all" aria-pressed="false">全部记录</button>
+          <button class="board-refresh board-refresh--inline" id="boardRefreshButton" type="button" aria-label="刷新全球排行榜">刷新</button>
         </div>
 
         <div class="board-filter-row">
@@ -505,7 +498,6 @@
             <button class="board-filter" type="button" data-filter="hard" aria-pressed="false">困难</button>
             <button class="board-filter" type="button" data-filter="extreme" aria-pressed="false">极限</button>
           </div>
-          <button class="board-refresh" id="boardRefreshButton" type="button">刷新</button>
         </div>
 
         <p class="board-status" id="boardStatus">正在连接全球排行榜…</p>
@@ -532,9 +524,15 @@
           <div class="board-current__row" id="boardCurrentRow"></div>
         </div>
 
-        <div class="modal-footer">
+        <div class="modal-footer board-footer">
           <span class="board-count" id="boardCount">共 0 条记录</span>
-          <button class="text-button" id="boardClearButton" type="button">清空记录</button>
+          <div class="board-footer-right">
+            <button class="text-button" id="boardClearButton" type="button">清空记录</button>
+            <div class="board-global-views board-global-views--footer" id="boardGlobalViews" role="group" aria-label="全球记录方式">
+              <button class="board-source board-view is-active" type="button" data-global-view="best" aria-pressed="true">每人最佳</button>
+              <button class="board-source board-view" type="button" data-global-view="all" aria-pressed="false">全部记录</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -545,15 +543,47 @@
           <span aria-hidden="true">✕</span>
         </button>
         <div class="modal-heading modal-heading--center">
-          <span class="micro-label">MILESTONES</span>
           <h2 id="achievementTitle">成就</h2>
           <p>四档模式通用，达到指定分数、距离或条件即可解锁，记录达成时间</p>
         </div>
         <div class="achievement-map" id="achievementList" role="img" aria-label="成就思维导图"></div>
         <p class="achievement-map__hint">隐藏成就解锁前显示「？」占位，解锁后显示真实内容；其他未解锁成就显示「？？？」，说明仍可查看</p>
-        <div class="modal-footer">
+        <div class="modal-footer achievement-footer">
           <span class="board-count" id="achievementProgress">0 / 54</span>
-          <span class="achievement-note">本机记录，登录后可云端同步</span>
+          <div class="achievement-footer__actions">
+            <span class="achievement-note">本机记录，登录后可云端同步</span>
+            <button class="text-button" id="achievementLeaderboardButton" type="button">成就排行榜</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen screen--achievement-board" id="achievementBoardScreen" aria-labelledby="achievementBoardTitle" aria-hidden="true">
+      <div class="modal board-card achievement-board-card">
+        <button class="round-button board-close" id="achievementBoardCloseButton" type="button" aria-label="返回成就">
+          <span aria-hidden="true">✕</span>
+        </button>
+        <div class="modal-heading modal-heading--center">
+          <h2 id="achievementBoardTitle">成就排行榜</h2>
+          <p>按每人已解锁的成就数量排名</p>
+        </div>
+        <p class="board-status" id="achievementBoardStatus">正在连接成就排行榜…</p>
+        <div class="board-table achievement-board-table">
+          <div class="board-row board-row--head" aria-hidden="true">
+            <span>#</span>
+            <span>玩家</span>
+            <span class="achievement-board-cell">成就</span>
+            <span class="achievement-board-date">更新</span>
+          </div>
+          <div class="board-body" id="achievementBoardBody" role="list"></div>
+        </div>
+        <p class="board-empty" id="achievementBoardEmpty" hidden>
+          <span class="board-empty__star" aria-hidden="true">✦</span>
+          <span id="achievementBoardEmptyText">还没有人上榜，解锁成就后就会出现在这里。</span>
+        </p>
+        <div class="modal-footer">
+          <span class="board-count" id="achievementBoardCount">共 0 人</span>
+          <button class="board-refresh" id="achievementBoardRefreshButton" type="button">刷新</button>
         </div>
       </div>
     </section>

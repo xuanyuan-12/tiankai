@@ -127,23 +127,25 @@
 
   function mountainFarSvg() {
     return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <path fill="var(--bg-mountain-far)" opacity=".5"
-        d="M0 540V330
-          C72 308 118 322 188 302
-          C258 282 316 248 388 266
-          C460 284 510 312 584 298
-          C658 284 716 246 786 264
-          C846 280 904 306 960 330
+      <path fill="var(--bg-mountain-far)" opacity=".58"
+        d="M0 540V332
+          L28 326 54 306 82 318 112 288 142 304 172 272 202 292
+          L232 258 262 282 292 246 322 270 352 232 382 258
+          L414 220 446 250 478 214 508 244 540 204 572 236
+          L604 198 636 230 668 190 700 226 732 188 764 222
+          L796 192 828 226 858 252 886 284 912 316 936 334 960 332
           V540Z"/>
-      <path class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".16"
-        d="M0 396
-          C108 408 208 382 318 392
-          C428 402 536 412 648 394
-          C756 378 864 398 960 412
-          V422
-          C864 412 756 392 648 408
-          C536 426 428 416 318 406
-          C208 396 108 422 0 410Z"/>
+      <path class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".14"
+        d="M0 382 30 366 58 378 88 350 120 368 152 338 184 356
+          216 326 248 346 280 314 314 334 346 300 378 322
+          412 286 446 312 480 278 514 304 548 270 582 296
+          616 260 650 288 686 252 718 280 752 246 786 276
+          820 262 852 292 884 322 914 350 938 372 960 368
+          V396 938 398 914 374 884 346 852 316 820 286
+          786 300 752 270 718 304 686 276 650 312 616 284
+          582 320 548 294 514 328 480 302 446 336 412 310
+          378 346 346 324 314 358 280 338 248 370 216 350
+          184 380 152 362 120 392 88 374 58 402 30 390 0 406Z"/>
     </svg>`;
   }
 
@@ -153,111 +155,125 @@
       <defs>
         <linearGradient id="${snowId}" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" style="stop-color:var(--bg-mountain-snow)"/>
-          <stop offset=".12" style="stop-color:var(--bg-mountain-snow)"/>
-          <stop offset=".26" style="stop-color:var(--bg-mountain-mid)"/>
+          <stop offset=".2" style="stop-color:var(--bg-mountain-snow)"/>
+          <stop offset=".34" style="stop-color:var(--bg-mountain-mid)"/>
           <stop offset="1" style="stop-color:var(--bg-mountain-mid)"/>
         </linearGradient>
       </defs>
-      <path fill="url(#${snowId})" opacity=".96"
+      <path fill="url(#${snowId})"
         d="M0 540V438
-          C58 424 112 392 170 366
-          C232 338 268 224 332 214
-          C392 204 436 292 496 326
-          C554 358 604 314 662 278
-          C722 240 770 218 826 238
-          C878 256 918 320 960 438
+          L30 436 54 410 78 430 108 392 138 416 168 374 198 400
+          L230 348 262 382 294 316 326 354 356 278 388 324
+          L418 252 452 300 482 224 516 276 546 190 580 248
+          L610 168 644 226 674 142 708 208 738 128 770 196
+          L798 154 830 218 856 272 884 326 910 378 936 420 960 438
           V540Z"/>
-      <path class="mountain-detail" fill="var(--bg-mountain-haze)" opacity=".24"
-        d="M0 438
-          C104 420 208 448 312 436
-          C424 424 528 452 640 440
-          C752 428 856 448 960 456
-          V472
-          C856 456 752 448 640 462
-          C528 474 424 452 312 456
-          C208 460 104 442 0 454Z"/>
-      <g class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".22">
-        <path d="M332 214C350 242 366 264 382 280L362 286C348 264 338 240 326 218Z"/>
-        <path d="M826 238C846 258 860 276 876 292L856 298C842 276 832 256 820 242Z"/>
-        <path d="M496 326C516 348 536 364 558 376L540 386C520 368 506 348 492 334Z"/>
-        <path d="M170 366C194 384 216 398 240 410L222 418C198 404 182 386 162 376Z"/>
+      <path class="mountain-detail" fill="var(--bg-mountain-haze)" opacity=".22"
+        d="M0 438C80 448 160 444 240 452C320 460 400 456 480 464C560 472 640 468 720 458C800 448 880 452 960 460V488C880 480 800 476 720 486C640 496 560 500 480 492C400 484 320 488 240 480C160 472 80 476 0 466Z"/>
+      <g class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".2">
+        <path d="M356 278 384 330 402 392 378 398 354 338 338 288Z"/>
+        <path d="M674 142 704 214 724 288 700 296 670 216 650 170Z"/>
+        <path d="M738 128 770 206 790 280 764 286 734 204 714 158Z"/>
+        <path d="M546 190 574 250 592 310 566 316 538 252 522 216Z"/>
       </g>
-      <g class="mountain-detail" fill="var(--bg-mountain-shadow)" opacity=".3">
-        <path d="M332 214C314 240 300 264 288 284L308 288C320 266 330 242 340 220Z"/>
-        <path d="M826 238C808 262 794 284 782 300L802 304C814 280 824 256 834 244Z"/>
-        <path d="M496 326C476 348 458 366 438 380L456 388C476 372 490 352 504 334Z"/>
-        <path d="M170 366C148 384 130 400 110 410L128 418C148 404 162 386 180 376Z"/>
+      <g class="mountain-detail" fill="var(--bg-mountain-shadow)" opacity=".28">
+        <path d="M356 278 336 326 316 378 340 384 362 326 376 292Z"/>
+        <path d="M674 142 650 204 630 266 654 272 680 202 696 170Z"/>
+        <path d="M482 224 462 278 444 330 468 336 490 276 504 244Z"/>
+        <path d="M798 154 778 222 760 286 784 292 806 220 820 184Z"/>
       </g>
     </svg>`;
   }
 
   function mountainNearSvg() {
     return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <path fill="var(--bg-mountain-near)" opacity=".96"
+      <path fill="var(--bg-mountain-near)" opacity=".98"
         d="M0 540V486
-          C62 478 120 452 178 440
-          C238 428 282 382 342 370
-          C402 358 452 420 512 430
-          C572 440 622 398 682 388
-          C742 378 802 420 862 450
-          C908 472 936 480 960 486
+          L34 482 62 454 92 470 124 438 156 458 188 424 220 448
+          L252 414 284 438 316 402 348 430 380 396 412 424
+          L444 392 476 418 508 386 540 412 572 390 604 414
+          L636 392 668 418 700 400 732 428 764 412 796 440
+          L828 454 858 470 888 476 920 482 960 486
           V540Z"/>
-      <path fill="var(--bg-mountain-shadow)" opacity=".36"
-        d="M0 540V512
-          C104 506 208 510 312 502
-          C424 494 536 510 648 502
-          C752 494 856 502 960 510
-          V540Z"/>
-      <g class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".22">
-        <path d="M196 428C230 446 258 460 288 472L264 482C234 464 210 448 184 438Z"/>
-        <path d="M570 430C598 412 624 420 652 458L628 462C606 438 586 432 564 442Z"/>
-        <path d="M758 440C782 430 806 444 834 462L812 468C792 454 774 450 758 452Z"/>
+      <path fill="var(--bg-mountain-shadow)" opacity=".4"
+        d="M0 540V512C80 508 160 514 240 510C320 506 400 516 480 512C560 508 640 518 720 514C800 510 880 516 960 510V540Z"/>
+      <g class="mountain-detail" fill="var(--bg-mountain-light)" opacity=".18">
+        <path d="M188 424 220 448 244 470 218 478 194 450 170 434Z"/>
+        <path d="M380 396 412 424 438 448 412 456 386 426 362 410Z"/>
+        <path d="M572 390 604 414 630 438 604 444 578 418 554 402Z"/>
+        <path d="M764 412 796 440 820 462 794 468 768 442 744 424Z"/>
       </g>
       <g class="mountain-detail" fill="var(--bg-mountain-shadow)" opacity=".28">
-        <path d="M292 450C270 466 252 474 230 476L240 488C268 484 284 470 302 460Z"/>
-        <path d="M644 466C624 480 606 486 586 488L594 498C620 494 636 484 652 474Z"/>
+        <path d="M188 424 166 448 146 466 162 476 184 450 202 436Z"/>
+        <path d="M380 396 358 420 338 440 356 448 378 422 396 408Z"/>
+        <path d="M700 400 678 424 658 444 676 452 698 426 716 412Z"/>
       </g>
     </svg>`;
   }
 
   function treeSvg() {
+    const grove = [
+      [26, 54, 16], [68, 88, 25], [118, 62, 19], [176, 104, 30],
+      [238, 70, 22], [300, 118, 34], [368, 78, 24], [432, 96, 29],
+      [500, 64, 20], [566, 112, 33], [636, 76, 23], [704, 126, 37],
+      [776, 88, 26], [842, 108, 31], [910, 72, 22],
+    ].map(([x, h, w], index) => `
+      <path d="M${x} 540V${540 - h}l-${w} ${h}Z" opacity="${(0.68 + (index % 3) * 0.08).toFixed(2)}"/>
+      <path d="M${x} 540V${540 - h * .78}l-${w * .72} ${h * .78}Z" opacity=".72"/>`
+    ).join('');
     return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
-      <path fill="var(--bg-tree-color)" opacity=".86"
-        d="M0 540V492c70-8 128 4 190-4 62-8 112-2 174 6 62 8 114-8 176-4 62 4 112 12 174 2 62-10 118 0 176 4 22 2 48 0 70-4V540Z"/>
-      <g fill="var(--bg-tree-color)">
-        <path d="M104 540v-92l-38 48h23l-32 40h25l-42 26h128l-42-26h25l-32-40h23l-38-48Z"/>
-        <path d="M324 540v-74l-30 38h18l-26 32h20l-34 22h104l-34-22h20l-26-32h18l-30-38Z" opacity=".9"/>
-        <path d="M742 540v-88l-34 44h20l-29 36h22l-38 24h118l-38-24h22l-29-36h20l-34-44Z" opacity=".92"/>
-      </g>
-      <g class="mountain-detail" fill="var(--bg-tree-light)" opacity=".24">
-        <path d="M104 448l-16 22h32Z"/>
-        <path d="M742 452l-15 22h30Z"/>
-        <path d="M324 466l-12 18h24Z"/>
+      <path fill="var(--bg-tree-color)" opacity=".82"
+        d="M0 540V506C80 500 160 510 240 506C320 502 400 514 480 508C560 502 640 512 720 506C800 500 880 508 960 504V540Z"/>
+      <g fill="var(--bg-tree-color)">${grove}</g>
+      <g class="mountain-detail" fill="var(--bg-tree-light)" opacity=".22">
+        <path d="M176 540 146 540 176 436Z"/>
+        <path d="M300 540 266 540 300 422Z"/>
+        <path d="M704 540 667 540 704 414Z"/>
+        <path d="M842 540 811 540 842 432Z"/>
       </g>
     </svg>`;
   }
 
   function foregroundSvg() {
+    const blades = [18, 44, 78, 116, 152, 188, 226, 262, 300, 336, 374, 412, 450, 488, 526, 564, 602, 640, 678, 716, 754, 792, 830, 868, 906, 940]
+      .map((x, index) => `<path d="M${x} ${500 + (index % 3) * 3}q${(index % 2 ? -1 : 1) * 4}-12 ${(index % 2 ? -1 : 1) * 10}-20"/>`)
+      .join('');
+    const flowers = [106, 250, 394, 536, 682, 822, 918]
+      .map((x, index) => `<circle cx="${x}" cy="${492 + (index % 2) * 5}" r="2.2" opacity=".8"/><circle cx="${x + 5}" cy="${488 + (index % 3) * 4}" r="1.6" opacity=".62"/>`)
+      .join('');
     return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
       <path fill="var(--bg-foreground-soft)" opacity=".8"
         d="M0 540V430c58-20 108-4 166 8 58 12 108-12 166-6 58 6 108 22 166 10 58-12 108-8 166 4 58 12 108 18 166 2 40-10 76-6 130 0V540Z"/>
       <path fill="var(--bg-grass)"
         d="M0 540V478c40-22 82-4 126 8 44 12 86-14 130-4 44 10 86 22 130 8 44-14 86-6 130 2 44 8 86 18 130 2 44-16 86-8 130 4 44 12 84 10 138-4 14-4 26-2 36 0V540Z"/>
-      <path fill="var(--bg-grass-light)" opacity=".5"
+      <path fill="var(--bg-grass-light)" opacity=".46"
         d="M0 478c40-22 82-4 126 8l-6 8c-40-12-80-26-120-6Zm260 4c44 10 86 22 130 8l-4 8c-42 12-84 0-126-8Zm260-6c44 8 86 18 130 2l-4 8c-42 14-84 6-126-2Zm260 4c44 12 84 10 138-4l4 8c-54 16-98 18-142 4Z"/>
       <path fill="var(--bg-track)" d="M0 540V518c58 4 104 0 162 6 58 6 116 0 174 2 58 2 116 6 174 2 58-4 116-6 174-4 58 2 104 4 162 0 38-2 76-2 114 0v16Z"/>
+      <path fill="var(--bg-track-detail)" opacity=".26"
+        d="M0 540V526c76 2 152 6 228 4 76-2 152-4 228-2 76 2 152 4 228 2 92-2 184-2 276 2v8Z"/>
+      <g fill="none" stroke="var(--bg-grass-light)" stroke-width="2" stroke-linecap="round" opacity=".72">${blades}</g>
       <g fill="var(--bg-track-detail)" opacity=".34">
         <path d="M64 528l12-4 8 4-4 5-12 1Z"/>
         <path d="M254 536l10-3 8 4-5 5-11-1Z"/>
         <path d="M470 526l13-4 9 5-6 5-14-1Z"/>
         <path d="M692 534l11-4 8 4-4 5-13 0Z"/>
         <path d="M842 526l9-3 7 4-4 4-10-1Z"/>
+        <path d="M128 534l16-3 10 4-7 4-17-1Z" opacity=".6"/>
+        <path d="M578 528l14-3 9 4-6 4-15-1Z" opacity=".55"/>
       </g>
-      <g class="mountain-detail" fill="var(--bg-foreground-color)" opacity=".52">
+      <g fill="var(--bg-foreground-color)" opacity=".5">${flowers}</g>
+      <g class="mountain-detail" fill="var(--bg-foreground-color)" opacity=".46">
         <path d="M26 500l10-18 8 18h-6l6 10H30l6-10Z"/>
         <path d="M338 508l9-16 8 16h-6l6 10h-18l6-10Z"/>
         <path d="M622 504l9-16 8 16h-6l6 10h-18l6-10Z"/>
         <path d="M906 500l9-17 8 17h-6l6 10h-17l6-10Z"/>
+        <path d="M158 512l7-13 6 13h-4l4 8h-13l4-8Z"/>
+        <path d="M806 508l7-12 6 12h-4l4 8h-13l4-8Z"/>
+      </g>
+      <g fill="var(--bg-track-detail)" opacity=".18">
+        <path d="M34 532c18-4 36-4 54 0-16 4-34 5-54 0Z"/>
+        <path d="M332 536c22-3 44-3 66 0-20 4-42 4-66 0Z"/>
+        <path d="M708 534c18-3 36-2 54 0-16 3-34 4-54 0Z"/>
       </g>
     </svg>`;
   }

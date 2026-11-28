@@ -51,12 +51,14 @@
     wechatSession: 'mario-run-wechat-session-v1',
     wechatLinked: 'mario-run-wechat-linked-v1',
     wechatDirty: 'mario-run-wechat-dirty-v1',
+    achievementReset: 'mario-run-achievement-reset-v2',
   };
 
   const ONLINE = Object.freeze({
     url: 'https://jwhfpixplrltncxeoydb.supabase.co',
     key: 'sb_publishable_cGTEJNDDMo5rN9wha6EJ2w_Iao0DV1y',
     table: 'scores',
+    achievementTable: 'achievement_boards',
     timeout: 15000,
     limit: 200,
     fetchLimit: 800,
@@ -494,7 +496,7 @@
     { id: 'coinAvoid', type: 'lowCoinsRun', meters: 500, maxCoins: 3, title: '金币绝缘体', label: '单局 500 米且金币不超过 3 枚' },
     { id: 'noDamage10k', type: 'noDamageDistance', meters: 10000, title: '毫发无伤', label: '非极限难度，单局 10,000 米无受伤' },
     { id: 'allModes10', type: 'modesRuns', value: 10, title: '难度收藏家', label: '四个难度各完成 10 局' },
-    { id: 'localTop10', type: 'localTop10', title: '名列前茅', label: '首次进入任一难度本机排行榜前 10' },
+    { id: 'localTop10', type: 'globalTop10', title: '名列前茅', label: '首次进入任一难度全球排行榜前 10' },
     { id: 'runs100', type: 'completedRuns', value: 100, title: '百炼成钢', label: '累计完成 100 局' },
     { id: 'coins10000', type: 'totalCoins', value: 10000, title: '积羽沉舟', label: '累计收集 10,000 枚金币' },
     { id: 'stomps500', type: 'totalStomps', value: 500, title: '百步穿杨', label: '累计踩中 500 个敌人' },
@@ -664,7 +666,7 @@
     coinAvoid: { icon: 'ghost', description: '单局跑出 500 米，收集金币不超过 3 枚。' },
     noDamage10k: { icon: 'ribbon', description: '非极限难度下单局跑出 10,000 米且一次未受伤。' },
     allModes10: { icon: 'modes', description: '四个难度各完成 10 局。' },
-    localTop10: { icon: 'medal', description: '首次进入任一难度的本机排行榜前 10 名。' },
+    localTop10: { icon: 'medal', description: '首次进入任一难度的全球排行榜前 10 名。' },
     runs100: { icon: 'star', description: '累计完成 100 局。' },
     coins10000: { icon: 'coins', description: '累计收集 10,000 枚金币。' },
     stomps500: { icon: 'boot', description: '累计踩中 500 个敌人。' },
@@ -2239,6 +2241,15 @@
     achievementCloseButton: document.getElementById('achievementCloseButton'),
     achievementList: document.getElementById('achievementList'),
     achievementProgress: document.getElementById('achievementProgress'),
+    achievementLeaderboardButton: document.getElementById('achievementLeaderboardButton'),
+    achievementBoardScreen: document.getElementById('achievementBoardScreen'),
+    achievementBoardCloseButton: document.getElementById('achievementBoardCloseButton'),
+    achievementBoardStatus: document.getElementById('achievementBoardStatus'),
+    achievementBoardBody: document.getElementById('achievementBoardBody'),
+    achievementBoardEmpty: document.getElementById('achievementBoardEmpty'),
+    achievementBoardEmptyText: document.getElementById('achievementBoardEmptyText'),
+    achievementBoardCount: document.getElementById('achievementBoardCount'),
+    achievementBoardRefreshButton: document.getElementById('achievementBoardRefreshButton'),
     achievementToast: document.getElementById('achievementToast'),
     achievementToastIcon: document.getElementById('achievementToastIcon'),
     achievementToastTitle: document.getElementById('achievementToastTitle'),
@@ -2401,6 +2412,42 @@
     writeStore(STORAGE.achievementsV2, JSON.stringify(state.achievements));
   }
 
+  const RETIRED_ACHIEVEMENT_IDS = ['localTop10', 'noStomp1000m'];
+
+  function stripRetiredAchievements() {
+    let changed = false;
+    for (const id of RETIRED_ACHIEVEMENT_IDS) {
+      if (state.achievements[id]) {
+        delete state.achievements[id];
+        changed = true;
+      }
+    }
+    if (changed) saveAchievements();
+    return changed;
+  }
+
+  function normalizeRetiredAchievements() {
+    const firstReset = readStore(STORAGE.achievementReset, '') !== '1';
+    let changed = stripRetiredAchievements();
+    if (firstReset) {
+      const stats = state.stats || (state.stats = emptyStats());
+      for (const key of Object.keys(MODE_RULES)) {
+        if (stats.modes[key] && stats.modes[key].globalTop10) {
+          stats.modes[key].globalTop10 = false;
+          changed = true;
+        }
+      }
+      if (changed) saveStats();
+      writeStore(STORAGE.achievementReset, '1');
+    }
+    if (changed) {
+      updateAchievementBadge();
+      if (state.achievementOpen) renderAchievements();
+      void publishAchievementBoard();
+    }
+    return changed;
+  }
+
   function emptyStats() {
     const modes = {};
     for (const key of Object.keys(MODE_RULES)) {
@@ -2501,6 +2548,11 @@
     achievementTimer: 0,
     achievementOpen: false,
     achievementReturn: 'start',
+    achievementBoardOpen: false,
+    achievementBoardRows: [],
+    achievementBoardLoading: false,
+    achievementBoardError: '',
+    achievementBoardFetchedAt: 0,
     settingsOpen: false,
     settingsReturn: 'start',
     settingsClearArmed: '',
@@ -3172,6 +3224,7 @@
       over: dom.gameOverScreen,
       board: dom.boardScreen,
       achievements: dom.achievementScreen,
+      achievementBoard: dom.achievementBoardScreen,
       nickname: dom.nicknameScreen,
       settings: dom.settingsScreen,
       help: dom.helpScreen,
@@ -3247,6 +3300,7 @@
     saveAchievements();
     updateAchievementBadge();
     if (state.achievementOpen) renderAchievements();
+    void publishAchievementBoard();
     markWipeData();
     showToast('成就已清空');
   }
@@ -3485,6 +3539,8 @@
         writeStore(STORAGE.stats, JSON.stringify(profile.stats));
         state.stats = loadStats();
       }
+      normalizeRetiredAchievements();
+      void publishAchievementBoard();
       updateNicknameUI();
       updateMenuBest();
       refreshAvatarUI();
@@ -3818,6 +3874,7 @@
       showToast(`昵称已设为 <strong>${escapeHtml(value)}</strong>，30 天内还可修改 2 次`);
     }
     scheduleCloudSync();
+    void publishAchievementBoard();
   }
 
   function cancelNickname() {
@@ -4424,6 +4481,168 @@
     renderBoard();
   }
 
+  function achievementBoardIds() {
+    return MILESTONES
+      .map((milestone) => milestone.id)
+      .filter((id) => state.achievements[id] && !RETIRED_ACHIEVEMENT_IDS.includes(id));
+  }
+
+  function achievementBoardPayload() {
+    const ids = achievementBoardIds();
+    return {
+      player_id: getOnlinePlayerId(),
+      nickname: String(state.nickname || '匿名').trim().slice(0, 12) || '匿名',
+      achievement_ids: ids,
+      achievement_count: Math.min(54, ids.length),
+      updated_at: new Date().toISOString(),
+    };
+  }
+
+  async function publishAchievementBoard() {
+    if (!state.nickname && !achievementBoardIds().length) return false;
+    try {
+      const response = await fetchWithTimeout(
+        `${ONLINE.url}/rest/v1/${ONLINE.achievementTable}?on_conflict=player_id`,
+        {
+          method: 'POST',
+          headers: onlineHeaders({
+            'Content-Type': 'application/json',
+            Prefer: 'resolution=merge-duplicates,return=minimal',
+          }),
+          body: JSON.stringify(achievementBoardPayload()),
+        },
+      );
+      return response.ok || response.status === 409;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function achievementBoardDate(value) {
+    const timestamp = Date.parse(value);
+    if (!Number.isFinite(timestamp)) return '—';
+    const date = new Date(timestamp);
+    return `${date.getMonth() + 1}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  }
+
+  function renderAchievementBoard() {
+    const rows = state.achievementBoardRows;
+    const loading = state.achievementBoardLoading;
+    dom.achievementBoardBody.replaceChildren();
+    dom.achievementBoardBody.classList.toggle('is-loading', loading && rows.length === 0);
+    dom.achievementBoardRefreshButton.disabled = loading;
+    dom.achievementBoardCount.textContent = `共 ${rows.length} 人`;
+
+    if (state.achievementBoardError) {
+      dom.achievementBoardStatus.textContent = state.achievementBoardError;
+      dom.achievementBoardStatus.classList.add('is-error');
+    } else if (loading && rows.length === 0) {
+      dom.achievementBoardStatus.textContent = '正在连接成就排行榜…';
+      dom.achievementBoardStatus.classList.remove('is-error');
+    } else {
+      dom.achievementBoardStatus.textContent = '按已解锁成就数量排序，最多显示前 200 名。';
+      dom.achievementBoardStatus.classList.remove('is-error');
+    }
+
+    rows.slice(0, BOARD_DISPLAY_LIMIT).forEach((row, index) => {
+      const item = document.createElement('div');
+      item.className = 'board-row achievement-board-row';
+      item.setAttribute('role', 'listitem');
+      if (row.playerId === getOnlinePlayerId()) item.classList.add('is-current');
+
+      const rank = document.createElement('span');
+      rank.className = 'board-rank';
+      if (index < 3) rank.classList.add(`board-rank--${index + 1}`);
+      rank.textContent = String(index + 1);
+
+      const player = document.createElement('span');
+      player.className = 'board-player-cell';
+      const name = document.createElement('strong');
+      name.textContent = row.nickname || '匿名';
+      player.appendChild(name);
+
+      const count = document.createElement('span');
+      count.className = 'achievement-board-count';
+      count.textContent = `${row.count} / 54`;
+
+      const date = document.createElement('span');
+      date.className = 'achievement-board-date';
+      date.textContent = achievementBoardDate(row.updatedAt);
+
+      item.append(rank, player, count, date);
+      dom.achievementBoardBody.appendChild(item);
+    });
+
+    const empty = rows.length === 0 && !loading;
+    dom.achievementBoardEmpty.hidden = !empty;
+    dom.achievementBoardEmptyText.textContent = state.achievementBoardError
+      ? '成就排行榜暂不可用，先解锁本机成就也可以继续游戏。'
+      : '还没有人上榜，解锁成就后就会出现在这里。';
+  }
+
+  async function fetchAchievementBoard(options = {}) {
+    if (state.achievementBoardLoading) return;
+    if (!options.force && state.achievementBoardFetchedAt && Date.now() - state.achievementBoardFetchedAt < 20000) return;
+    state.achievementBoardLoading = true;
+    state.achievementBoardError = '';
+    renderAchievementBoard();
+    try {
+      const params = new URLSearchParams({
+        select: 'player_id,nickname,achievement_ids,achievement_count,updated_at',
+        order: 'achievement_count.desc,updated_at.asc',
+        limit: String(BOARD_DISPLAY_LIMIT),
+      });
+      const response = await fetchWithTimeout(
+        `${ONLINE.url}/rest/v1/${ONLINE.achievementTable}?${params.toString()}`,
+        { headers: onlineHeaders({ Accept: 'application/json' }) },
+      );
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      const rows = (Array.isArray(payload) ? payload : [])
+        .map((row) => {
+          const ids = Array.isArray(row.achievement_ids) ? row.achievement_ids : [];
+          const cleaned = ids.filter((id) => MILESTONES.some((milestone) => milestone.id === id));
+          return {
+            playerId: String(row.player_id || ''),
+            nickname: String(row.nickname || '匿名').trim().slice(0, 12) || '匿名',
+            count: Math.min(54, Math.max(0, Number(row.achievement_count) || cleaned.length)),
+            updatedAt: row.updated_at,
+          };
+        })
+        .filter((row) => row.playerId)
+        .sort((a, b) => b.count - a.count || Date.parse(a.updatedAt) - Date.parse(b.updatedAt))
+        .slice(0, BOARD_DISPLAY_LIMIT);
+      state.achievementBoardRows = rows;
+      state.achievementBoardFetchedAt = Date.now();
+    } catch (error) {
+      state.achievementBoardError = '成就排行榜暂不可用，请确认数据库已执行最新迁移。';
+    } finally {
+      state.achievementBoardLoading = false;
+      renderAchievementBoard();
+    }
+  }
+
+  function openAchievementBoard() {
+    state.achievementBoardOpen = true;
+    audio.unlock();
+    audio.sfx('click');
+    renderAchievementBoard();
+    showScreen('achievementBoard');
+    void publishAchievementBoard();
+    void fetchAchievementBoard({ force: !state.achievementBoardFetchedAt });
+    window.setTimeout(() => {
+      dom.achievementBoardCloseButton.focus({ preventScroll: true });
+    }, 80);
+  }
+
+  function closeAchievementBoard() {
+    if (!state.achievementBoardOpen) return;
+    state.achievementBoardOpen = false;
+    audio.sfx('click');
+    showScreen('achievements');
+    dom.achievementCloseButton.focus({ preventScroll: true });
+  }
+
   function clearBoard() {
     const now = performance.now();
     if (now - state.clearArmedAt > 3200) {
@@ -4594,7 +4813,10 @@
       }
     }
     let unlocked = false;
-    if (rank <= 10) markGlobalTop10(entry, rank);
+    if (rank <= 10) {
+      markGlobalTop10(entry, rank);
+      if (unlockAchievement('localTop10')) unlocked = true;
+    }
     if (rank === 1 && unlockAchievement('globalFirst')) unlocked = true;
     const stats = state.stats || (state.stats = emptyStats());
     if (Object.keys(MODE_RULES).every((key) => stats.modes[key].globalTop10)
@@ -5030,7 +5252,9 @@
     if (milestone.type === 'groundStompsRun') return ground >= milestone.value;
     if (milestone.type === 'flyingStompsRun') return flying >= milestone.value;
     if (milestone.type === 'bothStompsRun') return ground >= milestone.value && flying >= milestone.value;
-    if (milestone.type === 'noStompDistance') return run.distance >= milestone.meters && ground + flying === 0;
+    if (milestone.type === 'noStompDistance') {
+      return mode !== 'easy' && run.distance >= milestone.meters && ground + flying === 0;
+    }
     if (milestone.type === 'flyerOnlyStomps') return flying >= milestone.value && ground === 0;
     if (milestone.type === 'coinsRun') return run.coins >= milestone.value;
     if (milestone.type === 'coinHealsRun') return (run.coinHeals || 0) >= milestone.value;
@@ -5051,7 +5275,9 @@
     if (milestone.type === 'modesGlobalTop10') {
       return Object.keys(MODE_RULES).every((key) => stats.modes[key].globalTop10);
     }
-    if (milestone.type === 'localTop10') return Boolean(run.localTop10);
+    if (milestone.type === 'globalTop10') {
+      return Object.keys(MODE_RULES).some((key) => stats.modes[key].globalTop10);
+    }
     if (milestone.type === 'completedRuns') return stats.completedRuns >= milestone.value;
     if (milestone.type === 'totalCoins') return stats.totalCoins >= milestone.value;
     if (milestone.type === 'totalStomps') return stats.totalStomps >= milestone.value;
@@ -5083,6 +5309,7 @@
     if (state.achievementOpen) renderAchievements();
     showNextAchievement();
     scheduleCloudSync();
+    void publishAchievementBoard();
     return true;
   }
 
@@ -5123,14 +5350,15 @@
     }
   }
 
-  function triggerDeath() {
+  function triggerDeath(reason = 'hit') {
     const run = state.run;
     if (!run || run.deathStarted) return;
     run.deathStarted = true;
     run.dead = true;
+    run.deathReason = reason === 'pit' ? 'pit' : 'hit';
     state.mode = 'dying';
     run.deathTimer = 0;
-    run.player.vy = -620;
+    run.player.vy = run.deathReason === 'pit' ? 220 : -620;
     run.player.onGround = false;
     audio.stopMusic();
     audio.sfx('hurt');
@@ -5224,7 +5452,7 @@
     if (run.hearts <= 0) {
       if (reason === 'pit' && run.wentOffscreen) run.gotOffscreenPit = true;
       checkAchievements(run);
-      triggerDeath();
+      triggerDeath(reason);
       return true;
     }
 
@@ -5759,7 +5987,7 @@
     run.time += dt;
     run.deathTimer += dt;
     run.shake = Math.max(0, run.shake - dt * 1.8);
-    run.player.x += 24 * dt;
+    if (run.deathReason !== 'pit') run.player.x += 24 * dt;
     run.player.vy = Math.min(MAX_FALL, run.player.vy + 1860 * dt);
     run.player.y += run.player.vy * dt;
     run.player.spin = (run.player.spin || 0) + dt * 3.6;
@@ -6651,6 +6879,8 @@
   function drawDyingScene(time) {
     const run = state.run;
     if (!run) return;
+    const pitDeath = run.deathReason === 'pit';
+    if (pitDeath) drawPlayer(run);
     drawGrounds(run);
     if (state.backgroundTheme === 'night') {
       ctx.save();
@@ -6669,7 +6899,7 @@
     }
     drawCoins(run);
     drawParticles(run, 'particles');
-    if (run.deathTimer < 1.5) drawPlayer(run);
+    if (!pitDeath && run.deathTimer < 1.5) drawPlayer(run);
     drawParticles(run, 'popups');
   }
 
@@ -6728,6 +6958,14 @@
       if (event.code === 'Escape' || event.code === 'Enter' || event.code === 'Space') {
         event.preventDefault();
         closeHelp();
+      }
+      return;
+    }
+
+    if (state.achievementBoardOpen) {
+      if (event.code === 'Escape') {
+        event.preventDefault();
+        closeAchievementBoard();
       }
       return;
     }
@@ -6791,6 +7029,7 @@
   }
 
   function setupInput() {
+    document.addEventListener('contextmenu', (event) => event.preventDefault());
     window.addEventListener('keydown', handleKeyDown, { passive: false });
     window.addEventListener('keyup', handleKeyUp);
 
@@ -6884,6 +7123,15 @@
     dom.achievementCloseButton.addEventListener('click', closeAchievements);
     dom.achievementScreen.addEventListener('click', (event) => {
       if (event.target === dom.achievementScreen) closeAchievements();
+    });
+    dom.achievementLeaderboardButton.addEventListener('click', () => openAchievementBoard());
+    dom.achievementBoardCloseButton.addEventListener('click', closeAchievementBoard);
+    dom.achievementBoardScreen.addEventListener('click', (event) => {
+      if (event.target === dom.achievementBoardScreen) closeAchievementBoard();
+    });
+    dom.achievementBoardRefreshButton.addEventListener('click', () => {
+      audio.sfx('click');
+      void fetchAchievementBoard({ force: true });
     });
     dom.achievementList.addEventListener('scroll', hideAchievementTooltip, { passive: true });
     dom.settingsButton.addEventListener('click', () => openSettings());
@@ -7138,6 +7386,7 @@
 
     refreshAvatarUI();
     refreshModeUI();
+    normalizeRetiredAchievements();
     renderAchievements();
     updateMenuBest();
     state.customImage = null;
@@ -7161,6 +7410,7 @@
     window.setTimeout(() => {
       fetchOnlineScores({ force: true });
       flushPendingScores().catch(() => {});
+      void publishAchievementBoard();
     }, 600);
   }
 

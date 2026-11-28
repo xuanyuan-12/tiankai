@@ -538,3 +538,12 @@ html.bg-lite .bg-mountains {
     transition: none !important;
   }
 }
+
+/* Keep the background artwork independent of the browser's forced dark palette. */
+.world-background,
+.world-background *,
+.world-background *::before,
+.world-background *::after,
+#gameCanvas {
+  forced-color-adjust: none;
+}

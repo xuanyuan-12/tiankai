@@ -236,6 +236,7 @@
 <script>
 (() => {
   'use strict';
+  document.addEventListener('contextmenu', (event) => event.preventDefault());
   const STORAGE = {
     avatar: 'mario-run-avatar-v1',
     custom: 'mario-run-custom-v1',
