@@ -1,4 +1,4 @@
-﻿/* ============================================================
+/* ============================================================
    Layered background controller
    No external assets, no independent rAF. The game loop calls
    update() once per rendered frame; this file only updates CSS
@@ -303,6 +303,41 @@
     )).join('');
   }
 
+  function cartoonFarSvg() {
+    return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path fill="var(--bg-cartoon-far)" d="M0 540V356L36 340 62 300 96 326 128 276 160 306 196 248 226 282 260 226 292 258 328 210 360 244 396 190 428 224 462 174 494 210 526 178 560 214 596 168 628 206 662 186 696 230 728 204 762 252 794 224 828 276 860 250 894 300 926 284 960 336V540Z"/>
+      <path fill="var(--bg-cartoon-far-snow)" opacity=".55" d="M328 210 360 244 396 190 428 224 462 174 494 210 526 178 560 214 596 168 628 206 662 186 696 230 728 204 744 230 720 222 700 246 676 220 652 244 628 218 604 240 580 210 556 236 532 204 508 232 484 200 460 224 436 198 412 224 388 202 364 230 340 206Z"/>
+      <path fill="none" stroke="var(--bg-cartoon-line)" stroke-width="1.1" opacity=".45" d="M0 356 36 340 62 300 96 326 128 276 160 306 196 248 226 282 260 226 292 258 328 210 360 244 396 190 428 224 462 174 494 210 526 178 560 214 596 168 628 206 662 186 696 230 728 204 762 252 794 224 828 276 860 250 894 300 926 284 960 336"/>
+    </svg>`;
+  }
+
+  function cartoonNearSvg() {
+    return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <path fill="var(--bg-cartoon-near)" d="M0 540V430L40 414 70 380 104 402 132 360 166 388 198 344 228 372 260 328 292 356 328 320 362 352 398 316 434 346 468 300 500 332 536 300 570 338 604 310 638 348 672 316 706 354 742 326 776 362 812 340 848 376 884 356 920 398 944 430 960 430V540Z"/>
+      <path fill="var(--bg-cartoon-near-light)" opacity=".45" d="M0 486 40 472 70 450 104 466 132 436 166 460 198 426 228 448 260 418 292 442 328 410 362 438 398 406 434 430 468 396 500 422 536 396 570 428 604 402 638 436 672 410 706 442 742 418 776 450 812 430 848 462 884 444 920 476 944 492 960 492V540H0Z"/>
+      <path fill="none" stroke="var(--bg-cartoon-line)" stroke-width="1.2" opacity=".5" d="M0 430 40 414 70 380 104 402 132 360 166 388 198 344 228 372 260 328 292 356 328 320 362 352 398 316 434 346 468 300 500 332 536 300 570 338 604 310 638 348 672 316 706 354 742 326 776 362 812 340 848 376 884 356 920 398 944 430 960 430"/>
+    </svg>`;
+  }
+
+  function cartoonMidSvg() {
+    const clip = nextArtId('cartoon-mid');
+    const body = 'M0 540V384L30 366 58 330 88 348 116 300 146 326 174 270 204 300 236 246 266 278 294 220 326 252 354 196 384 228 412 168 444 204 472 142 502 176 528 120 556 154 582 98 612 136 640 86 668 122 694 166 718 140 744 188 770 164 800 212 828 190 856 244 884 222 914 300 940 340 960 384V540Z';
+    const ridge = 'M0 384 30 366 58 330 88 348 116 300 146 326 174 270 204 300 236 246 266 278 294 220 326 252 354 196 384 228 412 168 444 204 472 142 502 176 528 120 556 154 582 98 612 136 640 86 668 122 694 166 718 140 744 188 770 164 800 212 828 190 856 244 884 222 914 300 940 340 960 384';
+    const snow = 'M354 196 384 228 412 168 444 204 472 142 502 176 528 120 556 154 582 98 612 136 640 86 668 122 694 166 718 140 744 188 770 164 800 212 828 190 856 244 884 222 914 300 940 340 960 384 960 350 936 320 918 352 894 318 870 348 846 306 824 340 800 300 776 336 750 298 726 330 700 292 676 326 652 288 630 320 606 282 582 316 558 278 534 312 510 276 486 308 462 270 438 302 414 266 390 298 366 270 342 300 320 270 296 300 272 270 248 300 224 266 200 296 176 264 152 294 128 266 104 296 80 270 56 300 32 278 354 196Z';
+    return `<svg viewBox="0 0 960 540" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+      <defs><clipPath id="${clip}"><path d="${body}"/></clipPath></defs>
+      <path fill="var(--bg-cartoon-rock)" d="${body}"/>
+      <g clip-path="url(#${clip})">
+        <path fill="var(--bg-cartoon-sun)" opacity=".58" d="M582 98 612 136 640 86 668 122 694 166 718 140 744 188 770 164 800 212 828 190 856 244 884 222 914 300 940 340 930 400 880 360 840 300 800 270 760 230 720 210 680 180 640 155 610 170 580 140Z"/>
+        <path fill="var(--bg-cartoon-shade)" opacity=".5" d="M412 168 444 204 472 142 502 176 528 120 556 154 582 98 612 136 640 86 650 185 615 205 580 190 545 225 510 205 478 215 450 180Z"/>
+        <path fill="var(--bg-cartoon-sun)" opacity=".55" d="M236 246 266 278 294 220 326 252 354 196 384 228 412 168 430 190 410 245 380 265 350 235 320 260 286 245Z"/>
+        <path fill="var(--bg-cartoon-snow)" opacity=".96" d="${snow}"/>
+        <path fill="none" stroke="var(--bg-cartoon-ridge)" stroke-width="1.2" opacity=".7" d="M354 196 412 168 472 142 528 120 582 98 640 86 694 166 744 188 800 212 856 244 914 300 960 384"/>
+      </g>
+      <path fill="none" stroke="var(--bg-cartoon-line)" stroke-width="1.5" opacity=".8" d="${ridge}"/>
+    </svg>`;
+  }
+
   function track(makeSvg) {
     return `<div class="bg-track">${[0, 1, 2].map((index) => makeSvg(index)).join('')}</div>`;
   }
@@ -311,10 +346,10 @@
     if (!container) return;
     container.innerHTML = [
       '<div class="bg-layer bg-sky"></div>',
+      '<div class="bg-layer bg-cartoon-image"><div class="bg-cartoon-photo-track"><img class="bg-cartoon-photo" src="assets/cartoon-snow-bg.webp" alt="" decoding="async"></div></div>',
       '<div class="bg-layer bg-stars"></div>',
       '<div class="bg-layer bg-motes"></div>',
       `<div class="bg-layer bg-clouds bg-clouds--back">${track(cloudSvg)}</div>`,
-      '<div class="bg-layer bg-mountains bg-mountains--image"><div class="bg-mountain-photo-track"><img class="bg-mountain-photo" src="assets/mountain-reference.webp" alt="" decoding="async"></div></div>',
       `<div class="bg-layer bg-clouds bg-clouds--front">${track((index) => cloudSvg(index + 1))}</div>`,
       `<div class="bg-layer bg-birds">${buildBirds()}</div>`,
       `<div class="bg-layer bg-trees">${track(treeSvg)}</div>`,
@@ -347,6 +382,7 @@
         '--bg-mountain-far-shift',
         '--bg-mountain-mid-shift',
         '--bg-mountain-near-shift',
+        '--bg-cartoon-shift',
         '--bg-tree-shift',
         '--bg-foreground-shift',
       ].forEach((name) => container.style.setProperty(name, '0'));
@@ -404,6 +440,7 @@
     container.style.setProperty('--bg-mountain-far-shift', farShift.toFixed(3));
     container.style.setProperty('--bg-mountain-mid-shift', midShift.toFixed(3));
     container.style.setProperty('--bg-mountain-near-shift', nearShift.toFixed(3));
+    container.style.setProperty('--bg-cartoon-shift', midShift.toFixed(3));
     container.style.setProperty('--bg-tree-shift', treeShift.toFixed(3));
     container.style.setProperty('--bg-foreground-shift', foregroundShift.toFixed(3));
     container.style.setProperty(
@@ -452,5 +489,3 @@
     get theme() { return theme; },
   };
 })();
-
-
