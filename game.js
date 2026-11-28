@@ -51,7 +51,7 @@
     wechatSession: 'mario-run-wechat-session-v1',
     wechatLinked: 'mario-run-wechat-linked-v1',
     wechatDirty: 'mario-run-wechat-dirty-v1',
-    achievementReset: 'mario-run-achievement-reset-v3',
+    achievementReset: 'mario-run-achievement-reset-v4',
   };
 
   const ONLINE = Object.freeze({
@@ -468,7 +468,7 @@
     { id: 'c5', type: 'combo', combo: 5, title: '五连绝世', label: '连续踩中 5 只小怪' },
     { id: 'doubleStomp', type: 'doubleStomp', title: '一箭双雕', label: '同一帧同时踩中 2 只小怪' },
     { id: 'c10', type: 'stompScore', stompScore: 50000, title: '天赐良机', label: '单次踩怪获得 50,000+ 分' },
-    { id: 'b4900', type: 'blockScore', blockScore: 1451, title: '幸运暴击', label: '问号砖单次获得 1,450 分以上' },
+    { id: 'b4900', type: 'blockScoreRatio', title: '幸运暴击', label: '问号砖本次得分达到最高可能分数的 95%' },
     { id: 'heartPrize', type: 'heartPrize', title: '物超所值', label: '在问号砖里获得回一颗心的奖励' },
     { id: 'dmg3', type: 'tripleDamage', title: '天煞孤星', label: '4 秒内连续受到 3 次伤害' },
     { id: 'secondDown', type: 'secondHeartDown', title: '超越生死', label: '1 心回到 2 心后 1 秒内又掉一颗心' },
@@ -496,7 +496,7 @@
     { id: 'coinAvoid', type: 'lowCoinsRun', meters: 500, maxCoins: 3, title: '金币绝缘体', label: '单局 500 米且金币不超过 3 枚' },
     { id: 'noDamage10k', type: 'noDamageDistance', meters: 10000, title: '毫发无伤', label: '非极限难度，单局 10,000 米无受伤' },
     { id: 'allModes10', type: 'modesRuns', value: 10, title: '难度收藏家', label: '四个难度各完成 10 局' },
-    { id: 'localTop10', type: 'blockScoreRatio', title: '名列前茅', label: '问号砖单次得分达到本次最高可能分数的95%' },
+    { id: 'localTop10', type: 'globalTop10', title: '名列前茅', label: '首次进入任一难度全球排行榜前 10' },
     { id: 'runs100', type: 'completedRuns', value: 100, title: '百炼成钢', label: '累计完成 100 局' },
     { id: 'coins10000', type: 'totalCoins', value: 10000, title: '积羽沉舟', label: '累计收集 10,000 枚金币' },
     { id: 'stomps500', type: 'totalStomps', value: 500, title: '百步穿杨', label: '累计踩中 500 个敌人' },
@@ -638,7 +638,7 @@
     c5: { icon: 'flame', description: '连续踩中 5 只小怪。' },
     doubleStomp: { icon: 'doubleBoot', description: '同一帧同时踩中两只小怪。' },
     c10: { icon: 'comet', description: '单次踩中一只小怪获得 50,000 分及以上。' },
-    b4900: { icon: 'dice', description: '问号砖单次获得 1,450 分以上。' },
+    b4900: { icon: 'dice', description: '问号砖本次得分达到最高可能分数的 95%。' },
     heartPrize: { icon: 'heart', description: '在问号砖的奖励中获得回一颗心。' },
     dmg3: { icon: 'skull', description: '4 秒内连续受到 3 次伤害，第三次致命也算。' },
     secondDown: { icon: 'brokenHeart', description: '1 颗心时回到 2 颗心，随后 1 秒内又掉一颗心。' },
@@ -666,7 +666,7 @@
     coinAvoid: { icon: 'ghost', description: '单局跑出 500 米，收集金币不超过 3 枚。' },
     noDamage10k: { icon: 'ribbon', description: '非极限难度下单局跑出 10,000 米且一次未受伤。' },
     allModes10: { icon: 'modes', description: '四个难度各完成 10 局。' },
-    localTop10: { icon: 'medal', description: '问号砖单次得分达到本次最高可能分数的95%。' },
+    localTop10: { icon: 'medal', description: '首次进入任一难度全球排行榜前 10。' },
     runs100: { icon: 'star', description: '累计完成 100 局。' },
     coins10000: { icon: 'coins', description: '累计收集 10,000 枚金币。' },
     stomps500: { icon: 'boot', description: '累计踩中 500 个敌人。' },
@@ -2413,7 +2413,7 @@
   }
 
   const RETIRED_ACHIEVEMENT_IDS = [];
-  const RESET_ONCE_ACHIEVEMENT_IDS = ['localTop10', 'noStomp1000m'];
+  const RESET_ONCE_ACHIEVEMENT_IDS = ['localTop10', 'b4900'];
 
   function stripAchievementIds(ids) {
     let changed = false;
@@ -2436,14 +2436,6 @@
     let changed = stripRetiredAchievements();
     if (firstReset) {
       changed = stripAchievementIds(RESET_ONCE_ACHIEVEMENT_IDS) || changed;
-      const stats = state.stats || (state.stats = emptyStats());
-      for (const key of Object.keys(MODE_RULES)) {
-        if (stats.modes[key] && stats.modes[key].globalTop10) {
-          stats.modes[key].globalTop10 = false;
-          changed = true;
-        }
-      }
-      if (changed) saveStats();
       writeStore(STORAGE.achievementReset, '1');
     }
     if (changed) {
@@ -4828,6 +4820,7 @@
     let unlocked = false;
     if (rank <= 10) {
       markGlobalTop10(entry, rank);
+      if (unlockAchievement('localTop10')) unlocked = true;
     }
     if (rank === 1 && unlockAchievement('globalFirst')) unlocked = true;
     const stats = state.stats || (state.stats = emptyStats());
