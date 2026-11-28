@@ -2412,11 +2412,12 @@
     writeStore(STORAGE.achievementsV2, JSON.stringify(state.achievements));
   }
 
-  const RETIRED_ACHIEVEMENT_IDS = ['localTop10', 'noStomp1000m'];
+  const RETIRED_ACHIEVEMENT_IDS = [];
+  const RESET_ONCE_ACHIEVEMENT_IDS = ['localTop10', 'noStomp1000m'];
 
-  function stripRetiredAchievements() {
+  function stripAchievementIds(ids) {
     let changed = false;
-    for (const id of RETIRED_ACHIEVEMENT_IDS) {
+    for (const id of ids) {
       if (state.achievements[id]) {
         delete state.achievements[id];
         changed = true;
@@ -2426,10 +2427,15 @@
     return changed;
   }
 
+  function stripRetiredAchievements() {
+    return stripAchievementIds(RETIRED_ACHIEVEMENT_IDS);
+  }
+
   function normalizeRetiredAchievements() {
     const firstReset = readStore(STORAGE.achievementReset, '') !== '1';
     let changed = stripRetiredAchievements();
     if (firstReset) {
+      changed = stripAchievementIds(RESET_ONCE_ACHIEVEMENT_IDS) || changed;
       const stats = state.stats || (state.stats = emptyStats());
       for (const key of Object.keys(MODE_RULES)) {
         if (stats.modes[key] && stats.modes[key].globalTop10) {
