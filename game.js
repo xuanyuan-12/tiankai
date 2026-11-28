@@ -2588,17 +2588,26 @@
     accumulator: 0,
     run: null,
     heartNodes: [],
-    lastHud: { score: '', coins: '', distance: '', hearts: -1 },
+    lastHud: { score: '', coins: '', distance: '', hearts: -1, combo: '', comboVisible: false },
   };
 
   const ctx = dom.canvas.getContext('2d');
+  const MAX_CANVAS_WIDTH = 1920;
+  const MAX_CANVAS_HEIGHT = 1080;
   let dpr = 1;
   let scaleX = 1;
   let scaleY = 1;
 
   function resizeCanvas() {
     const rect = dom.canvas.getBoundingClientRect();
-    dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    const requestedDpr = Math.min(window.devicePixelRatio || 1, 2.5);
+    // Keep the visible layout and drawing coordinates unchanged, but cap the
+    // backing store so large high-DPI displays don't fill millions of extra pixels.
+    dpr = Math.max(0.5, Math.min(
+      requestedDpr,
+      MAX_CANVAS_WIDTH / Math.max(1, rect.width),
+      MAX_CANVAS_HEIGHT / Math.max(1, rect.height)
+    ));
     dom.canvas.width = Math.max(1, Math.round(rect.width * dpr));
     dom.canvas.height = Math.max(1, Math.round(rect.height * dpr));
     scaleX = dom.canvas.width / DESIGN_W;
@@ -3941,15 +3950,16 @@
 
   function updateComboBadge() {
     const run = state.run;
-    if (!run) {
-      dom.combo.hidden = true;
-      return;
+    const visible = Boolean(run && run.combo >= 2 && run.comboTimer > 0);
+    if (state.lastHud.comboVisible !== visible) {
+      dom.combo.hidden = !visible;
+      state.lastHud.comboVisible = visible;
     }
-    if (run.combo >= 2 && run.comboTimer > 0) {
-      dom.combo.hidden = false;
-      dom.comboValue.textContent = `×${run.combo}`;
-    } else {
-      dom.combo.hidden = true;
+    if (!visible) return;
+    const text = `×${run.combo}`;
+    if (text !== state.lastHud.combo) {
+      dom.comboValue.textContent = text;
+      state.lastHud.combo = text;
     }
   }
 
@@ -6828,43 +6838,60 @@
      Rendering — scenes
      ========================================================== */
 
-  function drawSky() {
-    const sky = ctx.createLinearGradient(0, 0, 0, DESIGN_H);
+  let skyCache = null;
+
+  function paintSky(c) {
+    const sky = c.createLinearGradient(0, 0, 0, DESIGN_H);
     sky.addColorStop(0, '#64d2f4');
     sky.addColorStop(.46, '#a8ebf8');
     sky.addColorStop(.72, '#dff8ee');
     sky.addColorStop(1, '#f5f3c9');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0, 0, DESIGN_W, DESIGN_H);
+    c.fillStyle = sky;
+    c.fillRect(0, 0, DESIGN_W, DESIGN_H);
 
     // soft sun glow
     const sunX = 790;
     const sunY = 92;
-    const glow = ctx.createRadialGradient(sunX, sunY, 18, sunX, sunY, 160);
+    const glow = c.createRadialGradient(sunX, sunY, 18, sunX, sunY, 160);
     glow.addColorStop(0, 'rgba(255,250,197,.95)');
     glow.addColorStop(.36, 'rgba(255,242,160,.28)');
     glow.addColorStop(1, 'rgba(255,239,158,0)');
-    ctx.fillStyle = glow;
-    ctx.fillRect(sunX - 170, sunY - 170, 340, 340);
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 38, 0, TAU);
-    ctx.fillStyle = '#fff3a6';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(236,183,57,.22)';
-    ctx.lineWidth = 3;
-    ctx.stroke();
+    c.fillStyle = glow;
+    c.fillRect(sunX - 170, sunY - 170, 340, 340);
+    c.beginPath();
+    c.arc(sunX, sunY, 38, 0, TAU);
+    c.fillStyle = '#fff3a6';
+    c.fill();
+    c.strokeStyle = 'rgba(236,183,57,.22)';
+    c.lineWidth = 3;
+    c.stroke();
 
     // decorative rings around the sun
-    ctx.strokeStyle = 'rgba(255,248,192,.2)';
-    ctx.lineWidth = 1.4;
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 57, 0, TAU);
-    ctx.stroke();
-    ctx.setLineDash([5, 10]);
-    ctx.beginPath();
-    ctx.arc(sunX, sunY, 70, 0, TAU);
-    ctx.stroke();
-    ctx.setLineDash([]);
+    c.strokeStyle = 'rgba(255,248,192,.2)';
+    c.lineWidth = 1.4;
+    c.beginPath();
+    c.arc(sunX, sunY, 57, 0, TAU);
+    c.stroke();
+    c.setLineDash([5, 10]);
+    c.beginPath();
+    c.arc(sunX, sunY, 70, 0, TAU);
+    c.stroke();
+    c.setLineDash([]);
+  }
+
+  function getSkyCache() {
+    if (skyCache) return skyCache;
+    skyCache = document.createElement('canvas');
+    skyCache.width = DESIGN_W * 2;
+    skyCache.height = DESIGN_H * 2;
+    const cacheCtx = skyCache.getContext('2d');
+    cacheCtx.scale(2, 2);
+    paintSky(cacheCtx);
+    return skyCache;
+  }
+
+  function drawSky() {
+    ctx.drawImage(getSkyCache(), 0, 0, DESIGN_W, DESIGN_H);
   }
 
   function drawCloud(x, y, scale, opacity = .92, variant = 0) {
