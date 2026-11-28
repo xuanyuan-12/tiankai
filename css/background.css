@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    Layered background — sky, clouds, mountains, foreground
    All artwork is CSS + inline SVG. No external images.
    ============================================================ */
@@ -547,3 +547,31 @@ html.bg-lite .bg-mountains {
 #gameCanvas {
   forced-color-adjust: none;
 }
+
+.world-background .bg-mountains--mid > svg > path:first-child {
+  stroke: var(--bg-mountain-light);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  paint-order: stroke fill;
+}
+
+
+.world-background .bg-mountains--image {
+  height: 80%;
+  opacity: 1;
+  overflow: hidden;
+}
+.bg-mountain-photo-track {
+  width: 140%;
+  height: 100%;
+  transform: translate3d(calc(var(--bg-mountain-image-shift, 0) * -1%), 0, 0);
+}
+.bg-mountain-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center bottom;
+}
+.theme-dusk .bg-mountain-photo { filter: saturate(.88) brightness(.82) sepia(.12) hue-rotate(-8deg); }
+.theme-night .bg-mountain-photo { filter: saturate(.6) brightness(.5) hue-rotate(8deg) contrast(1.05); }
+
