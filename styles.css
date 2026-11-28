@@ -862,7 +862,7 @@ label:focus-visible {
 }
 
 .side-card__body strong {
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
   line-height: 1.15;
   letter-spacing: .02em;
   white-space: nowrap;
@@ -4014,7 +4014,7 @@ kbd {
 }
 
 .start-grid .home-side--left .side-card__body strong {
-  font-size: var(--text-sm);
+  font-size: var(--text-lg);
 }
 
 .start-grid .home-side--left .side-card__eyebrow {
@@ -4167,7 +4167,7 @@ kbd {
   }
 
   .start-grid .home-side--left .side-card__body strong {
-    font-size: var(--text-sm);
+    font-size: var(--text-lg);
   }
 
   .start-grid .selector-panel {

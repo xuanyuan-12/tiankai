@@ -51,7 +51,7 @@
     wechatSession: 'mario-run-wechat-session-v1',
     wechatLinked: 'mario-run-wechat-linked-v1',
     wechatDirty: 'mario-run-wechat-dirty-v1',
-    achievementReset: 'mario-run-achievement-reset-v2',
+    achievementReset: 'mario-run-achievement-reset-v3',
   };
 
   const ONLINE = Object.freeze({
@@ -496,7 +496,7 @@
     { id: 'coinAvoid', type: 'lowCoinsRun', meters: 500, maxCoins: 3, title: '金币绝缘体', label: '单局 500 米且金币不超过 3 枚' },
     { id: 'noDamage10k', type: 'noDamageDistance', meters: 10000, title: '毫发无伤', label: '非极限难度，单局 10,000 米无受伤' },
     { id: 'allModes10', type: 'modesRuns', value: 10, title: '难度收藏家', label: '四个难度各完成 10 局' },
-    { id: 'localTop10', type: 'globalTop10', title: '名列前茅', label: '首次进入任一难度全球排行榜前 10' },
+    { id: 'localTop10', type: 'blockScoreRatio', title: '名列前茅', label: '问号砖单次得分达到本次最高可能分数的95%' },
     { id: 'runs100', type: 'completedRuns', value: 100, title: '百炼成钢', label: '累计完成 100 局' },
     { id: 'coins10000', type: 'totalCoins', value: 10000, title: '积羽沉舟', label: '累计收集 10,000 枚金币' },
     { id: 'stomps500', type: 'totalStomps', value: 500, title: '百步穿杨', label: '累计踩中 500 个敌人' },
@@ -666,7 +666,7 @@
     coinAvoid: { icon: 'ghost', description: '单局跑出 500 米，收集金币不超过 3 枚。' },
     noDamage10k: { icon: 'ribbon', description: '非极限难度下单局跑出 10,000 米且一次未受伤。' },
     allModes10: { icon: 'modes', description: '四个难度各完成 10 局。' },
-    localTop10: { icon: 'medal', description: '首次进入任一难度的全球排行榜前 10 名。' },
+    localTop10: { icon: 'medal', description: '问号砖单次得分达到本次最高可能分数的95%。' },
     runs100: { icon: 'star', description: '累计完成 100 局。' },
     coins10000: { icon: 'coins', description: '累计收集 10,000 枚金币。' },
     stomps500: { icon: 'boot', description: '累计踩中 500 个敌人。' },
@@ -2876,6 +2876,7 @@
     maxStompScore: 0,
     maxStompCombo: 0,
     maxBlockScore: 0,
+    maxBlockCombo: 0,
     airTime: 0,
     doubleJumps: 0,
     jumpCount: 0,
@@ -4811,7 +4812,6 @@
     let unlocked = false;
     if (rank <= 10) {
       markGlobalTop10(entry, rank);
-      if (unlockAchievement('localTop10')) unlocked = true;
     }
     if (rank === 1 && unlockAchievement('globalFirst')) unlocked = true;
     const stats = state.stats || (state.stats = emptyStats());
@@ -5233,6 +5233,10 @@
     if (milestone.type === 'distance') return run.distance >= milestone.meters;
     if (milestone.type === 'combo') return (run.maxStompCombo || 0) >= milestone.combo;
     if (milestone.type === 'blockScore') return (run.maxBlockScore || 0) >= milestone.blockScore;
+    if (milestone.type === 'blockScoreRatio') {
+      const combo = Math.max(1, run.maxBlockCombo || 1);
+      return (run.maxBlockScore || 0) >= 1425 * combo;
+    }
     if (milestone.type === 'heartPrize') return Boolean(run.gotHeartPrize);
     if (milestone.type === 'doubleStomp') return Boolean(run.gotDoubleStomp);
     if (milestone.type === 'stompScore') return (run.maxStompScore || 0) >= milestone.stompScore;
@@ -5492,16 +5496,20 @@
         popup(run, cx, block.y - 20, '+1 ♥', '#ff8fb8');
         spawnBurst(run, cx, block.y - 6, '#ff8fb8', 12, 170);
       } else {
-        // 二等奖：500~1500 随机分；满血抽到一等奖也转成这个
+        // 二等奖：500~1500 随机分，再乘以当前 combo 数
+        const multiplier = Math.max(1, run.combo || 1);
         let gained;
         if (prize) {
-          gained = Math.floor(rand(prize.score[0], prize.score[1] + 1));
+          gained = Math.floor(rand(prize.score[0], prize.score[1] + 1)) * multiplier;
         } else {
-          gained = 120;
+          gained = 120 * multiplier;
           run.coins++;
         }
         run.scoreFloat += gained;
-        run.maxBlockScore = Math.max(run.maxBlockScore || 0, gained);
+        if (gained >= (run.maxBlockScore || 0)) {
+          run.maxBlockScore = gained;
+          run.maxBlockCombo = multiplier;
+        }
         run.blockCoins.push({
           x: cx,
           y: block.y - 10,
